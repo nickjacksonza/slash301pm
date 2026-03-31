@@ -1,0 +1,175 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Slash 301 PM" [level=1] [ref=e6]
+    - textbox "Search..." [ref=e9]
+    - generic [ref=e10]:
+      - generic [ref=e156]:
+        - button "☰" [ref=e157] [cursor=pointer]
+        - button "▦" [ref=e158] [cursor=pointer]
+      - generic [ref=e12] [cursor=pointer]:
+        - generic "Kim Lee" [ref=e478]:
+          - generic [ref=e14]: KL
+        - generic [ref=e15]:
+          - generic [ref=e16]: Kim Lee
+          - generic [ref=e17]: User
+        - generic [ref=e18]: ▼
+  - navigation [ref=e19]:
+    - button "⌂ Dashboard" [ref=e20] [cursor=pointer]:
+      - generic [ref=e21]: ⌂
+      - text: Dashboard
+    - button "◎ Work 5" [ref=e22] [cursor=pointer]:
+      - generic [ref=e23]: ◎
+      - text: Work
+      - generic [ref=e24]: "5"
+    - button "◐ Capacity 9" [ref=e25] [cursor=pointer]:
+      - generic [ref=e26]: ◐
+      - text: Capacity
+      - generic [ref=e27]: "9"
+    - button "⋯ More ▼" [ref=e29] [cursor=pointer]:
+      - generic [ref=e30]: ⋯
+      - text: More
+      - generic [ref=e31]: ▼
+  - main [ref=e32]:
+    - generic [ref=e159]:
+      - generic [ref=e160]:
+        - generic [ref=e161]:
+          - button "Jobs 5" [ref=e162] [cursor=pointer]:
+            - text: Jobs
+            - generic [ref=e163]: "5"
+          - button "Projects 2" [ref=e164] [cursor=pointer]:
+            - text: Projects
+            - generic [ref=e165]: "2"
+          - button "Assets 8" [ref=e166] [cursor=pointer]:
+            - text: Assets
+            - generic [ref=e167]: "8"
+        - generic [ref=e168]:
+          - generic [ref=e169]:
+            - button "All" [ref=e170] [cursor=pointer]
+            - button "My Work" [ref=e171] [cursor=pointer]
+          - combobox [ref=e172] [cursor=pointer]:
+            - option "All Projects" [selected]
+            - option "Acme Corp - Summer Campaign"
+            - option "TechStart - Brand Refresh"
+          - combobox [ref=e173] [cursor=pointer]:
+            - option "All Statuses" [selected]
+            - option "In Progress"
+            - option "In Review"
+            - option "Inbox"
+            - option "On Hold"
+            - option "Today"
+      - generic [ref=e175]: 5 jobs
+      - table [ref=e177]:
+        - rowgroup [ref=e178]:
+          - 'row "Job # Name Client Status Team Due" [ref=e179] [cursor=pointer]':
+            - 'columnheader "Job #" [ref=e180]'
+            - columnheader "Name" [ref=e181]
+            - columnheader "Client" [ref=e182]
+            - columnheader "Status" [ref=e183]
+            - columnheader "Team" [ref=e184]
+            - columnheader "Due" [ref=e185]
+        - rowgroup [ref=e186]:
+          - row "SUMM-001 Hero Video Acme Corp In Progress SC MD JW +6 Feb 15" [ref=e187] [cursor=pointer]:
+            - cell "SUMM-001" [ref=e188]
+            - cell "Hero Video" [ref=e189]
+            - cell "Acme Corp" [ref=e190]
+            - cell "In Progress" [ref=e191]:
+              - generic [ref=e193]: In Progress
+            - cell "SC MD JW +6" [ref=e194]:
+              - generic [ref=e195]:
+                - generic "Sarah Chen" [ref=e196]:
+                  - generic [ref=e197]: SC
+                - generic "Morgan Davis" [ref=e198]:
+                  - generic [ref=e199]: MD
+                - generic "James Wilson" [ref=e200]:
+                  - generic [ref=e201]: JW
+                - generic [ref=e202]: "+6"
+            - cell "Feb 15" [ref=e203]
+          - row "SUMM-002 Social Package Acme Corp Today SC SC JW +6 Feb 10" [ref=e204] [cursor=pointer]:
+            - cell "SUMM-002" [ref=e205]
+            - cell "Social Package" [ref=e206]
+            - cell "Acme Corp" [ref=e207]
+            - cell "Today" [ref=e208]:
+              - generic [ref=e210]: Today
+            - cell "SC SC JW +6" [ref=e211]:
+              - generic [ref=e212]:
+                - generic "Sarah Chen" [ref=e213]:
+                  - generic [ref=e214]: SC
+                - generic "Sarah Chen" [ref=e215]:
+                  - generic [ref=e216]: SC
+                - generic "James Wilson" [ref=e217]:
+                  - generic [ref=e218]: JW
+                - generic [ref=e219]: "+6"
+            - cell "Feb 10" [ref=e220]
+          - row "SUMM-003 Email Campaign Acme Corp Inbox Needs Attention Backlog Inbox Today On Hold In Progress To Do This Week In Progress Waiting In Review Completed Done Approved (Internal) Approved (External) Scheduled Live Other Archived SC MD JW +6 Feb 20" [ref=e272] [cursor=pointer]:
+            - cell "SUMM-003" [ref=e222]
+            - cell "Email Campaign" [ref=e223]
+            - cell "Acme Corp" [ref=e224]
+            - cell "Inbox Needs Attention Backlog Inbox Today On Hold In Progress To Do This Week In Progress Waiting In Review Completed Done Approved (Internal) Approved (External) Scheduled Live Other Archived" [ref=e273]:
+              - generic [ref=e226]:
+                - generic [ref=e227]: Inbox
+                - generic [ref=e274]:
+                  - generic [ref=e275]:
+                    - generic [ref=e276]: Needs Attention
+                    - generic [ref=e277]: Backlog
+                    - generic [ref=e279]: Inbox
+                    - generic [ref=e281]: Today
+                    - generic [ref=e283]: On Hold
+                  - generic [ref=e285]:
+                    - generic [ref=e286]: In Progress
+                    - generic [ref=e287]: To Do
+                    - generic [ref=e289]: This Week
+                    - generic [ref=e291]: In Progress
+                    - generic [ref=e293]: Waiting
+                    - generic [ref=e295]: In Review
+                  - generic [ref=e297]:
+                    - generic [ref=e298]: Completed
+                    - generic [ref=e299]: Done
+                    - generic [ref=e301]: Approved (Internal)
+                    - generic [ref=e303]: Approved (External)
+                    - generic [ref=e305]: Scheduled
+                    - generic [ref=e307]: Live
+                  - generic [ref=e309]:
+                    - generic [ref=e310]: Other
+                    - generic [ref=e311]: Archived
+            - cell "SC MD JW +6" [ref=e228]:
+              - generic [ref=e229]:
+                - generic "Sarah Chen" [ref=e230]:
+                  - generic [ref=e231]: SC
+                - generic "Morgan Davis" [ref=e232]:
+                  - generic [ref=e233]: MD
+                - generic "James Wilson" [ref=e234]:
+                  - generic [ref=e235]: JW
+                - generic [ref=e236]: "+6"
+            - cell "Feb 20" [ref=e237]
+          - row "BRAN-001 Logo Design TechStart In Review MD SC JW +6 Feb 5" [ref=e238] [cursor=pointer]:
+            - cell "BRAN-001" [ref=e239]
+            - cell "Logo Design" [ref=e240]
+            - cell "TechStart" [ref=e241]
+            - cell "In Review" [ref=e242]:
+              - generic [ref=e244]: In Review
+            - cell "MD SC JW +6" [ref=e245]:
+              - generic [ref=e246]:
+                - generic "Morgan Davis" [ref=e247]:
+                  - generic [ref=e248]: MD
+                - generic "Sarah Chen" [ref=e249]:
+                  - generic [ref=e250]: SC
+                - generic "James Wilson" [ref=e251]:
+                  - generic [ref=e252]: JW
+                - generic [ref=e253]: "+6"
+            - cell "Feb 5" [ref=e254]
+          - row "BRAN-002 Brand Guidelines TechStart On Hold MD SC JW +6 Feb 28" [ref=e255] [cursor=pointer]:
+            - cell "BRAN-002" [ref=e256]
+            - cell "Brand Guidelines" [ref=e257]
+            - cell "TechStart" [ref=e258]
+            - cell "On Hold" [ref=e259]:
+              - generic [ref=e261]: On Hold
+            - cell "MD SC JW +6" [ref=e262]:
+              - generic [ref=e263]:
+                - generic "Morgan Davis" [ref=e264]:
+                  - generic [ref=e265]: MD
+                - generic "Sarah Chen" [ref=e266]:
+                  - generic [ref=e267]: SC
+                - generic "James Wilson" [ref=e268]:
+                  - generic [ref=e269]: JW
+                - generic [ref=e270]: "+6"
+            - cell "Feb 28" [ref=e271]

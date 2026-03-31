@@ -1,0 +1,144 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Slash 301 PM" [level=1] [ref=e6]
+    - textbox "Search..." [ref=e9]
+    - generic [ref=e11]:
+      - generic [ref=e12] [cursor=pointer]:
+        - generic "Kim Lee" [ref=e13]:
+          - generic [ref=e14]: KL
+        - generic [ref=e15]:
+          - generic [ref=e16]: Kim Lee
+          - generic [ref=e17]: User
+        - generic [ref=e18]: ▲
+      - generic [ref=e92]:
+        - generic [ref=e93]: Switch User
+        - generic [ref=e94] [cursor=pointer]:
+          - generic "Rachel Adams" [ref=e95]:
+            - generic [ref=e96]: RA
+          - generic [ref=e97]:
+            - generic [ref=e98]: Rachel Adams
+            - generic [ref=e99]: COO • COO
+        - generic [ref=e100] [cursor=pointer]:
+          - generic "Sarah Chen" [ref=e101]:
+            - generic [ref=e102]: SC
+          - generic [ref=e103]:
+            - generic [ref=e104]: Sarah Chen
+            - generic [ref=e105]: PM • Manager
+        - generic [ref=e106] [cursor=pointer]:
+          - generic "James Wilson" [ref=e107]:
+            - generic [ref=e108]: JW
+          - generic [ref=e109]:
+            - generic [ref=e110]: James Wilson
+            - generic [ref=e111]: ECD • Manager
+        - generic [ref=e112] [cursor=pointer]:
+          - generic "Maria Garcia" [ref=e113]:
+            - generic [ref=e114]: MG
+          - generic [ref=e115]:
+            - generic [ref=e116]: Maria Garcia
+            - generic [ref=e117]: CD • User
+        - generic [ref=e118] [cursor=pointer]:
+          - generic "Alex Thompson" [ref=e119]:
+            - generic [ref=e120]: AT
+          - generic [ref=e121]:
+            - generic [ref=e122]: Alex Thompson
+            - generic [ref=e123]: Copywriter • User
+        - generic [ref=e124] [cursor=pointer]:
+          - generic "Kim Lee" [ref=e125]:
+            - generic [ref=e126]: KL
+          - generic [ref=e127]:
+            - generic [ref=e128]: Kim Lee
+            - generic [ref=e129]: Designer • User
+        - generic [ref=e130] [cursor=pointer]:
+          - generic "Jordan Blake" [ref=e131]:
+            - generic [ref=e132]: JB
+          - generic [ref=e133]:
+            - generic [ref=e134]: Jordan Blake
+            - generic [ref=e135]: QA • User
+        - generic [ref=e136] [cursor=pointer]:
+          - generic "Chris Martin" [ref=e137]:
+            - generic [ref=e138]: CM
+          - generic [ref=e139]:
+            - generic [ref=e140]: Chris Martin
+            - generic [ref=e141]: Client • User
+        - generic [ref=e142] [cursor=pointer]:
+          - generic "Taylor Swift" [ref=e143]:
+            - generic [ref=e144]: TS
+          - generic [ref=e145]:
+            - generic [ref=e146]: Taylor Swift
+            - generic [ref=e147]: Producer • User
+        - generic [ref=e148] [cursor=pointer]:
+          - generic "Morgan Davis" [ref=e149]:
+            - generic [ref=e150]: MD
+          - generic [ref=e151]:
+            - generic [ref=e152]: Morgan Davis
+            - generic [ref=e153]: Traffic • Admin
+  - navigation [ref=e19]:
+    - button "⌂ Dashboard" [ref=e20] [cursor=pointer]:
+      - generic [ref=e21]: ⌂
+      - text: Dashboard
+    - button "◎ Work 5" [ref=e22] [cursor=pointer]:
+      - generic [ref=e23]: ◎
+      - text: Work
+      - generic [ref=e24]: "5"
+    - button "◐ Capacity 9" [ref=e25] [cursor=pointer]:
+      - generic [ref=e26]: ◐
+      - text: Capacity
+      - generic [ref=e27]: "9"
+    - button "⋯ More ▼" [ref=e29] [cursor=pointer]:
+      - generic [ref=e30]: ⋯
+      - text: More
+      - generic [ref=e31]: ▼
+  - main [ref=e32]:
+    - generic [ref=e33]:
+      - generic [ref=e34]:
+        - heading "Good evening, Kim" [level=1] [ref=e35]
+        - paragraph [ref=e36]: Designer • 5 active jobs
+      - generic [ref=e37]:
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - heading "My Work" [level=2] [ref=e41]
+            - generic [ref=e42]: 5 jobs
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - heading "Today / In Progress (2)" [level=3] [ref=e45]
+              - generic [ref=e46]:
+                - generic [ref=e47] [cursor=pointer]:
+                  - generic [ref=e48]:
+                    - generic [ref=e49]: SUMM-001
+                    - generic [ref=e51]: In Progress
+                  - generic [ref=e52]: Hero Video
+                  - generic [ref=e53]:
+                    - generic [ref=e54]: "Copy: Done"
+                    - generic [ref=e55]: "Media: In Progress"
+                  - generic [ref=e56]:
+                    - generic [ref=e57]: Acme Corp
+                    - generic [ref=e58]: "Due: Feb 15"
+                - generic [ref=e59] [cursor=pointer]:
+                  - generic [ref=e60]:
+                    - generic [ref=e61]: SUMM-002
+                    - generic [ref=e63]: Today
+                  - generic [ref=e64]: Social Package
+                  - generic [ref=e65]:
+                    - generic [ref=e66]: "Copy: In Progress"
+                    - generic [ref=e67]: "Media: Inbox"
+                  - generic [ref=e68]:
+                    - generic [ref=e69]: Acme Corp
+                    - generic [ref=e70]: "Due: Feb 10"
+            - generic [ref=e71]:
+              - heading "Inbox (1)" [level=3] [ref=e72]
+              - generic [ref=e74] [cursor=pointer]:
+                - generic [ref=e75]:
+                  - generic [ref=e76]: SUMM-003
+                  - generic [ref=e78]: Inbox
+                - generic [ref=e79]: Email Campaign
+                - generic [ref=e80]:
+                  - generic [ref=e81]: "Copy: Inbox"
+                  - generic [ref=e82]: "Media: Inbox"
+                - generic [ref=e83]:
+                  - generic [ref=e84]: Acme Corp
+                  - generic [ref=e85]: "Due: Feb 20"
+        - generic [ref=e86]:
+          - heading "Quick Actions" [level=2] [ref=e88]
+          - generic [ref=e89]:
+            - heading "Recent Activity" [level=2] [ref=e90]
+            - paragraph [ref=e91]: No recent activity

@@ -1,0 +1,87 @@
+- generic [ref=e204]:
+  - banner [ref=e205]:
+    - heading "Slash 301 PM" [level=1] [ref=e207]
+    - textbox "Search..." [ref=e210]
+    - generic [ref=e211]:
+      - button "↓" [ref=e212] [cursor=pointer]
+      - button "↑" [ref=e213] [cursor=pointer]
+      - generic [ref=e215] [cursor=pointer]:
+        - generic "Priya Nair" [ref=e216]:
+          - generic [ref=e217]: PN
+        - generic [ref=e218]:
+          - generic [ref=e219]: Priya Nair
+          - generic [ref=e220]: COO
+        - generic [ref=e221]: ▼
+  - navigation [ref=e222]:
+    - button "⌂ Dashboard" [ref=e223] [cursor=pointer]:
+      - generic [ref=e224]: ⌂
+      - text: Dashboard
+    - button "◎ Work 18" [ref=e225] [cursor=pointer]:
+      - generic [ref=e226]: ◎
+      - text: Work
+      - generic [ref=e227]: "18"
+    - button "◐ Capacity 18" [ref=e228] [cursor=pointer]:
+      - generic [ref=e229]: ◐
+      - text: Capacity
+      - generic [ref=e230]: "18"
+    - button "◇ Reviews 2" [ref=e231] [cursor=pointer]:
+      - generic [ref=e232]: ◇
+      - text: Reviews
+      - generic [ref=e233]: "2"
+    - button "⋯ More ▼" [ref=e235] [cursor=pointer]:
+      - generic [ref=e236]: ⋯
+      - text: More
+      - generic [ref=e237]: ▼
+  - main [ref=e238]:
+    - generic [ref=e843]:
+      - generic [ref=e844]:
+        - button "Internal Review 1" [ref=e845] [cursor=pointer]:
+          - text: Internal Review
+          - generic [ref=e846]: "1"
+        - button "Client Review 1" [active] [ref=e847] [cursor=pointer]:
+          - text: Client Review
+          - generic [ref=e848]: "1"
+      - generic [ref=e903]:
+        - generic [ref=e905]:
+          - heading "Client Review" [level=1] [ref=e906]
+          - paragraph [ref=e907]: 1 item awaiting your approval
+        - generic [ref=e909]:
+          - generic [ref=e910]:
+            - generic [ref=e911]:
+              - generic [ref=e912]: T
+              - generic [ref=e913]:
+                - generic [ref=e914]: The Ashford Grand
+                - generic [ref=e915]: "@theashfordgrand"
+              - generic [ref=e916]: Preview
+            - generic [ref=e918]: Media pending
+            - generic [ref=e919]:
+              - generic [ref=e920]:
+                - generic [ref=e921] [cursor=pointer]: ♡
+                - generic [ref=e922] [cursor=pointer]: 💬
+                - generic [ref=e923] [cursor=pointer]: ↗
+              - generic [ref=e924]: ⚐
+            - generic [ref=e926]: theashfordgrandCopy pending...
+            - generic [ref=e927]:
+              - generic [ref=e928]: ASHF-002
+              - generic [ref=e929]: Fine Dining Menu Launch
+          - generic [ref=e930]:
+            - generic [ref=e931]:
+              - generic [ref=e932]:
+                - generic [ref=e933]: Campaign
+                - generic [ref=e934]: Heritage Collection
+              - generic [ref=e935]:
+                - generic [ref=e936]: Due Date
+                - generic [ref=e937]: Feb 22
+              - generic [ref=e938]:
+                - generic [ref=e939]: Brief
+                - generic [ref=e940]: New seasonal menu launch for The Ashford Grand restaurant. Email and social.
+            - generic [ref=e941]:
+              - button "✓ Approve" [ref=e942] [cursor=pointer]:
+                - generic [ref=e943]: ✓
+                - text: Approve
+              - button "✗ Not Approved" [ref=e944] [cursor=pointer]:
+                - generic [ref=e945]: ✗
+                - text: Not Approved
+              - button "✎ Add Feedback" [ref=e946] [cursor=pointer]:
+                - generic [ref=e947]: ✎
+                - text: Add Feedback

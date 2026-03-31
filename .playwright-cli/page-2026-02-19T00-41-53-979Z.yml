@@ -1,0 +1,32 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Slash 301 PM" [level=1] [ref=e6]
+    - textbox "Search..." [ref=e9]
+    - generic [ref=e14] [cursor=pointer]:
+      - generic "Kim Lee" [ref=e244]:
+        - generic [ref=e16]: KL
+      - generic [ref=e17]:
+        - generic [ref=e18]: Kim Lee
+        - generic [ref=e19]: User
+      - generic [ref=e20]: ▼
+  - navigation [ref=e21]:
+    - button "⌂ Dashboard" [ref=e22] [cursor=pointer]:
+      - generic [ref=e23]: ⌂
+      - text: Dashboard
+    - button "◎ Work 5" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: ◎
+      - text: Work
+      - generic [ref=e26]: "5"
+    - button "◐ Capacity 9" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: ◐
+      - text: Capacity
+      - generic [ref=e29]: "9"
+    - button "⋯ More ▼" [ref=e34] [cursor=pointer]:
+      - generic [ref=e35]: ⋯
+      - text: More
+      - generic [ref=e36]: ▼
+  - main [ref=e37]:
+    - generic [ref=e154]:
+      - generic [ref=e245]: ◉
+      - heading "Access Restricted" [level=2] [ref=e246]
+      - paragraph [ref=e247]: Reviews are available to CDs, ECDs, Producers, PMs, Traffic, COO, and Clients.

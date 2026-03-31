@@ -1,0 +1,480 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Slash 301 PM" [level=1] [ref=e6]
+    - textbox "Search..." [ref=e9]
+    - generic [ref=e10]:
+      - button "↓" [ref=e11] [cursor=pointer]
+      - button "↑" [ref=e12] [cursor=pointer]
+      - generic [ref=e13]:
+        - generic [ref=e14] [cursor=pointer]:
+          - generic "Priya Nair" [ref=e15]:
+            - generic [ref=e16]: PN
+          - generic [ref=e17]:
+            - generic [ref=e18]: Priya Nair
+            - generic [ref=e19]: COO
+          - generic [ref=e20]: ▲
+        - generic [ref=e303]:
+          - generic [ref=e304]: Switch User
+          - generic [ref=e305] [cursor=pointer]:
+            - generic "Priya Nair" [ref=e306]:
+              - generic [ref=e307]: PN
+            - generic [ref=e308]:
+              - generic [ref=e309]: Priya Nair
+              - generic [ref=e310]: COO • COO
+          - generic [ref=e311] [cursor=pointer]:
+            - generic "Dominic Walsh" [ref=e312]:
+              - generic [ref=e313]: DW
+            - generic [ref=e314]:
+              - generic [ref=e315]: Dominic Walsh
+              - generic [ref=e316]: ECD • Manager
+          - generic [ref=e317] [cursor=pointer]:
+            - generic "Sarah Chen" [ref=e318]:
+              - generic [ref=e319]: SC
+            - generic [ref=e320]:
+              - generic [ref=e321]: Sarah Chen
+              - generic [ref=e322]: PM • Manager
+          - generic [ref=e323] [cursor=pointer]:
+            - generic "Lena Müller" [ref=e324]:
+              - generic [ref=e325]: LM
+            - generic [ref=e326]:
+              - generic [ref=e327]: Lena Müller
+              - generic [ref=e328]: PM • Manager
+          - generic [ref=e329] [cursor=pointer]:
+            - generic "Morgan Davis" [ref=e330]:
+              - generic [ref=e331]: MD
+            - generic [ref=e332]:
+              - generic [ref=e333]: Morgan Davis
+              - generic [ref=e334]: Traffic • Admin
+          - generic [ref=e335] [cursor=pointer]:
+            - generic "Ryan Okafor" [ref=e336]:
+              - generic [ref=e337]: RO
+            - generic [ref=e338]:
+              - generic [ref=e339]: Ryan Okafor
+              - generic [ref=e340]: Traffic • Admin
+          - generic [ref=e341] [cursor=pointer]:
+            - generic "Isabelle Fontaine" [ref=e342]:
+              - generic [ref=e343]: IF
+            - generic [ref=e344]:
+              - generic [ref=e345]: Isabelle Fontaine
+              - generic [ref=e346]: CD • User
+          - generic [ref=e347] [cursor=pointer]:
+            - generic "James Park" [ref=e348]:
+              - generic [ref=e349]: JP
+            - generic [ref=e350]:
+              - generic [ref=e351]: James Park
+              - generic [ref=e352]: CD • User
+          - generic [ref=e353] [cursor=pointer]:
+            - generic "Alex Thompson" [ref=e354]:
+              - generic [ref=e355]: AT
+            - generic [ref=e356]:
+              - generic [ref=e357]: Alex Thompson
+              - generic [ref=e358]: Copywriter • User
+          - generic [ref=e359] [cursor=pointer]:
+            - generic "Chloe Mwangi" [ref=e360]:
+              - generic [ref=e361]: CM
+            - generic [ref=e362]:
+              - generic [ref=e363]: Chloe Mwangi
+              - generic [ref=e364]: Copywriter • User
+          - generic [ref=e365] [cursor=pointer]:
+            - generic "Kim Lee" [ref=e366]:
+              - generic [ref=e367]: KL
+            - generic [ref=e368]:
+              - generic [ref=e369]: Kim Lee
+              - generic [ref=e370]: Designer • User
+          - generic [ref=e371] [cursor=pointer]:
+            - generic "Tariq Hassan" [ref=e372]:
+              - generic [ref=e373]: TH
+            - generic [ref=e374]:
+              - generic [ref=e375]: Tariq Hassan
+              - generic [ref=e376]: Designer • User
+          - generic [ref=e377] [cursor=pointer]:
+            - generic "Jordan Blake" [ref=e378]:
+              - generic [ref=e379]: JB
+            - generic [ref=e380]:
+              - generic [ref=e381]: Jordan Blake
+              - generic [ref=e382]: QA • User
+          - generic [ref=e383] [cursor=pointer]:
+            - generic "Sophie Vandenberg" [ref=e384]:
+              - generic [ref=e385]: SV
+            - generic [ref=e386]:
+              - generic [ref=e387]: Sophie Vandenberg
+              - generic [ref=e388]: Client • User
+          - generic [ref=e389] [cursor=pointer]:
+            - generic "Charles Meridian III" [ref=e390]:
+              - generic [ref=e391]: CM
+            - generic [ref=e392]:
+              - generic [ref=e393]: Charles Meridian III
+              - generic [ref=e394]: Client • User
+          - generic [ref=e395] [cursor=pointer]:
+            - generic "Luca Ferretti" [ref=e396]:
+              - generic [ref=e397]: LF
+            - generic [ref=e398]:
+              - generic [ref=e399]: Luca Ferretti
+              - generic [ref=e400]: Client • User
+          - generic [ref=e401] [cursor=pointer]:
+            - generic "Nina Bjornstad" [ref=e402]:
+              - generic [ref=e403]: NB
+            - generic [ref=e404]:
+              - generic [ref=e405]: Nina Bjornstad
+              - generic [ref=e406]: Client • User
+          - generic [ref=e407] [cursor=pointer]:
+            - generic "Preethi Subramaniam" [ref=e408]:
+              - generic [ref=e409]: PS
+            - generic [ref=e410]:
+              - generic [ref=e411]: Preethi Subramaniam
+              - generic [ref=e412]: Client • User
+          - generic [ref=e413] [cursor=pointer]:
+            - generic "Oliver Ashford" [ref=e414]:
+              - generic [ref=e415]: OA
+            - generic [ref=e416]:
+              - generic [ref=e417]: Oliver Ashford
+              - generic [ref=e418]: Client • User
+          - generic [ref=e419] [cursor=pointer]:
+            - generic "Mia Johansson" [ref=e420]:
+              - generic [ref=e421]: MJ
+            - generic [ref=e422]:
+              - generic [ref=e423]: Mia Johansson
+              - generic [ref=e424]: Client • User
+          - generic [ref=e425] [cursor=pointer]:
+            - generic "Rafael Costa" [ref=e426]:
+              - generic [ref=e427]: RC
+            - generic [ref=e428]:
+              - generic [ref=e429]: Rafael Costa
+              - generic [ref=e430]: Client • User
+          - generic [ref=e431] [cursor=pointer]:
+            - generic "Yuki Tanaka" [ref=e432]:
+              - generic [ref=e433]: YT
+            - generic [ref=e434]:
+              - generic [ref=e435]: Yuki Tanaka
+              - generic [ref=e436]: Client • User
+          - generic [ref=e437] [cursor=pointer]:
+            - generic "Harriet Blackwood" [ref=e438]:
+              - generic [ref=e439]: HB
+            - generic [ref=e440]:
+              - generic [ref=e441]: Harriet Blackwood
+              - generic [ref=e442]: Client • User
+          - generic [ref=e443] [cursor=pointer]:
+            - generic "Diego Reyes" [ref=e444]:
+              - generic [ref=e445]: DR
+            - generic [ref=e446]:
+              - generic [ref=e447]: Diego Reyes
+              - generic [ref=e448]: Client • User
+          - generic [ref=e449] [cursor=pointer]:
+            - generic "Amara Osei" [ref=e450]:
+              - generic [ref=e451]: AO
+            - generic [ref=e452]:
+              - generic [ref=e453]: Amara Osei
+              - generic [ref=e454]: Client • User
+          - generic [ref=e455] [cursor=pointer]:
+            - generic "Fionnuala O'Brien" [ref=e456]:
+              - generic [ref=e457]: FO
+            - generic [ref=e458]:
+              - generic [ref=e459]: Fionnuala O'Brien
+              - generic [ref=e460]: Client • User
+          - generic [ref=e461] [cursor=pointer]:
+            - generic "Callum Northgate" [ref=e462]:
+              - generic [ref=e463]: CN
+            - generic [ref=e464]:
+              - generic [ref=e465]: Callum Northgate
+              - generic [ref=e466]: Client • User
+          - generic [ref=e467] [cursor=pointer]:
+            - generic "Ananya Krishnan" [ref=e468]:
+              - generic [ref=e469]: AK
+            - generic [ref=e470]:
+              - generic [ref=e471]: Ananya Krishnan
+              - generic [ref=e472]: Client • User
+          - generic [ref=e473] [cursor=pointer]:
+            - generic "Marco Bianchi" [ref=e474]:
+              - generic [ref=e475]: MB
+            - generic [ref=e476]:
+              - generic [ref=e477]: Marco Bianchi
+              - generic [ref=e478]: Client • User
+          - generic [ref=e479] [cursor=pointer]:
+            - generic "Zara Adeyemi" [ref=e480]:
+              - generic [ref=e481]: ZA
+            - generic [ref=e482]:
+              - generic [ref=e483]: Zara Adeyemi
+              - generic [ref=e484]: Client • User
+          - generic [ref=e485] [cursor=pointer]:
+            - generic "Pieter de Vries" [ref=e486]:
+              - generic [ref=e487]: Pd
+            - generic [ref=e488]:
+              - generic [ref=e489]: Pieter de Vries
+              - generic [ref=e490]: Client • User
+          - generic [ref=e491] [cursor=pointer]:
+            - generic "Ben Whitfield" [ref=e492]:
+              - generic [ref=e493]: BW
+            - generic [ref=e494]:
+              - generic [ref=e495]: Ben Whitfield
+              - generic [ref=e496]: Client • User
+          - generic [ref=e497] [cursor=pointer]:
+            - generic "Valentina Aureli" [ref=e498]:
+              - generic [ref=e499]: VA
+            - generic [ref=e500]:
+              - generic [ref=e501]: Valentina Aureli
+              - generic [ref=e502]: Client • User
+  - navigation [ref=e21]:
+    - button "⌂ Dashboard" [ref=e22] [cursor=pointer]:
+      - generic [ref=e23]: ⌂
+      - text: Dashboard
+    - button "◎ Work 18" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: ◎
+      - text: Work
+      - generic [ref=e26]: "18"
+    - button "◐ Capacity 13" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: ◐
+      - text: Capacity
+      - generic [ref=e29]: "13"
+    - button "◇ Reviews 2" [ref=e30] [cursor=pointer]:
+      - generic [ref=e31]: ◇
+      - text: Reviews
+      - generic [ref=e32]: "2"
+    - button "⋯ More ▼" [ref=e34] [cursor=pointer]:
+      - generic [ref=e35]: ⋯
+      - text: More
+      - generic [ref=e36]: ▼
+  - main [ref=e37]:
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - heading "Good afternoon, Priya" [level=1] [ref=e40]
+        - paragraph [ref=e41]: COO • 0 active jobs
+      - generic [ref=e42]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - heading "My Work" [level=2] [ref=e46]
+            - generic [ref=e47]: 18 jobs
+          - generic [ref=e48]:
+            - generic [ref=e49]:
+              - heading "Today / In Progress (7)" [level=3] [ref=e50]
+              - generic [ref=e51]:
+                - generic [ref=e52] [cursor=pointer]:
+                  - generic [ref=e53]:
+                    - generic [ref=e54]: HARB-001
+                    - generic [ref=e56]: In Progress
+                  - generic [ref=e57]: Marina Weekend Package
+                  - generic [ref=e58]:
+                    - generic [ref=e59]: "Copy: In Progress"
+                    - generic [ref=e60]: "Media: In Progress"
+                  - generic [ref=e61]:
+                    - generic [ref=e62]: Harbour & Helm Hotels
+                    - generic [ref=e63]: "Due: Feb 28"
+                - generic [ref=e64] [cursor=pointer]:
+                  - generic [ref=e65]:
+                    - generic [ref=e66]: HARB-002
+                    - generic [ref=e68]: Today
+                  - generic [ref=e69]: Sailing Regatta Promo
+                  - generic [ref=e70]:
+                    - generic [ref=e71]: "Copy: In Progress"
+                    - generic [ref=e72]: "Media: In Progress"
+                  - generic [ref=e73]:
+                    - generic [ref=e74]: Harbour & Helm Hotels
+                    - generic [ref=e75]: "Due: Feb 25"
+                - generic [ref=e76] [cursor=pointer]:
+                  - generic [ref=e77]:
+                    - generic [ref=e78]: ASHF-001
+                    - generic [ref=e80]: In Progress
+                  - generic [ref=e81]: Heritage Suite Photography
+                  - generic [ref=e82]:
+                    - generic [ref=e83]: "Copy: Done"
+                    - generic [ref=e84]: "Media: Done"
+                  - generic [ref=e85]:
+                    - generic [ref=e86]: The Ashford Grand
+                    - generic [ref=e87]: "Due: Feb 20"
+                - generic [ref=e88] [cursor=pointer]:
+                  - generic [ref=e89]:
+                    - generic [ref=e90]: SOLA-001
+                    - generic [ref=e92]: In Progress
+                  - generic [ref=e93]: Wellness Retreat Video
+                  - generic [ref=e94]:
+                    - generic [ref=e95]: "Copy: Done"
+                    - generic [ref=e96]: "Media: In Progress"
+                  - generic [ref=e97]:
+                    - generic [ref=e98]: Solaris Hotels & Spa
+                    - generic [ref=e99]: "Due: Mar 1"
+                - generic [ref=e100] [cursor=pointer]:
+                  - generic [ref=e101]:
+                    - generic [ref=e102]: VELA-001
+                    - generic [ref=e104]: In Progress
+                  - generic [ref=e105]: Maldives Villa Collection
+                  - generic [ref=e106]:
+                    - generic [ref=e107]: "Copy: In Progress"
+                    - generic [ref=e108]: "Media: In Progress"
+                  - generic [ref=e109]:
+                    - generic [ref=e110]: Vela Luxury Resorts
+                    - generic [ref=e111]: "Due: Feb 28"
+                - generic [ref=e112] [cursor=pointer]:
+                  - generic [ref=e113]:
+                    - generic [ref=e114]: AURU-001
+                    - generic [ref=e116]: In Progress
+                  - generic [ref=e117]: Paris City Break
+                  - generic [ref=e118]:
+                    - generic [ref=e119]: "Copy: In Progress"
+                    - generic [ref=e120]: "Media: Not Started"
+                  - generic [ref=e121]:
+                    - generic [ref=e122]: Aurum City Hotels
+                    - generic [ref=e123]: "Due: Mar 1"
+                - generic [ref=e124] [cursor=pointer]:
+                  - generic [ref=e125]:
+                    - generic [ref=e126]: AURU-002
+                    - generic [ref=e128]: Today
+                  - generic [ref=e129]: London Rooftop Bar Launch
+                  - generic [ref=e130]:
+                    - generic [ref=e131]: "Copy: In Progress"
+                    - generic [ref=e132]: "Media: In Progress"
+                  - generic [ref=e133]:
+                    - generic [ref=e134]: Aurum City Hotels
+                    - generic [ref=e135]: "Due: Feb 26"
+            - generic [ref=e136]:
+              - heading "This Week (1)" [level=3] [ref=e137]
+              - generic [ref=e139] [cursor=pointer]:
+                - generic [ref=e140]:
+                  - generic [ref=e141]: COAS-001
+                  - generic [ref=e143]: This Week
+                - generic [ref=e144]: Beach Club Teaser Video
+                - generic [ref=e145]:
+                  - generic [ref=e146]: "Copy: In Progress"
+                  - generic [ref=e147]: "Media: Not Started"
+                - generic [ref=e148]:
+                  - generic [ref=e149]: Coastal & Co. Resorts
+                  - generic [ref=e150]: "Due: Feb 27"
+            - generic [ref=e151]:
+              - heading "Inbox (6)" [level=3] [ref=e152]
+              - generic [ref=e153]:
+                - generic [ref=e154] [cursor=pointer]:
+                  - generic [ref=e155]:
+                    - generic [ref=e156]: MERC-001
+                    - generic [ref=e158]: Inbox
+                  - generic [ref=e159]: Grand Opening Social Launch
+                  - generic [ref=e160]:
+                    - generic [ref=e161]: "Copy: Not Started"
+                    - generic [ref=e162]: "Media: Not Started"
+                  - generic [ref=e163]:
+                    - generic [ref=e164]: The Meridian Collection
+                    - generic [ref=e165]: "Due: Mar 1"
+                - generic [ref=e166] [cursor=pointer]:
+                  - generic [ref=e167]:
+                    - generic [ref=e168]: MERC-002
+                    - generic [ref=e170]: Inbox
+                  - generic [ref=e171]: Grand Opening Email Blast
+                  - generic [ref=e172]:
+                    - generic [ref=e173]: "Copy: Not Started"
+                    - generic [ref=e174]: "Media: Not Started"
+                  - generic [ref=e175]:
+                    - generic [ref=e176]: The Meridian Collection
+                    - generic [ref=e177]: "Due: Mar 5"
+                - generic [ref=e178] [cursor=pointer]:
+                  - generic [ref=e179]:
+                    - generic [ref=e180]: MERC-003
+                    - generic [ref=e182]: Inbox
+                  - generic [ref=e183]: Grand Opening Landing Page
+                  - generic [ref=e184]:
+                    - generic [ref=e185]: "Copy: Not Started"
+                    - generic [ref=e186]: "Media: Not Started"
+                  - generic [ref=e187]:
+                    - generic [ref=e188]: The Meridian Collection
+                    - generic [ref=e189]: "Due: Mar 10"
+                - generic [ref=e190] [cursor=pointer]:
+                  - generic [ref=e191]:
+                    - generic [ref=e192]: COAS-002
+                    - generic [ref=e194]: Inbox
+                  - generic [ref=e195]: Beach Club Social Launch
+                  - generic [ref=e196]:
+                    - generic [ref=e197]: "Copy: Not Started"
+                    - generic [ref=e198]: "Media: Not Started"
+                  - generic [ref=e199]:
+                    - generic [ref=e200]: Coastal & Co. Resorts
+                    - generic [ref=e201]: "Due: Mar 5"
+                - generic [ref=e202] [cursor=pointer]:
+                  - generic [ref=e203]:
+                    - generic [ref=e204]: SOLA-002
+                    - generic [ref=e206]: Inbox
+                  - generic [ref=e207]: Spa Day Pass Promo
+                  - generic [ref=e208]:
+                    - generic [ref=e209]: "Copy: Not Started"
+                    - generic [ref=e210]: "Media: Not Started"
+                  - generic [ref=e211]:
+                    - generic [ref=e212]: Solaris Hotels & Spa
+                    - generic [ref=e213]: "Due: Mar 8"
+                - generic [ref=e214] [cursor=pointer]:
+                  - generic [ref=e215]:
+                    - generic [ref=e216]: NORT-001
+                    - generic [ref=e218]: Inbox
+                  - generic [ref=e219]: Conference Packages Brochure
+                  - generic [ref=e220]:
+                    - generic [ref=e221]: "Copy: Not Started"
+                    - generic [ref=e222]: "Media: Not Started"
+                  - generic [ref=e223]:
+                    - generic [ref=e224]: The Northgate Group
+                    - generic [ref=e225]: "Due: Mar 15"
+            - generic [ref=e226]:
+              - heading "Ready to Schedule (2)" [level=3] [ref=e227]
+              - generic [ref=e228]:
+                - generic [ref=e229] [cursor=pointer]:
+                  - generic [ref=e230]:
+                    - generic [ref=e231]: ASHF-002
+                    - generic [ref=e233]: Approved (Internal)
+                  - generic [ref=e234]: Fine Dining Menu Launch
+                  - generic [ref=e235]:
+                    - generic [ref=e236]: "Copy: Done"
+                    - generic [ref=e237]: "Media: Done"
+                  - generic [ref=e238]:
+                    - generic [ref=e239]: The Ashford Grand
+                    - generic [ref=e240]: "Due: Feb 22"
+                - generic [ref=e241] [cursor=pointer]:
+                  - generic [ref=e242]:
+                    - generic [ref=e243]: BLCK-001
+                    - generic [ref=e245]: Approved (External)
+                  - generic [ref=e246]: Midnight Series Social
+                  - generic [ref=e247]:
+                    - generic [ref=e248]: "Copy: Done"
+                    - generic [ref=e249]: "Media: Done"
+                  - generic [ref=e250]:
+                    - generic [ref=e251]: The Blackwood Boutique
+                    - generic [ref=e252]: "Due: Feb 5"
+            - generic [ref=e253]:
+              - heading "Other (2)" [level=3] [ref=e254]
+              - generic [ref=e255]:
+                - generic [ref=e256] [cursor=pointer]:
+                  - generic [ref=e257]:
+                    - generic [ref=e258]: VELA-002
+                    - generic [ref=e260]: Waiting
+                  - generic [ref=e261]: Seychelles Honeymoon Package
+                  - generic [ref=e262]:
+                    - generic [ref=e263]: "Copy: Waiting"
+                    - generic [ref=e264]: "Media: Waiting"
+                  - generic [ref=e265]:
+                    - generic [ref=e266]: Vela Luxury Resorts
+                    - generic [ref=e267]: "Due: Mar 10"
+                - generic [ref=e268] [cursor=pointer]:
+                  - generic [ref=e269]:
+                    - generic [ref=e270]: COPP-001
+                    - generic [ref=e272]: On Hold
+                  - generic [ref=e273]: Autumn Harvest Social
+                  - generic [ref=e274]:
+                    - generic [ref=e275]: "Copy: On Hold"
+                    - generic [ref=e276]: "Media: On Hold"
+                  - generic [ref=e277]:
+                    - generic [ref=e278]: The Copperleaf Collection
+                    - generic [ref=e279]: "Due: Apr 1"
+        - generic [ref=e280]:
+          - generic [ref=e281]:
+            - heading "Quick Actions" [level=2] [ref=e282]
+            - button "+ New Brief" [ref=e284] [cursor=pointer]
+          - generic [ref=e285]:
+            - heading "Recent Activity" [level=2] [ref=e286]
+            - generic [ref=e287]:
+              - generic [ref=e288]:
+                - generic [ref=e289]: ◎
+                - generic [ref=e290]:
+                  - generic [ref=e291]: MERC-003 - Grand Opening Landing Page
+                  - generic [ref=e292]: The Meridian Collection • Created Feb 16
+              - generic [ref=e293]:
+                - generic [ref=e294]: ◎
+                - generic [ref=e295]:
+                  - generic [ref=e296]: MERC-001 - Grand Opening Social Launch
+                  - generic [ref=e297]: The Meridian Collection • Created Feb 15
+              - generic [ref=e298]:
+                - generic [ref=e299]: ◎
+                - generic [ref=e300]:
+                  - generic [ref=e301]: MERC-002 - Grand Opening Email Blast
+                  - generic [ref=e302]: The Meridian Collection • Created Feb 15

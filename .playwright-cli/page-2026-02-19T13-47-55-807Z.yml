@@ -1,0 +1,156 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Slash 301 PM" [level=1] [ref=e6]
+    - textbox "Search..." [ref=e9]
+    - generic [ref=e10]:
+      - button "↓" [ref=e11] [cursor=pointer]
+      - button "↑" [ref=e12] [cursor=pointer]
+      - generic [ref=e14] [cursor=pointer]:
+        - generic "Rachel Adams" [ref=e15]:
+          - generic [ref=e16]: RA
+        - generic [ref=e17]:
+          - generic [ref=e18]: Rachel Adams
+          - generic [ref=e19]: COO
+        - generic [ref=e20]: ▼
+  - navigation [ref=e21]:
+    - button "⌂ Dashboard" [ref=e22] [cursor=pointer]:
+      - generic [ref=e23]: ⌂
+      - text: Dashboard
+    - button "◎ Work 5" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: ◎
+      - text: Work
+      - generic [ref=e26]: "5"
+    - button "◐ Capacity 9" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: ◐
+      - text: Capacity
+      - generic [ref=e29]: "9"
+    - button "◇ Reviews 1" [ref=e30] [cursor=pointer]:
+      - generic [ref=e31]: ◇
+      - text: Reviews
+      - generic [ref=e32]: "1"
+    - button "⋯ More ▼" [ref=e72] [cursor=pointer]:
+      - generic [ref=e35]: ⋯
+      - text: More
+      - generic [ref=e36]: ▼
+  - main [ref=e37]:
+    - generic [ref=e73]:
+      - generic [ref=e74]:
+        - heading "Operations Dashboard" [level=2] [ref=e75]
+        - paragraph [ref=e76]: Overview of agency capacity and workload
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - img "Clients" [ref=e79]: ○
+          - generic [ref=e80]:
+            - generic [ref=e81]: "2"
+            - generic [ref=e82]: Clients
+        - generic [ref=e83]:
+          - img "Campaigns" [ref=e84]: ◎
+          - generic [ref=e85]:
+            - generic [ref=e86]: "2"
+            - generic [ref=e87]: Campaigns
+        - generic [ref=e88]:
+          - img "Jobs" [ref=e89]: ◈
+          - generic [ref=e90]:
+            - generic [ref=e91]: "5"
+            - generic [ref=e92]: Jobs
+        - generic [ref=e93]:
+          - img "Hours" [ref=e94]: ◔
+          - generic [ref=e95]:
+            - generic [ref=e96]: 2.3h
+            - generic [ref=e97]: Hours in Jobs
+      - generic [ref=e98]:
+        - heading "Hours Capacity per Role (Weekly)" [level=3] [ref=e99]
+        - generic [ref=e100]:
+          - generic [ref=e101]:
+            - generic [ref=e102]:
+              - generic [ref=e103]: COO
+              - generic [ref=e104]: 1 person
+            - generic [ref=e107]: 35h / week
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - generic [ref=e110]: PM
+              - generic [ref=e111]: 1 person
+            - generic [ref=e114]: 35h / week
+          - generic [ref=e115]:
+            - generic [ref=e116]:
+              - generic [ref=e117]: Traffic
+              - generic [ref=e118]: 1 person
+            - generic [ref=e121]: 35h / week
+          - generic [ref=e122]:
+            - generic [ref=e123]:
+              - generic [ref=e124]: ECD
+              - generic [ref=e125]: 1 person
+            - generic [ref=e128]: 35h / week
+          - generic [ref=e129]:
+            - generic [ref=e130]:
+              - generic [ref=e131]: CD
+              - generic [ref=e132]: 1 person
+            - generic [ref=e135]: 35h / week
+          - generic [ref=e136]:
+            - generic [ref=e137]:
+              - generic [ref=e138]: Copywriter
+              - generic [ref=e139]: 1 person
+            - generic [ref=e142]: 35h / week
+          - generic [ref=e143]:
+            - generic [ref=e144]:
+              - generic [ref=e145]: Designer
+              - generic [ref=e146]: 1 person
+            - generic [ref=e149]: 35h / week
+          - generic [ref=e150]:
+            - generic [ref=e151]:
+              - generic [ref=e152]: QA
+              - generic [ref=e153]: 1 person
+            - generic [ref=e156]: 35h / week
+          - generic [ref=e157]:
+            - generic [ref=e158]:
+              - generic [ref=e159]: Producer
+              - generic [ref=e160]: 1 person
+            - generic [ref=e163]: 35h / week
+      - generic [ref=e164]:
+        - heading "Jobs by Status" [level=3] [ref=e165]
+        - generic [ref=e166]:
+          - generic [ref=e169]:
+            - generic [ref=e170]: Backlog
+            - generic [ref=e171]: "0"
+          - generic [ref=e174]:
+            - generic [ref=e175]: To Do
+            - generic [ref=e176]: "0"
+          - generic [ref=e179]:
+            - generic [ref=e180]: In Progress
+            - generic [ref=e181]: "1"
+          - generic [ref=e184]:
+            - generic [ref=e185]: Waiting
+            - generic [ref=e186]: "0"
+          - generic [ref=e189]:
+            - generic [ref=e190]: Done
+            - generic [ref=e191]: "0"
+          - generic [ref=e194]:
+            - generic [ref=e195]: Inbox
+            - generic [ref=e196]: "1"
+          - generic [ref=e199]:
+            - generic [ref=e200]: Today
+            - generic [ref=e201]: "1"
+          - generic [ref=e204]:
+            - generic [ref=e205]: This Week
+            - generic [ref=e206]: "0"
+          - generic [ref=e209]:
+            - generic [ref=e210]: On Hold
+            - generic [ref=e211]: "1"
+          - generic [ref=e214]:
+            - generic [ref=e215]: In Review
+            - generic [ref=e216]: "1"
+          - generic [ref=e219]:
+            - generic [ref=e220]: Approved (Internal)
+            - generic [ref=e221]: "0"
+          - generic [ref=e224]:
+            - generic [ref=e225]: Approved (External)
+            - generic [ref=e226]: "0"
+          - generic [ref=e229]:
+            - generic [ref=e230]: Scheduled
+            - generic [ref=e231]: "0"
+          - generic [ref=e234]:
+            - generic [ref=e235]: Live
+            - generic [ref=e236]: "0"
+          - generic [ref=e239]:
+            - generic [ref=e240]: Archived
+            - generic [ref=e241]: "0"

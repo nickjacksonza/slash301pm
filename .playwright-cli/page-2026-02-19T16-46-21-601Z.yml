@@ -1,0 +1,16 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - heading "Slash 301 PM" [level=1] [ref=e7]
+    - paragraph [ref=e8]: Sign in to your account
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]: Username
+      - textbox "Username" [ref=e12]:
+        - /placeholder: e.g. priya-nair-coo
+        - text: priya-nair-coo
+    - generic [ref=e13]:
+      - generic [ref=e14]: Password
+      - textbox "Password" [active] [ref=e15]:
+        - /placeholder: Enter your password
+        - text: Password123!
+    - button "Sign In" [ref=e16] [cursor=pointer]

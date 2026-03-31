@@ -1,0 +1,86 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Slash 301 PM" [level=1] [ref=e6]
+    - textbox "Search..." [ref=e9]
+    - generic [ref=e14] [cursor=pointer]:
+      - generic "Sophie Vandenberg" [ref=e503]:
+        - generic [ref=e16]: SV
+      - generic [ref=e17]:
+        - generic [ref=e18]: Sophie Vandenberg
+        - generic [ref=e19]: User
+      - generic [ref=e20]: ▼
+  - navigation [ref=e21]:
+    - button "⌂ Dashboard" [ref=e22] [cursor=pointer]:
+      - generic [ref=e23]: ⌂
+      - text: Dashboard
+    - button "◎ Work 18" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: ◎
+      - text: Work
+      - generic [ref=e26]: "18"
+    - button "◐ Capacity 13" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: ◐
+      - text: Capacity
+      - generic [ref=e29]: "13"
+    - button "◇ Reviews 1" [ref=e504] [cursor=pointer]:
+      - generic [ref=e31]: ◇
+      - text: Reviews
+      - generic [ref=e32]: "1"
+    - button "⋯ More ▼" [ref=e34] [cursor=pointer]:
+      - generic [ref=e35]: ⋯
+      - text: More
+      - generic [ref=e36]: ▼
+  - main [ref=e37]:
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - heading "Good afternoon, Sophie" [level=1] [ref=e505]
+        - paragraph [ref=e41]: Client • 2 active jobs
+      - generic [ref=e42]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - heading "My Work" [level=2] [ref=e46]
+            - generic [ref=e47]: 2 jobs
+          - generic [ref=e151]:
+            - heading "Inbox (2)" [level=3] [ref=e506]
+            - generic [ref=e153]:
+              - generic [ref=e154] [cursor=pointer]:
+                - generic [ref=e155]:
+                  - generic [ref=e156]: MERC-001
+                  - generic [ref=e158]: Inbox
+                - generic [ref=e159]: Grand Opening Social Launch
+                - generic [ref=e160]:
+                  - generic [ref=e161]: "Copy: Not Started"
+                  - generic [ref=e162]: "Media: Not Started"
+                - generic [ref=e163]:
+                  - generic [ref=e164]: The Meridian Collection
+                  - generic [ref=e165]: "Due: Mar 1"
+              - generic [ref=e166] [cursor=pointer]:
+                - generic [ref=e167]:
+                  - generic [ref=e168]: MERC-002
+                  - generic [ref=e170]: Inbox
+                - generic [ref=e171]: Grand Opening Email Blast
+                - generic [ref=e172]:
+                  - generic [ref=e173]: "Copy: Not Started"
+                  - generic [ref=e174]: "Media: Not Started"
+                - generic [ref=e175]:
+                  - generic [ref=e176]: The Meridian Collection
+                  - generic [ref=e177]: "Due: Mar 5"
+        - generic [ref=e280]:
+          - heading "Quick Actions" [level=2] [ref=e282]
+          - generic [ref=e285]:
+            - heading "Recent Activity" [level=2] [ref=e286]
+            - generic [ref=e287]:
+              - generic [ref=e288]:
+                - generic [ref=e289]: ◎
+                - generic [ref=e290]:
+                  - generic [ref=e291]: MERC-003 - Grand Opening Landing Page
+                  - generic [ref=e292]: The Meridian Collection • Created Feb 16
+              - generic [ref=e293]:
+                - generic [ref=e294]: ◎
+                - generic [ref=e295]:
+                  - generic [ref=e296]: MERC-001 - Grand Opening Social Launch
+                  - generic [ref=e297]: The Meridian Collection • Created Feb 15
+              - generic [ref=e298]:
+                - generic [ref=e299]: ◎
+                - generic [ref=e300]:
+                  - generic [ref=e301]: MERC-002 - Grand Opening Email Blast
+                  - generic [ref=e302]: The Meridian Collection • Created Feb 15

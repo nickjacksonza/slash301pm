@@ -1,0 +1,71 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Slash 301 PM" [level=1] [ref=e6]
+    - textbox "Search..." [ref=e9]
+    - generic [ref=e14] [cursor=pointer]:
+      - generic "Morgan Davis" [ref=e121]:
+        - generic [ref=e16]: MD
+      - generic [ref=e17]:
+        - generic [ref=e18]: Morgan Davis
+        - generic [ref=e19]: Admin
+      - generic [ref=e20]: ▼
+  - navigation [ref=e21]:
+    - button "⌂ Dashboard" [ref=e22] [cursor=pointer]:
+      - generic [ref=e23]: ⌂
+      - text: Dashboard
+    - button "◎ Work 5" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: ◎
+      - text: Work
+      - generic [ref=e26]: "5"
+    - button "◐ Capacity 9" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: ◐
+      - text: Capacity
+      - generic [ref=e29]: "9"
+    - button "◇ Reviews 0" [active] [ref=e30] [cursor=pointer]:
+      - generic [ref=e31]: ◇
+      - text: Reviews
+      - generic [ref=e32]: "0"
+    - button "⋯ More ▼" [ref=e34] [cursor=pointer]:
+      - generic [ref=e35]: ⋯
+      - text: More
+      - generic [ref=e36]: ▼
+  - main [ref=e37]:
+    - generic [ref=e154]:
+      - generic [ref=e155]:
+        - button "Internal Review 0" [ref=e156] [cursor=pointer]:
+          - text: Internal Review
+          - generic [ref=e157]: "0"
+        - button "Client Review 1" [ref=e158] [cursor=pointer]:
+          - text: Client Review
+          - generic [ref=e159]: "1"
+      - generic [ref=e160]:
+        - generic [ref=e162]:
+          - heading "Internal Review" [level=1] [ref=e163]
+          - paragraph [ref=e164]: 0 jobs ready for review
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - generic [ref=e167]: Client
+            - combobox [ref=e168] [cursor=pointer]:
+              - option "All Clients" [selected]
+              - option "Acme Corp"
+              - option "TechStart"
+          - generic [ref=e169]:
+            - generic [ref=e170]: Campaign
+            - combobox [ref=e171] [cursor=pointer]:
+              - option "All Campaigns" [selected]
+              - option "Summer Campaign"
+              - option "Brand Refresh"
+          - generic [ref=e172]:
+            - generic [ref=e173]: Job
+            - combobox [ref=e174] [cursor=pointer]:
+              - option "All Jobs" [selected]
+          - generic [ref=e175]:
+            - generic [ref=e176]: Task Type
+            - combobox [ref=e177] [cursor=pointer]:
+              - option "All Tasks" [selected]
+              - option "Copy"
+              - option "Media"
+        - generic [ref=e178]:
+          - generic [ref=e179]: ◌
+          - heading "No Jobs Ready for Review" [level=2] [ref=e180]
+          - paragraph [ref=e181]: Jobs will appear here when their Copy and Media tasks are completed.

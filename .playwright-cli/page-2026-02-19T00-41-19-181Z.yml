@@ -1,0 +1,77 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Slash 301 PM" [level=1] [ref=e6]
+    - textbox "Search..." [ref=e9]
+    - generic [ref=e14] [cursor=pointer]:
+      - generic "Morgan Davis" [ref=e121]:
+        - generic [ref=e16]: MD
+      - generic [ref=e17]:
+        - generic [ref=e18]: Morgan Davis
+        - generic [ref=e19]: Admin
+      - generic [ref=e20]: ▼
+  - navigation [ref=e21]:
+    - button "⌂ Dashboard" [ref=e22] [cursor=pointer]:
+      - generic [ref=e23]: ⌂
+      - text: Dashboard
+    - button "◎ Work 5" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: ◎
+      - text: Work
+      - generic [ref=e26]: "5"
+    - button "◐ Capacity 9" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: ◐
+      - text: Capacity
+      - generic [ref=e29]: "9"
+    - button "◇ Reviews 0" [ref=e30] [cursor=pointer]:
+      - generic [ref=e31]: ◇
+      - text: Reviews
+      - generic [ref=e32]: "0"
+    - button "⋯ More ▼" [ref=e34] [cursor=pointer]:
+      - generic [ref=e35]: ⋯
+      - text: More
+      - generic [ref=e36]: ▼
+  - main [ref=e37]:
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - heading "Good morning, Morgan" [level=1] [ref=e122]
+        - paragraph [ref=e41]: Traffic • 4 active jobs
+      - generic [ref=e42]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - heading "My Work" [level=2] [ref=e46]
+            - generic [ref=e47]: 4 jobs
+          - generic [ref=e48]:
+            - generic [ref=e123]:
+              - heading "Today / In Progress (1)" [level=3] [ref=e124]
+              - generic [ref=e126] [cursor=pointer]:
+                - generic [ref=e127]:
+                  - generic [ref=e128]: SUMM-001
+                  - generic [ref=e130]: In Progress
+                - generic [ref=e131]: Hero Video
+                - generic [ref=e132]:
+                  - generic [ref=e133]: "Copy: Done"
+                  - generic [ref=e134]: "Media: In Progress"
+                - generic [ref=e135]:
+                  - generic [ref=e136]: Acme Corp
+                  - generic [ref=e137]: "Due: Feb 15"
+            - generic [ref=e138]:
+              - heading "Inbox (1)" [level=3] [ref=e139]
+              - generic [ref=e141] [cursor=pointer]:
+                - generic [ref=e142]:
+                  - generic [ref=e143]: SUMM-003
+                  - generic [ref=e145]: Inbox
+                - generic [ref=e146]: Email Campaign
+                - generic [ref=e147]:
+                  - generic [ref=e148]: "Copy: Inbox"
+                  - generic [ref=e149]: "Media: Inbox"
+                - generic [ref=e150]:
+                  - generic [ref=e151]: Acme Corp
+                  - generic [ref=e152]: "Due: Feb 20"
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - heading "Quick Actions" [level=2] [ref=e53]
+            - generic [ref=e54]:
+              - button "+ New Brief" [ref=e55] [cursor=pointer]
+              - button "Check Capacity" [ref=e153] [cursor=pointer]
+          - generic [ref=e56]:
+            - heading "Recent Activity" [level=2] [ref=e57]
+            - paragraph [ref=e58]: No recent activity

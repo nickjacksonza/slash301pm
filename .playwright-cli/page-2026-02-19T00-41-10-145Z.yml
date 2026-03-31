@@ -1,0 +1,117 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Slash 301 PM" [level=1] [ref=e6]
+    - textbox "Search..." [ref=e9]
+    - generic [ref=e10]:
+      - button "↓" [ref=e11] [cursor=pointer]
+      - button "↑" [ref=e12] [cursor=pointer]
+      - generic [ref=e13]:
+        - generic [ref=e14] [cursor=pointer]:
+          - generic "Rachel Adams" [ref=e15]:
+            - generic [ref=e16]: RA
+          - generic [ref=e17]:
+            - generic [ref=e18]: Rachel Adams
+            - generic [ref=e19]: COO
+          - generic [ref=e20]: ▲
+        - generic [ref=e59]:
+          - generic [ref=e60]: Switch User
+          - generic [ref=e61] [cursor=pointer]:
+            - generic "Rachel Adams" [ref=e62]:
+              - generic [ref=e63]: RA
+            - generic [ref=e64]:
+              - generic [ref=e65]: Rachel Adams
+              - generic [ref=e66]: COO • COO
+          - generic [ref=e67] [cursor=pointer]:
+            - generic "Sarah Chen" [ref=e68]:
+              - generic [ref=e69]: SC
+            - generic [ref=e70]:
+              - generic [ref=e71]: Sarah Chen
+              - generic [ref=e72]: PM • Manager
+          - generic [ref=e73] [cursor=pointer]:
+            - generic "James Wilson" [ref=e74]:
+              - generic [ref=e75]: JW
+            - generic [ref=e76]:
+              - generic [ref=e77]: James Wilson
+              - generic [ref=e78]: ECD • Manager
+          - generic [ref=e79] [cursor=pointer]:
+            - generic "Maria Garcia" [ref=e80]:
+              - generic [ref=e81]: MG
+            - generic [ref=e82]:
+              - generic [ref=e83]: Maria Garcia
+              - generic [ref=e84]: CD • User
+          - generic [ref=e85] [cursor=pointer]:
+            - generic "Alex Thompson" [ref=e86]:
+              - generic [ref=e87]: AT
+            - generic [ref=e88]:
+              - generic [ref=e89]: Alex Thompson
+              - generic [ref=e90]: Copywriter • User
+          - generic [ref=e91] [cursor=pointer]:
+            - generic "Kim Lee" [ref=e92]:
+              - generic [ref=e93]: KL
+            - generic [ref=e94]:
+              - generic [ref=e95]: Kim Lee
+              - generic [ref=e96]: Designer • User
+          - generic [ref=e97] [cursor=pointer]:
+            - generic "Jordan Blake" [ref=e98]:
+              - generic [ref=e99]: JB
+            - generic [ref=e100]:
+              - generic [ref=e101]: Jordan Blake
+              - generic [ref=e102]: QA • User
+          - generic [ref=e103] [cursor=pointer]:
+            - generic "Chris Martin" [ref=e104]:
+              - generic [ref=e105]: CM
+            - generic [ref=e106]:
+              - generic [ref=e107]: Chris Martin
+              - generic [ref=e108]: Client • User
+          - generic [ref=e109] [cursor=pointer]:
+            - generic "Taylor Swift" [ref=e110]:
+              - generic [ref=e111]: TS
+            - generic [ref=e112]:
+              - generic [ref=e113]: Taylor Swift
+              - generic [ref=e114]: Producer • User
+          - generic [ref=e115] [cursor=pointer]:
+            - generic "Morgan Davis" [ref=e116]:
+              - generic [ref=e117]: MD
+            - generic [ref=e118]:
+              - generic [ref=e119]: Morgan Davis
+              - generic [ref=e120]: Traffic • Admin
+  - navigation [ref=e21]:
+    - button "⌂ Dashboard" [ref=e22] [cursor=pointer]:
+      - generic [ref=e23]: ⌂
+      - text: Dashboard
+    - button "◎ Work 5" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: ◎
+      - text: Work
+      - generic [ref=e26]: "5"
+    - button "◐ Capacity 9" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: ◐
+      - text: Capacity
+      - generic [ref=e29]: "9"
+    - button "◇ Reviews 0" [ref=e30] [cursor=pointer]:
+      - generic [ref=e31]: ◇
+      - text: Reviews
+      - generic [ref=e32]: "0"
+    - button "⋯ More ▼" [ref=e34] [cursor=pointer]:
+      - generic [ref=e35]: ⋯
+      - text: More
+      - generic [ref=e36]: ▼
+  - main [ref=e37]:
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - heading "Good morning, Rachel" [level=1] [ref=e40]
+        - paragraph [ref=e41]: COO • 0 active jobs
+      - generic [ref=e42]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - heading "My Work" [level=2] [ref=e46]
+            - generic [ref=e47]: 0 jobs
+          - generic [ref=e48]:
+            - generic [ref=e49]: ◌
+            - paragraph [ref=e50]: No jobs assigned to you
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - heading "Quick Actions" [level=2] [ref=e53]
+            - button "+ New Brief" [ref=e55] [cursor=pointer]
+          - generic [ref=e56]:
+            - heading "Recent Activity" [level=2] [ref=e57]
+            - paragraph [ref=e58]: No recent activity

@@ -1,0 +1,278 @@
+- generic [ref=e17]:
+  - banner [ref=e18]:
+    - heading "Slash 301 PM" [level=1] [ref=e20]
+    - textbox "Search..." [ref=e23]
+    - generic [ref=e24]:
+      - button "↓" [ref=e25] [cursor=pointer]
+      - button "↑" [ref=e26] [cursor=pointer]
+      - generic [ref=e27]:
+        - generic [ref=e28]: PN
+        - generic [ref=e29]:
+          - generic [ref=e30]: Priya Nair
+          - generic [ref=e31]: COO
+      - button "Logout" [ref=e32] [cursor=pointer]
+  - navigation [ref=e33]:
+    - button "⌂ Dashboard" [ref=e34] [cursor=pointer]:
+      - generic [ref=e35]: ⌂
+      - text: Dashboard
+    - button "◎ Work 18" [ref=e36] [cursor=pointer]:
+      - generic [ref=e37]: ◎
+      - text: Work
+      - generic [ref=e38]: "18"
+    - button "◐ Capacity 13" [ref=e39] [cursor=pointer]:
+      - generic [ref=e40]: ◐
+      - text: Capacity
+      - generic [ref=e41]: "13"
+    - button "◇ Reviews 2" [ref=e42] [cursor=pointer]:
+      - generic [ref=e43]: ◇
+      - text: Reviews
+      - generic [ref=e44]: "2"
+    - button "⋯ More ▼" [ref=e46] [cursor=pointer]:
+      - generic [ref=e47]: ⋯
+      - text: More
+      - generic [ref=e48]: ▼
+  - main [ref=e49]:
+    - generic [ref=e50]:
+      - generic [ref=e51]:
+        - heading "Good afternoon, Priya" [level=1] [ref=e52]
+        - paragraph [ref=e53]: COO • 0 active jobs
+      - generic [ref=e54]:
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - heading "My Work" [level=2] [ref=e58]
+            - generic [ref=e59]: 18 jobs
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - heading "Today / In Progress (7)" [level=3] [ref=e62]
+              - generic [ref=e63]:
+                - generic [ref=e64] [cursor=pointer]:
+                  - generic [ref=e65]:
+                    - generic [ref=e66]: AURU-001
+                    - generic [ref=e68]: In Progress
+                  - generic [ref=e69]: Paris City Break
+                  - generic [ref=e70]:
+                    - generic [ref=e71]: "Copy: In Progress"
+                    - generic [ref=e72]: "Media: Not Started"
+                  - generic [ref=e73]:
+                    - generic [ref=e74]: Aurum City Hotels
+                    - generic [ref=e75]: "Due: Mar 1"
+                - generic [ref=e76] [cursor=pointer]:
+                  - generic [ref=e77]:
+                    - generic [ref=e78]: SOLA-001
+                    - generic [ref=e80]: In Progress
+                  - generic [ref=e81]: Wellness Retreat Video
+                  - generic [ref=e82]:
+                    - generic [ref=e83]: "Copy: Done"
+                    - generic [ref=e84]: "Media: In Progress"
+                  - generic [ref=e85]:
+                    - generic [ref=e86]: Solaris Hotels & Spa
+                    - generic [ref=e87]: "Due: Mar 1"
+                - generic [ref=e88] [cursor=pointer]:
+                  - generic [ref=e89]:
+                    - generic [ref=e90]: VELA-001
+                    - generic [ref=e92]: In Progress
+                  - generic [ref=e93]: Maldives Villa Collection
+                  - generic [ref=e94]:
+                    - generic [ref=e95]: "Copy: In Progress"
+                    - generic [ref=e96]: "Media: In Progress"
+                  - generic [ref=e97]:
+                    - generic [ref=e98]: Vela Luxury Resorts
+                    - generic [ref=e99]: "Due: Feb 28"
+                - generic [ref=e100] [cursor=pointer]:
+                  - generic [ref=e101]:
+                    - generic [ref=e102]: HARB-001
+                    - generic [ref=e104]: In Progress
+                  - generic [ref=e105]: Marina Weekend Package
+                  - generic [ref=e106]:
+                    - generic [ref=e107]: "Copy: In Progress"
+                    - generic [ref=e108]: "Media: In Progress"
+                  - generic [ref=e109]:
+                    - generic [ref=e110]: Harbour & Helm Hotels
+                    - generic [ref=e111]: "Due: Feb 28"
+                - generic [ref=e112] [cursor=pointer]:
+                  - generic [ref=e113]:
+                    - generic [ref=e114]: ASHF-001
+                    - generic [ref=e116]: In Progress
+                  - generic [ref=e117]: Heritage Suite Photography
+                  - generic [ref=e118]:
+                    - generic [ref=e119]: "Copy: Done"
+                    - generic [ref=e120]: "Media: Done"
+                  - generic [ref=e121]:
+                    - generic [ref=e122]: The Ashford Grand
+                    - generic [ref=e123]: "Due: Feb 20"
+                - generic [ref=e124] [cursor=pointer]:
+                  - generic [ref=e125]:
+                    - generic [ref=e126]: AURU-002
+                    - generic [ref=e128]: Today
+                  - generic [ref=e129]: London Rooftop Bar Launch
+                  - generic [ref=e130]:
+                    - generic [ref=e131]: "Copy: In Progress"
+                    - generic [ref=e132]: "Media: In Progress"
+                  - generic [ref=e133]:
+                    - generic [ref=e134]: Aurum City Hotels
+                    - generic [ref=e135]: "Due: Feb 26"
+                - generic [ref=e136] [cursor=pointer]:
+                  - generic [ref=e137]:
+                    - generic [ref=e138]: HARB-002
+                    - generic [ref=e140]: Today
+                  - generic [ref=e141]: Sailing Regatta Promo
+                  - generic [ref=e142]:
+                    - generic [ref=e143]: "Copy: In Progress"
+                    - generic [ref=e144]: "Media: In Progress"
+                  - generic [ref=e145]:
+                    - generic [ref=e146]: Harbour & Helm Hotels
+                    - generic [ref=e147]: "Due: Feb 25"
+            - generic [ref=e148]:
+              - heading "This Week (1)" [level=3] [ref=e149]
+              - generic [ref=e151] [cursor=pointer]:
+                - generic [ref=e152]:
+                  - generic [ref=e153]: COAS-001
+                  - generic [ref=e155]: This Week
+                - generic [ref=e156]: Beach Club Teaser Video
+                - generic [ref=e157]:
+                  - generic [ref=e158]: "Copy: In Progress"
+                  - generic [ref=e159]: "Media: Not Started"
+                - generic [ref=e160]:
+                  - generic [ref=e161]: Coastal & Co. Resorts
+                  - generic [ref=e162]: "Due: Feb 27"
+            - generic [ref=e163]:
+              - heading "Inbox (6)" [level=3] [ref=e164]
+              - generic [ref=e165]:
+                - generic [ref=e166] [cursor=pointer]:
+                  - generic [ref=e167]:
+                    - generic [ref=e168]: MERC-001
+                    - generic [ref=e170]: Inbox
+                  - generic [ref=e171]: Grand Opening Social Launch
+                  - generic [ref=e172]:
+                    - generic [ref=e173]: "Copy: Not Started"
+                    - generic [ref=e174]: "Media: Not Started"
+                  - generic [ref=e175]:
+                    - generic [ref=e176]: The Meridian Collection
+                    - generic [ref=e177]: "Due: Mar 1"
+                - generic [ref=e178] [cursor=pointer]:
+                  - generic [ref=e179]:
+                    - generic [ref=e180]: NORT-001
+                    - generic [ref=e182]: Inbox
+                  - generic [ref=e183]: Conference Packages Brochure
+                  - generic [ref=e184]:
+                    - generic [ref=e185]: "Copy: Not Started"
+                    - generic [ref=e186]: "Media: Not Started"
+                  - generic [ref=e187]:
+                    - generic [ref=e188]: The Northgate Group
+                    - generic [ref=e189]: "Due: Mar 15"
+                - generic [ref=e190] [cursor=pointer]:
+                  - generic [ref=e191]:
+                    - generic [ref=e192]: MERC-002
+                    - generic [ref=e194]: Inbox
+                  - generic [ref=e195]: Grand Opening Email Blast
+                  - generic [ref=e196]:
+                    - generic [ref=e197]: "Copy: Not Started"
+                    - generic [ref=e198]: "Media: Not Started"
+                  - generic [ref=e199]:
+                    - generic [ref=e200]: The Meridian Collection
+                    - generic [ref=e201]: "Due: Mar 5"
+                - generic [ref=e202] [cursor=pointer]:
+                  - generic [ref=e203]:
+                    - generic [ref=e204]: SOLA-002
+                    - generic [ref=e206]: Inbox
+                  - generic [ref=e207]: Spa Day Pass Promo
+                  - generic [ref=e208]:
+                    - generic [ref=e209]: "Copy: Not Started"
+                    - generic [ref=e210]: "Media: Not Started"
+                  - generic [ref=e211]:
+                    - generic [ref=e212]: Solaris Hotels & Spa
+                    - generic [ref=e213]: "Due: Mar 8"
+                - generic [ref=e214] [cursor=pointer]:
+                  - generic [ref=e215]:
+                    - generic [ref=e216]: COAS-002
+                    - generic [ref=e218]: Inbox
+                  - generic [ref=e219]: Beach Club Social Launch
+                  - generic [ref=e220]:
+                    - generic [ref=e221]: "Copy: Not Started"
+                    - generic [ref=e222]: "Media: Not Started"
+                  - generic [ref=e223]:
+                    - generic [ref=e224]: Coastal & Co. Resorts
+                    - generic [ref=e225]: "Due: Mar 5"
+                - generic [ref=e226] [cursor=pointer]:
+                  - generic [ref=e227]:
+                    - generic [ref=e228]: MERC-003
+                    - generic [ref=e230]: Inbox
+                  - generic [ref=e231]: Grand Opening Landing Page
+                  - generic [ref=e232]:
+                    - generic [ref=e233]: "Copy: Not Started"
+                    - generic [ref=e234]: "Media: Not Started"
+                  - generic [ref=e235]:
+                    - generic [ref=e236]: The Meridian Collection
+                    - generic [ref=e237]: "Due: Mar 10"
+            - generic [ref=e238]:
+              - heading "Ready to Schedule (2)" [level=3] [ref=e239]
+              - generic [ref=e240]:
+                - generic [ref=e241] [cursor=pointer]:
+                  - generic [ref=e242]:
+                    - generic [ref=e243]: BLCK-001
+                    - generic [ref=e245]: Approved (External)
+                  - generic [ref=e246]: Midnight Series Social
+                  - generic [ref=e247]:
+                    - generic [ref=e248]: "Copy: Done"
+                    - generic [ref=e249]: "Media: Done"
+                  - generic [ref=e250]:
+                    - generic [ref=e251]: The Blackwood Boutique
+                    - generic [ref=e252]: "Due: Feb 5"
+                - generic [ref=e253] [cursor=pointer]:
+                  - generic [ref=e254]:
+                    - generic [ref=e255]: ASHF-002
+                    - generic [ref=e257]: Approved (Internal)
+                  - generic [ref=e258]: Fine Dining Menu Launch
+                  - generic [ref=e259]:
+                    - generic [ref=e260]: "Copy: Done"
+                    - generic [ref=e261]: "Media: Done"
+                  - generic [ref=e262]:
+                    - generic [ref=e263]: The Ashford Grand
+                    - generic [ref=e264]: "Due: Feb 22"
+            - generic [ref=e265]:
+              - heading "Other (2)" [level=3] [ref=e266]
+              - generic [ref=e267]:
+                - generic [ref=e268] [cursor=pointer]:
+                  - generic [ref=e269]:
+                    - generic [ref=e270]: COPP-001
+                    - generic [ref=e272]: On Hold
+                  - generic [ref=e273]: Autumn Harvest Social
+                  - generic [ref=e274]:
+                    - generic [ref=e275]: "Copy: On Hold"
+                    - generic [ref=e276]: "Media: On Hold"
+                  - generic [ref=e277]:
+                    - generic [ref=e278]: The Copperleaf Collection
+                    - generic [ref=e279]: "Due: Apr 1"
+                - generic [ref=e280] [cursor=pointer]:
+                  - generic [ref=e281]:
+                    - generic [ref=e282]: VELA-002
+                    - generic [ref=e284]: Waiting
+                  - generic [ref=e285]: Seychelles Honeymoon Package
+                  - generic [ref=e286]:
+                    - generic [ref=e287]: "Copy: Waiting"
+                    - generic [ref=e288]: "Media: Waiting"
+                  - generic [ref=e289]:
+                    - generic [ref=e290]: Vela Luxury Resorts
+                    - generic [ref=e291]: "Due: Mar 10"
+        - generic [ref=e292]:
+          - generic [ref=e293]:
+            - heading "Quick Actions" [level=2] [ref=e294]
+            - button "+ New Brief" [ref=e296] [cursor=pointer]
+          - generic [ref=e297]:
+            - heading "Recent Activity" [level=2] [ref=e298]
+            - generic [ref=e299]:
+              - generic [ref=e300]:
+                - generic [ref=e301]: ◎
+                - generic [ref=e302]:
+                  - generic [ref=e303]: MERC-003 - Grand Opening Landing Page
+                  - generic [ref=e304]: The Meridian Collection • Created Feb 16
+              - generic [ref=e305]:
+                - generic [ref=e306]: ◎
+                - generic [ref=e307]:
+                  - generic [ref=e308]: MERC-001 - Grand Opening Social Launch
+                  - generic [ref=e309]: The Meridian Collection • Created Feb 15
+              - generic [ref=e310]:
+                - generic [ref=e311]: ◎
+                - generic [ref=e312]:
+                  - generic [ref=e313]: MERC-002 - Grand Opening Email Blast
+                  - generic [ref=e314]: The Meridian Collection • Created Feb 15

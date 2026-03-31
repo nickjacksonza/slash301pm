@@ -1,0 +1,91 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Slash 301 PM" [level=1] [ref=e6]
+    - textbox "Search..." [ref=e9]
+    - generic [ref=e10]:
+      - button "↓" [ref=e11] [cursor=pointer]
+      - button "↑" [ref=e12] [cursor=pointer]
+      - generic [ref=e14] [cursor=pointer]:
+        - generic "Rachel Adams" [ref=e15]:
+          - generic [ref=e16]: RA
+        - generic [ref=e17]:
+          - generic [ref=e18]: Rachel Adams
+          - generic [ref=e19]: COO
+        - generic [ref=e20]: ▼
+  - navigation [ref=e21]:
+    - button "⌂ Dashboard" [ref=e22] [cursor=pointer]:
+      - generic [ref=e23]: ⌂
+      - text: Dashboard
+    - button "◎ Work 5" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: ◎
+      - text: Work
+      - generic [ref=e26]: "5"
+    - button "◐ Capacity 9" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: ◐
+      - text: Capacity
+      - generic [ref=e29]: "9"
+    - button "◇ Reviews 1" [ref=e30] [cursor=pointer]:
+      - generic [ref=e31]: ◇
+      - text: Reviews
+      - generic [ref=e32]: "1"
+    - button "⋯ More ▼" [ref=e72] [cursor=pointer]:
+      - generic [ref=e35]: ⋯
+      - text: More
+      - generic [ref=e36]: ▼
+  - main [ref=e37]:
+    - generic [ref=e242]:
+      - generic [ref=e243]:
+        - button "Internal Review 0" [ref=e244] [cursor=pointer]:
+          - text: Internal Review
+          - generic [ref=e245]: "0"
+        - button "Client Review 1" [active] [ref=e246] [cursor=pointer]:
+          - text: Client Review
+          - generic [ref=e247]: "1"
+      - generic [ref=e270]:
+        - generic [ref=e272]:
+          - heading "Client Review" [level=1] [ref=e273]
+          - paragraph [ref=e274]: 1 item awaiting your approval
+        - generic [ref=e276]:
+          - generic [ref=e277]:
+            - generic [ref=e278]:
+              - generic [ref=e279]: T
+              - generic [ref=e280]:
+                - generic [ref=e281]: TechStart
+                - generic [ref=e282]: "@techstart"
+              - generic [ref=e283]: Preview
+            - generic [ref=e286]:
+              - generic [ref=e287]: 🖼
+              - generic [ref=e288]: logo-concepts.png
+            - generic [ref=e289]:
+              - generic [ref=e290]:
+                - generic [ref=e291] [cursor=pointer]: ♡
+                - generic [ref=e292] [cursor=pointer]: 💬
+                - generic [ref=e293] [cursor=pointer]: ↗
+              - generic [ref=e294]: ⚐
+            - generic [ref=e295]:
+              - generic [ref=e296]: techstartTechStart - Innovation Forward
+              - generic [ref=e297]: 50 characters
+            - generic [ref=e298]:
+              - generic [ref=e299]: BRAN-001
+              - generic [ref=e300]: Logo Design
+          - generic [ref=e301]:
+            - generic [ref=e302]:
+              - generic [ref=e303]:
+                - generic [ref=e304]: Campaign
+                - generic [ref=e305]: Brand Refresh
+              - generic [ref=e306]:
+                - generic [ref=e307]: Due Date
+                - generic [ref=e308]: Feb 5
+              - generic [ref=e309]:
+                - generic [ref=e310]: Brief
+                - generic [ref=e311]: New logo concepts
+            - generic [ref=e312]:
+              - button "✓ Approve" [ref=e313] [cursor=pointer]:
+                - generic [ref=e314]: ✓
+                - text: Approve
+              - button "✗ Not Approved" [ref=e315] [cursor=pointer]:
+                - generic [ref=e316]: ✗
+                - text: Not Approved
+              - button "✎ Add Feedback" [ref=e317] [cursor=pointer]:
+                - generic [ref=e318]: ✎
+                - text: Add Feedback
