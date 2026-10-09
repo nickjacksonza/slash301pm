@@ -24,3 +24,7 @@ __pycache__/
 *.db-shm
 *.db-wal
 .playwright-cli/
+
+# Archives and one-off server tools (never deploy)
+*.zip
+unzipper.php

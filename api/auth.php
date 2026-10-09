@@ -206,15 +206,54 @@ function clearAttempts(string $ip): void {
 }
 
 /**
+ * Is $ip inside the CIDR range $cidr? Handles IPv4 and IPv6.
+ */
+function ipInCidr(string $ip, string $cidr): bool {
+    [$subnet, $bits] = explode('/', $cidr);
+    $ipBin = @inet_pton($ip);
+    $subBin = @inet_pton($subnet);
+    if ($ipBin === false || $subBin === false || strlen($ipBin) !== strlen($subBin)) {
+        return false;
+    }
+    $bits = (int) $bits;
+    $bytes = intdiv($bits, 8);
+    if ($bytes > 0 && substr($ipBin, 0, $bytes) !== substr($subBin, 0, $bytes)) {
+        return false;
+    }
+    $rem = $bits % 8;
+    if ($rem === 0) {
+        return true;
+    }
+    $mask = (0xFF << (8 - $rem)) & 0xFF;
+    return (ord($ipBin[$bytes]) & $mask) === (ord($subBin[$bytes]) & $mask);
+}
+
+/**
  * Get the client IP address.
+ * Only trusts CF-Connecting-IP when the request really came from Cloudflare.
+ * Anything else falls back to REMOTE_ADDR, so a spoofed header cannot be used
+ * to dodge the login rate limit.
+ * Cloudflare ranges: https://www.cloudflare.com/ips/ (re-check occasionally).
  */
 function getClientIp(): string {
-    // On shared hosting behind proxy, check forwarded headers
-    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-        return trim($ips[0]);
+    $remote = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $cfRanges = [
+        '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
+        '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
+        '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+        '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+        '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
+        '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32',
+    ];
+    $cfIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? '';
+    if ($cfIp !== '' && filter_var($cfIp, FILTER_VALIDATE_IP)) {
+        foreach ($cfRanges as $range) {
+            if (ipInCidr($remote, $range)) {
+                return $cfIp;
+            }
+        }
     }
-    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    return $remote;
 }
 
 // ============================================================================
