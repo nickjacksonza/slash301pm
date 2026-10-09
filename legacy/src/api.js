@@ -3,7 +3,7 @@
 // Phase 3.3: Auth + CSRF token management
 // ============================================================================
 
-const API_BASE = 'api/api.php';
+const API_BASE = '../api/api.php';
 
 const api = {
   // CSRF token stored in memory (received on login/check_session)

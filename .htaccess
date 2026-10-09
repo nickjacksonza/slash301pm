@@ -1,0 +1,39 @@
+# Slash 301 PM root (public_html/projects/slash301pm/). Upload this FIRST.
+# legacy/, api/ and public/ are served as files; everything else goes to index.php.
+
+Options -Indexes
+DirectoryIndex index.php index.html
+
+# Datastar actions: no gzip, so short SSE responses are never held back by mod_deflate.
+<IfModule mod_setenvif.c>
+    SetEnvIfNoCase Datastar-Request "^true$" no-gzip=1 dont-vary=1
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /slash301pm/
+
+    # HTTPS on the one fixed host (never built from the Host header).
+    # Cloudflare may reach the origin over plain HTTP: honour X-Forwarded-Proto.
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteRule ^ https://projects.slash301.com%{REQUEST_URI} [R=301,L]
+    RewriteCond %{HTTP_HOST} !^projects\.slash301\.com$ [NC]
+    RewriteRule ^ https://projects.slash301.com%{REQUEST_URI} [R=301,L]
+
+    # Dotfiles and dot-directories (.git, .claude, .env, .htaccess ...)
+    RewriteRule (^|/)\. - [F,L]
+
+    # Internal folders: code, tooling, docs, data and backups are never served.
+    RewriteRule ^(app|migrations|tests|tools|vendor|styles|docs|data|backup)(/|$) - [F,L]
+
+    # Source and data file types anywhere (docs, SQL, scripts, YAML, lock files, databases).
+    RewriteRule \.(md|sql|sh|ya?ml|lock|db|db-wal|db-shm|sqlite|sqlite3)$ - [F,L,NC]
+
+    # The front controller itself, and the folders served as plain files.
+    RewriteRule ^index\.php$ - [L]
+    RewriteRule ^(legacy|api|public)(/|$) - [L]
+
+    # Everything else is a route of the new app.
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>

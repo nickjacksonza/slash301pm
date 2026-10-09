@@ -31,3 +31,9 @@ unzipper.php
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Runtime data written by the app (sessions, migration backups and state)
+data/sessions/sess_*
+data/backups/
+data/migrate.lock
+data/migrate-failed.json
