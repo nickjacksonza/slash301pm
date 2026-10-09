@@ -4,7 +4,8 @@
 // ============================================================================
 
 // Database file location -- in data/ directory protected by .htaccess
-define('DB_PATH', __DIR__ . '/../data/slash301pm.db');
+// S301_DB lets the integration tests point at a temp copy; production never sets it.
+define('DB_PATH', getenv('S301_DB') ?: (__DIR__ . '/../data/slash301pm.db'));
 
 /**
  * Get a SQLite3 database connection with all PRAGMAs set.
@@ -25,6 +26,9 @@ function getDb(): SQLite3 {
 
     $isNew = !file_exists(DB_PATH);
     $db = new SQLite3(DB_PATH);
+    // Throw on SQL errors so a failed write can never report success.
+    // api.php turns uncaught exceptions into a 500 JSON response.
+    $db->enableExceptions(true);
 
     // Required PRAGMAs (run on every connection)
     $db->exec('PRAGMA journal_mode = WAL');

@@ -20,6 +20,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/permissions.php';
 
+// Any SQL error (getDb() enables SQLite3 exceptions) or other uncaught failure
+// becomes a 500 JSON response, so a failed write can never report success.
+set_exception_handler(function (Throwable $e): void {
+    error_log('[slash301pm api] ' . get_class($e) . ': ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+    try {
+        getDb()->exec('ROLLBACK');
+    } catch (Throwable $ignore) {
+        // no open transaction
+    }
+    if (!headers_sent()) {
+        jsonError('Internal server error', 500);
+    }
+    exit;
+});
+
+// Statuses that may only be reached through approve_internal / approve_client.
+const APPROVAL_ONLY_STATUSES = ['Approved (Internal)', 'Approved (External)'];
+
+// Job fields a Client must never see.
+const CLIENT_HIDDEN_JOB_FIELDS = [
+    'internal_feedback', 'internal_feedback_by', 'internal_feedback_at',
+    'hours_estimate', 'client_feedback_assigned_to', 'client_feedback_assigned_role',
+];
+const CLIENT_HIDDEN_TASK_FIELDS = ['internal_feedback', 'feedback_by', 'feedback_at'];
+
+/**
+ * Overwrite every *_by field present in the request with the session user.
+ * A null value (clearing a field) stays null; any other value is replaced.
+ */
+function forceActorFields(array $data, string $userId): array {
+    foreach ($data as $key => $value) {
+        if (is_string($key) && preg_match('/_by$/', $key) && $value !== null) {
+            $data[$key] = $userId;
+        }
+    }
+    return $data;
+}
+
+/**
+ * Refuse to move a job into an approval status except through the approval
+ * endpoints. Re-sending the status it already has is allowed (the legacy UI
+ * sends the full job on every save).
+ */
+function assertJobStatusChangeAllowed(SQLite3 $db, string $jobId, mixed $newStatus): void {
+    if (!is_string($newStatus) || !in_array($newStatus, APPROVAL_ONLY_STATUSES, true)) {
+        return;
+    }
+    $stmt = $db->prepare('SELECT status FROM jobs WHERE id = :id');
+    $stmt->bindValue(':id', $jobId, SQLITE3_TEXT);
+    $row = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
+    if ($row && $row['status'] === $newStatus) {
+        return;
+    }
+    jsonError('Approved statuses can only be set through the approval workflow', 403);
+}
+
+/**
+ * Job ids and campaign ids that belong to a brand (a Client's whole world).
+ * @return array{jobs: array<string,true>, campaigns: array<string,true>}
+ */
+function clientScope(SQLite3 $db, ?string $brandId): array {
+    $scope = ['jobs' => [], 'campaigns' => []];
+    if ($brandId === null || $brandId === '') {
+        return $scope;
+    }
+    $stmt = $db->prepare('SELECT id FROM campaigns WHERE brand_id = :b');
+    $stmt->bindValue(':b', $brandId, SQLITE3_TEXT);
+    $r = $stmt->execute();
+    while ($row = $r->fetchArray(SQLITE3_ASSOC)) {
+        $scope['campaigns'][$row['id']] = true;
+    }
+    $stmt = $db->prepare('SELECT j.id FROM jobs j JOIN campaigns c ON j.campaign_id = c.id WHERE c.brand_id = :b');
+    $stmt->bindValue(':b', $brandId, SQLITE3_TEXT);
+    $r = $stmt->execute();
+    while ($row = $r->fetchArray(SQLITE3_ASSOC)) {
+        $scope['jobs'][$row['id']] = true;
+    }
+    return $scope;
+}
+
+/** Remove the keys in $hidden from $row. */
+function stripFields(array $row, array $hidden): array {
+    foreach ($hidden as $key) {
+        unset($row[$key]);
+    }
+    return $row;
+}
+
 $action = $_GET['action'] ?? '';
 
 // Action whitelist
@@ -190,6 +278,8 @@ switch ($action) {
         ]);
 
     case 'logout':
+        // GET stays allowed: the legacy UI logs out with GET (src/api.js logout()).
+        // Logout CSRF is low impact; the rebuild uses POST + CSRF token.
         handleLogout();
         jsonResponse(['success' => true]);
 
@@ -205,12 +295,15 @@ switch ($action) {
     // ========================================================================
 
     case 'demo_login':
+        // POST only: a GET link must not be able to switch the session user
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonError('POST required', 405);
+
         // In demo mode, allow switching users without password
         if (!$demoMode) {
             jsonError('Demo mode is not enabled', 403);
         }
 
-        $userId = $input['user_id'] ?? $_GET['user_id'] ?? null;
+        $userId = $input['user_id'] ?? null;
         if (!$userId) {
             jsonError('Missing user_id');
         }
@@ -222,6 +315,9 @@ switch ($action) {
         if (!$user) {
             jsonError('User not found', 404);
         }
+
+        // New session ID on every identity change (session fixation)
+        session_regenerate_id(true);
 
         // Set demo session
         $_SESSION['demo_user_id'] = $user['id'];
@@ -266,6 +362,31 @@ switch ($action) {
 
     case 'get_users':
         $results = [];
+        if (isClient($sessionUser)) {
+            // Clients: users of their own brand, plus agency staff by name only
+            // (no username, no email except their own).
+            $stmt = $db->prepare('
+                SELECT u.id, u.name, u.role, u.color, u.brand_id, u.is_active, u.created_at,
+                       b.name as brand_name
+                FROM users u
+                LEFT JOIN brands b ON u.brand_id = b.id
+                WHERE u.is_active = 1
+                  AND ((u.brand_id IS NOT NULL AND u.brand_id = :brand_id)
+                       OR (u.brand_id IS NULL AND u.role != \'Client\'))
+                ORDER BY u.role, u.name
+            ');
+            $stmt->bindValue(':brand_id', (string) $sessionUser['brand_id'], SQLITE3_TEXT);
+            $query = $stmt->execute();
+            while ($row = $query->fetchArray(SQLITE3_ASSOC)) {
+                $row['email'] = null;
+                if ($row['id'] === $sessionUser['id']) {
+                    $row['email'] = $sessionUser['email'];
+                    $row['username'] = $sessionUser['username'];
+                }
+                $results[] = $row;
+            }
+            jsonResponse(['users' => $results]);
+        }
         // Phase 3.4: Explicit column selection -- never SELECT * for users
         $query = $db->query('
             SELECT u.id, u.username, u.name, u.email, u.role, u.color,
@@ -283,6 +404,13 @@ switch ($action) {
 
     case 'get_campaigns':
         $brandId = $_GET['brand_id'] ?? null;
+        if (isClient($sessionUser)) {
+            // Clients only ever see their own brand, whatever brand_id they pass
+            $brandId = (string) ($sessionUser['brand_id'] ?? '');
+            if ($brandId === '') {
+                jsonResponse(['campaigns' => []]);
+            }
+        }
         if ($brandId) {
             $stmt = $db->prepare('
                 SELECT c.*, b.name as brand_name
@@ -384,6 +512,10 @@ switch ($action) {
             }
             $row['tasks'] = $tasks;
 
+            if (isClient($sessionUser)) {
+                $row = stripFields($row, CLIENT_HIDDEN_JOB_FIELDS);
+            }
+
             $jobs[] = $row;
         }
         jsonResponse(['jobs' => $jobs]);
@@ -417,6 +549,8 @@ switch ($action) {
                 jsonError('Job not found', 404);  // 404 not 403 to avoid leaking existence
             }
         }
+        // Creatives may only read jobs they are assigned to (admin/manager/client pass)
+        authorize($sessionUser, 'read_job', $job);
 
         // Denormalize: include assignments with person details
         $aStmt = $db->prepare('
@@ -432,7 +566,7 @@ switch ($action) {
             $assignments[$a['role_on_job']] = [
                 'user_id' => $a['user_id'],
                 'name' => $a['user_name'],
-                'email' => $a['user_email'],
+                'email' => isClient($sessionUser) ? null : $a['user_email'],
                 'color' => $a['user_color'],
             ];
         }
@@ -470,10 +604,18 @@ switch ($action) {
         }
         $job['assets'] = $assets;
 
+        if (isClient($sessionUser)) {
+            $job = stripFields($job, CLIENT_HIDDEN_JOB_FIELDS);
+            foreach ($job['tasks'] as $ti => $tRow) {
+                $job['tasks'][$ti] = stripFields($tRow, CLIENT_HIDDEN_TASK_FIELDS);
+            }
+        }
+
         jsonResponse(['job' => $job]);
 
     case 'get_wiki_pages':
         $results = [];
+        $scope = isClient($sessionUser) ? clientScope($db, $sessionUser['brand_id'] ?? null) : null;
         $query = $db->query('
             SELECT id, title, slug, template_id, parent_id, type, tags, sort_order, created_at, updated_at
             FROM wiki_pages
@@ -489,6 +631,15 @@ switch ($action) {
             while ($l = $lResult->fetchArray(SQLITE3_ASSOC)) {
                 if ($l['entity_type'] === 'job') $linkedJobs[] = $l['entity_id'];
                 if ($l['entity_type'] === 'project') $linkedProjects[] = $l['entity_id'];
+            }
+            if ($scope !== null) {
+                // Clients: only pages linked to their own brand's jobs/campaigns,
+                // and only those links (no ids from other brands)
+                $linkedJobs = array_values(array_filter($linkedJobs, fn($id) => isset($scope['jobs'][$id])));
+                $linkedProjects = array_values(array_filter($linkedProjects, fn($id) => isset($scope['campaigns'][$id])));
+                if (empty($linkedJobs) && empty($linkedProjects)) {
+                    continue;
+                }
             }
             $row['linkedJobs'] = $linkedJobs;
             $row['linkedProjects'] = $linkedProjects;
@@ -517,6 +668,14 @@ switch ($action) {
         while ($l = $lResult->fetchArray(SQLITE3_ASSOC)) {
             if ($l['entity_type'] === 'job') $linkedJobs[] = $l['entity_id'];
             if ($l['entity_type'] === 'project') $linkedProjects[] = $l['entity_id'];
+        }
+        if (isClient($sessionUser)) {
+            $scope = clientScope($db, $sessionUser['brand_id'] ?? null);
+            $linkedJobs = array_values(array_filter($linkedJobs, fn($id) => isset($scope['jobs'][$id])));
+            $linkedProjects = array_values(array_filter($linkedProjects, fn($id) => isset($scope['campaigns'][$id])));
+            if (empty($linkedJobs) && empty($linkedProjects)) {
+                jsonError('Wiki page not found', 404);  // 404 not 403: do not leak existence
+            }
         }
         $page['linkedJobs'] = $linkedJobs;
         $page['linkedProjects'] = $linkedProjects;
@@ -595,7 +754,7 @@ switch ($action) {
         $stmt->bindValue(':delivery_date', $input['delivery_date'] ?? null, SQLITE3_TEXT);
         $stmt->bindValue(':hours_estimate', $input['hours_estimate'] ?? null, SQLITE3_FLOAT);
         $stmt->bindValue(':sort_order', $input['sort_order'] ?? 0, SQLITE3_INTEGER);
-        $stmt->bindValue(':created_by', $input['created_by'] ?? null, SQLITE3_TEXT);
+        $stmt->bindValue(':created_by', $sessionUser['id'], SQLITE3_TEXT);  // never from the body
         $stmt->execute();
 
         // Insert assignments if provided
@@ -647,6 +806,7 @@ switch ($action) {
     case 'update_job':
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonError('POST required', 405);
 
+        $input = forceActorFields($input, $sessionUser['id']);
         $jobId = $input['id'] ?? null;
         if (!$jobId) jsonError('Missing id');
 
@@ -661,6 +821,11 @@ switch ($action) {
 
         // Phase 3.4: Authorization -- Admin/Manager: any; Creative: only if assigned; Client: denied
         authorize($sessionUser, 'update_job', ['id' => $jobId]);
+
+        // Approval statuses go through approve_internal / approve_client only
+        if (array_key_exists('status', $input)) {
+            assertJobStatusChangeAllowed($db, $jobId, $input['status']);
+        }
 
         // Allowed fields for update
         $allowedFields = [
@@ -730,6 +895,7 @@ switch ($action) {
     case 'update_task':
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonError('POST required', 405);
 
+        $input = forceActorFields($input, $sessionUser['id']);
         $taskId = $input['id'] ?? null;
         if (!$taskId) jsonError('Missing id');
 
@@ -872,10 +1038,19 @@ switch ($action) {
 
         validateInput(['id' => $pageId], ['id' => 'required|id']);
 
-        $stmt = $db->prepare('SELECT id FROM wiki_pages WHERE id = :id');
+        $stmt = $db->prepare('SELECT id, content FROM wiki_pages WHERE id = :id');
         $stmt->bindValue(':id', $pageId, SQLITE3_TEXT);
         $result = $stmt->execute();
-        if (!$result->fetchArray()) jsonError('Wiki page not found', 404);
+        $existingPage = $result->fetchArray(SQLITE3_ASSOC);
+        if (!$existingPage) jsonError('Wiki page not found', 404);
+
+        // Data-loss guard: the legacy UI loads wiki pages without content, so a
+        // save sends empty content. Never replace stored text with nothing.
+        if (array_key_exists('content', $input)
+            && trim((string) $input['content']) === ''
+            && trim((string) ($existingPage['content'] ?? '')) !== '') {
+            jsonError('Refusing to overwrite existing wiki content with empty content', 409);
+        }
 
         $allowedFields = ['title', 'slug', 'content', 'template_id', 'parent_id', 'type', 'tags', 'sort_order'];
         $sets = [];
@@ -944,7 +1119,7 @@ switch ($action) {
         authorize($sessionUser, 'approve_internal');
 
         $jobId = $input['job_id'] ?? null;
-        $approvedBy = $input['approved_by'] ?? $sessionUser['id'];
+        $approvedBy = $sessionUser['id'];  // never from the body
         if (!$jobId) jsonError('Missing job_id');
 
         // Validate current status: all tasks must be Done, job status allows internal approval
@@ -987,7 +1162,7 @@ switch ($action) {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonError('POST required', 405);
 
         $jobId = $input['job_id'] ?? null;
-        $approvedBy = $input['approved_by'] ?? $sessionUser['id'];
+        $approvedBy = $sessionUser['id'];  // never from the body
         if (!$jobId) jsonError('Missing job_id');
 
         $stmt = $db->prepare('SELECT j.id, j.status, c.brand_id FROM jobs j LEFT JOIN campaigns c ON j.campaign_id = c.id WHERE j.id = :id');
@@ -1022,7 +1197,7 @@ switch ($action) {
 
         $jobId = $input['job_id'] ?? null;
         $feedback = $input['feedback'] ?? null;
-        $feedbackBy = $input['feedback_by'] ?? $sessionUser['id'];
+        $feedbackBy = $sessionUser['id'];  // never from the body
         $isInternal = $input['is_internal'] ?? false;
         if (!$jobId || !$feedback) {
             jsonError('Missing job_id or feedback');
@@ -1102,93 +1277,80 @@ switch ($action) {
             jsonError('Batch too large (max 20 operations)');
         }
 
+        // Pass 1: validate and authorize EVERY operation exactly as the single
+        // endpoints do, before any data is touched.
+        $batchAllowed = ['update_job', 'update_task', 'update_asset'];
+        $prepared = [];
+        foreach ($operations as $i => $op) {
+            $opAction = is_array($op) ? ($op['action'] ?? null) : null;
+            if (!in_array($opAction, $batchAllowed, true)) {
+                jsonError("Batch operation {$i}: action '" . (is_string($opAction) ? $opAction : '') . "' not allowed in batch");
+            }
+            $opInput = is_array($op['data'] ?? null) ? $op['data'] : [];
+            $opInput = forceActorFields($opInput, $sessionUser['id']);
+
+            $targetId = $opInput['id'] ?? null;
+            if (!$targetId || !is_string($targetId)) jsonError("Missing id in operation {$i}");
+            validateInput(['id' => $targetId], ['id' => 'required|id']);
+
+            switch ($opAction) {
+                case 'update_job':
+                    $stmt = $db->prepare('SELECT id FROM jobs WHERE id = :id');
+                    $stmt->bindValue(':id', $targetId, SQLITE3_TEXT);
+                    if (!$stmt->execute()->fetchArray()) jsonError("Batch operation {$i}: job not found", 404);
+                    authorize($sessionUser, 'update_job', ['id' => $targetId]);
+                    if (array_key_exists('status', $opInput)) {
+                        assertJobStatusChangeAllowed($db, $targetId, $opInput['status']);
+                    }
+                    $table = 'jobs';
+                    $allowedFields = ['title','description','status','sort_order','all_tasks_completed_at',
+                        'client_feedback','client_feedback_by','client_feedback_at','client_feedback_status',
+                        'internal_feedback','internal_feedback_by','internal_feedback_at'];
+                    break;
+
+                case 'update_task':
+                    $stmt = $db->prepare('SELECT id, job_id, assigned_to FROM tasks WHERE id = :id');
+                    $stmt->bindValue(':id', $targetId, SQLITE3_TEXT);
+                    $task = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
+                    if (!$task) jsonError("Batch operation {$i}: task not found", 404);
+                    authorize($sessionUser, 'update_task', $task);
+                    $table = 'tasks';
+                    $allowedFields = ['status','content','assigned_to','character_count','file_url','file_type',
+                        'internal_feedback','feedback_by','feedback_at','sort_order','completed_at','completed_by'];
+                    break;
+
+                default: // update_asset
+                    $stmt = $db->prepare('SELECT id, assigned_to FROM assets WHERE id = :id');
+                    $stmt->bindValue(':id', $targetId, SQLITE3_TEXT);
+                    $asset = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
+                    if (!$asset) jsonError("Batch operation {$i}: asset not found", 404);
+                    authorize($sessionUser, 'update_asset', $asset);
+                    $table = 'assets';
+                    $allowedFields = ['name','type','template_id','status','assigned_to','due_date','sort_order'];
+                    break;
+            }
+
+            $sets = [];
+            $params = [':id' => $targetId];
+            foreach ($allowedFields as $f) {
+                if (array_key_exists($f, $opInput)) {
+                    $sets[] = "{$f} = :{$f}";
+                    $params[":{$f}"] = $opInput[$f];
+                }
+            }
+            $prepared[$i] = ['action' => $opAction, 'table' => $table, 'sets' => $sets, 'params' => $params];
+        }
+
+        // Pass 2: apply. Any SQL error throws; the exception handler rolls back and returns 500.
         $db->exec('BEGIN TRANSACTION');
         $results = [];
-
-        foreach ($operations as $i => $op) {
-            $opAction = $op['action'] ?? null;
-            $opInput = $op['data'] ?? [];
-
-            // Only allow write actions in batch
-            $batchAllowed = ['update_job', 'update_task', 'update_asset'];
-            if (!in_array($opAction, $batchAllowed, true)) {
-                $db->exec('ROLLBACK');
-                jsonError("Batch operation {$i}: action '{$opAction}' not allowed in batch");
+        foreach ($prepared as $p) {
+            if (!empty($p['sets'])) {
+                $s = $db->prepare('UPDATE ' . $p['table'] . ' SET ' . implode(', ', $p['sets']) . ' WHERE id = :id');
+                foreach ($p['params'] as $k => $v) $s->bindValue($k, $v);
+                $s->execute();
             }
-
-            // Execute inline (simplified -- re-uses same logic)
-            try {
-                switch ($opAction) {
-                    case 'update_job':
-                        $jId = $opInput['id'] ?? null;
-                        if (!$jId) throw new Exception("Missing id in operation {$i}");
-                        $allowedFields = ['title','description','status','sort_order','all_tasks_completed_at',
-                            'client_feedback','client_feedback_by','client_feedback_at','client_feedback_status',
-                            'internal_feedback','internal_feedback_by','internal_feedback_at'];
-                        $sets = [];
-                        $params = [':id' => $jId];
-                        foreach ($allowedFields as $f) {
-                            if (array_key_exists($f, $opInput)) {
-                                $sets[] = "{$f} = :{$f}";
-                                $params[":{$f}"] = $opInput[$f];
-                            }
-                        }
-                        if (!empty($sets)) {
-                            $sql = 'UPDATE jobs SET ' . implode(', ', $sets) . ' WHERE id = :id';
-                            $s = $db->prepare($sql);
-                            foreach ($params as $k => $v) $s->bindValue($k, $v);
-                            $s->execute();
-                        }
-                        $results[] = ['success' => true, 'action' => $opAction];
-                        break;
-
-                    case 'update_task':
-                        $tId = $opInput['id'] ?? null;
-                        if (!$tId) throw new Exception("Missing id in operation {$i}");
-                        $allowedFields = ['status','content','assigned_to','character_count','file_url','file_type',
-                            'internal_feedback','feedback_by','feedback_at','sort_order','completed_at','completed_by'];
-                        $sets = [];
-                        $params = [':id' => $tId];
-                        foreach ($allowedFields as $f) {
-                            if (array_key_exists($f, $opInput)) {
-                                $sets[] = "{$f} = :{$f}";
-                                $params[":{$f}"] = $opInput[$f];
-                            }
-                        }
-                        if (!empty($sets)) {
-                            $sql = 'UPDATE tasks SET ' . implode(', ', $sets) . ' WHERE id = :id';
-                            $s = $db->prepare($sql);
-                            foreach ($params as $k => $v) $s->bindValue($k, $v);
-                            $s->execute();
-                        }
-                        $results[] = ['success' => true, 'action' => $opAction];
-                        break;
-
-                    case 'update_asset':
-                        $aId = $opInput['id'] ?? null;
-                        if (!$aId) throw new Exception("Missing id in operation {$i}");
-                        $allowedFields = ['name','type','template_id','status','assigned_to','due_date','sort_order'];
-                        $sets = [];
-                        $params = [':id' => $aId];
-                        foreach ($allowedFields as $f) {
-                            if (array_key_exists($f, $opInput)) {
-                                $sets[] = "{$f} = :{$f}";
-                                $params[":{$f}"] = $opInput[$f];
-                            }
-                        }
-                        if (!empty($sets)) {
-                            $sql = 'UPDATE assets SET ' . implode(', ', $sets) . ' WHERE id = :id';
-                            $s = $db->prepare($sql);
-                            foreach ($params as $k => $v) $s->bindValue($k, $v);
-                            $s->execute();
-                        }
-                        $results[] = ['success' => true, 'action' => $opAction];
-                        break;
-                }
-            } catch (Exception $e) {
-                $db->exec('ROLLBACK');
-                jsonError("Batch operation {$i} failed: " . $e->getMessage());
-            }
+            $results[] = ['success' => true, 'action' => $p['action']];
         }
 
         $db->exec('COMMIT');

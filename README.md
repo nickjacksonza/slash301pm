@@ -1,74 +1,17 @@
 # Slash 301 PM
 
-Project management tool for small creative agencies (5-20 people). Manages the full creative workflow from brief to delivery.
+Project management for a small creative agency: Brand > Campaign > Job, with the Brief at the centre and assets requested from a design and copy team.
 
-## Quick Start
+- **New app** (PHP 8.3, SQLite, Datastar, Tailwind): `/slash301pm/`. Account Manager role first, then the other roles.
+- **Legacy app** (React in the browser): `/slash301pm/legacy/`. It stays live until each area reaches parity. Its API is `api/api.php`.
+- **Plan and decisions:** `docs/PLAN.md`, `docs/adr/`, `docs/audit.md`. Old docs: `docs/archive/`.
 
-Open `index.html` in a browser. No build step required.
+Local development (needs PHP 8.3):
 
-## Features
+- Run the app: `php -S 127.0.0.1:8301 tools/dev-router.php`
+- Run the tests: `php tests/run.php` (one suite: `php tests/run.php integration`)
+- Build the CSS (Tailwind CLI, output `public/css/app.css` is committed): `bash tools/build-css.sh`
+- Before an SFTP deploy: `php tools/predeploy.php <live-commit> <new-commit>` prints the upload and delete checklist
 
-- **Jobs & Briefs** - Create briefs, assign teams, track status
-- **Asset Management** - Auto-naming convention, version tracking
-- **Capacity Planning** - List and calendar views, workload tracking
-- **Review Workflows** - Internal (CD/ECD) and client review stages
-- **Wiki** - Client bibles, campaign logs, templates
-- **Role-Based Permissions** - COO, Traffic, PM, Designer, etc.
-
-## Architecture
-
-```
-Frontend-only React app
-├── React 18 (via CDN)
-├── Babel (in-browser JSX compilation)
-├── localStorage (data persistence)
-└── Custom CSS (no framework)
-```
-
-## File Structure
-
-```
-/slash301pm
-├── index.html          # Entry point
-├── styles.css          # All styles
-├── src/
-│   ├── constants.js    # Statuses, roles, permissions
-│   ├── utils.js        # Utilities, asset naming
-│   ├── data.js         # State management, storage
-│   └── components/
-│       ├── ui.js       # Base components
-│       ├── views.js    # Table, Kanban
-│       ├── panels.js   # Detail panels
-│       ├── capacity.js # Capacity + calendar
-│       ├── reviews.js  # Review workflows
-│       ├── wiki.js     # Wiki system
-│       └── ...
-└── PLAN.md             # Detailed roadmap
-```
-
-## Current Status
-
-**Phase:** Early Prototype (v3.1)
-
-| Component | Status |
-|-----------|--------|
-| Core CRUD | Functional |
-| Permissions | UI-only (no auth) |
-| Storage | localStorage (5-10MB limit) |
-| Multi-user | Not implemented |
-
-## Roadmap
-
-1. **Phase 1** - Cleanup (complete)
-2. **Phase 2** - UX Polish (9→5 tabs, Dashboard)
-3. **Phase 3** - Backend (Supabase, Auth, RLS)
-4. **Phase 4** - Multi-user (real-time sync)
-
-## Known Limitations
-
-- Single-user only (localStorage)
-- No authentication
-- Permissions bypassable via DevTools
-- ~500 brief limit before quota issues
-
-See `PLAN.md` for detailed roadmap and architecture decisions.
+Deploys are manual over SFTP. Demo mode stays on until the owner flips the beta gate (see the plan).
+See `CLAUDE.md` for the working rules.
