@@ -21,5 +21,5 @@ A rebuild on Datastar (AM role first) is planned in phases; Phase 0 rewrites thi
 - **Standing rules** (enforced by `.claude/hooks/`): no push to `main`, no force-push, no `reset --hard`, no amending pushed commits, never connect to the server, leave `data/.demo_mode`, `api/seed.php` and kairosflow alone. Run `bash .claude/hooks/test-hooks.sh` after changing a guard.
 - **Deploy checklist:** `php tools/predeploy.php <live-commit> <new-commit>` prints uploads and deletes in deploy order and fails on files that must never reach the server. See the `sftp-deploy` skill.
 - **SQL for migrations** must pass `php tools/lint-sql.php` (the server runs SQLite 3.34).
-- **Subagents** (`.claude/agents/`): `scout` (Haiku, read-only lookups), `builder` (Sonnet, implementation from a written spec), `architect` (Opus, Domain, migrations, auth, PR review), `oracle` (Fable, rare checkpoint reviews).
+- **Subagents** (`.claude/agents/`): `scout` (Haiku, read-only lookups), `builder` (Sonnet, implementation from a written spec), `architect` (Opus, Domain, migrations, auth, PR review).
 - **Project skills** (`.claude/skills/`): `datastar`, `datastarui-port`, `go-portable-php`, `sqlite-migration`, `sftp-deploy`, `steward`.
