@@ -1,0 +1,7 @@
+[
+  {"name": "select", "c": "select", "args": {"id": "role", "placeholder": "Pick a role", "options": [{"value": "admin", "label": "Admin"}, {"value": "member", "label": "Member"}]}},
+  {"name": "select.value", "c": "select", "args": {"id": "role2", "name": "role", "required": true, "value": "member", "onChange": "@get('/x')", "class": "w-48", "options": [{"value": "admin", "label": "Admin"}, {"value": "member", "label": "Member", "disabled": true}]}},
+  {"name": "select.grouped", "c": "select", "args": {"id": "g", "placeholder": "Any", "options": [{"value": "a", "label": "A"}, {"value": "b", "label": "B", "group": "Team"}, {"value": "c", "label": "C", "group": "Team"}]}},
+  {"name": "select.empty", "c": "select", "args": {"id": "e", "disabled": true, "options": []}},
+  {"name": "select.open", "c": "select", "args": {"id": "o", "defaultOpen": true, "placeholder": "It's", "options": [{"value": "", "label": "None"}, {"value": "x", "label": "X"}]}}
+]

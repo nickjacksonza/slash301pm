@@ -1,0 +1,6 @@
+[
+  {"name": "tooltip.trigger", "c": "tooltip.trigger", "args": {"id": "tt-trigger", "tooltipID": "tt1"}, "children": ["Hover"]},
+  {"name": "tooltip.trigger.delay", "c": "tooltip.trigger", "args": {"tooltipID": "tt2", "delayDuration": 200, "class": "x"}, "children": ["Hover"]},
+  {"name": "tooltip.content", "c": "tooltip.content", "args": {"id": "tt1", "useAnchor": true, "side": "top", "align": "center"}, "children": ["Tip"]},
+  {"name": "tooltip.content.plain", "c": "tooltip.content", "args": {"id": "tt2"}, "children": ["Tip"]}
+]

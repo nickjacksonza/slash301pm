@@ -1,0 +1,27 @@
+<div data-signals="{&quot;confirm_delete&quot;:{&quot;open&quot;:false}}">
+  <div class="bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 fixed inset-0 z-50" data-on:click="evt.target === evt.currentTarget ? ($confirm_delete.open = false) : void 0" data-on:keydown__window="evt.key === 'Escape' &amp;&amp; $confirm_delete.open ? ($confirm_delete.open = false) : void 0" data-show="$confirm_delete.open" style="display: none;">
+    <div aria-modal="true" class="data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 fixed left-[50%] max-w-lg top-[50%] translate-x-[-50%] translate-y-[-50%] w-full z-50" data-on:click="evt.stopPropagation()" data-on:mount="evt.target.focus()" id="confirm-delete" role="dialog" tabindex="-1">
+      <div class="bg-background border max-h-[90vh] max-w-lg overflow-auto p-6 rounded-lg shadow-lg w-full">
+        <div class="flex flex-col gap-2 text-left" data-slot="dialog-header">
+          <h2 class="font-semibold leading-none text-lg" data-slot="dialog-title">
+            Delete project
+          </h2>
+          <p class="text-muted-foreground text-sm" data-slot="dialog-description">
+            This cannot be undone.
+          </p>
+        </div>
+        <div class="py-4" data-slot="dialog-content">
+          Are you sure?
+        </div>
+        <div class="flex flex-row gap-3 justify-end pt-4" data-slot="dialog-footer">
+          <button class="bg-background border border-input disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring font-medium h-10 hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center px-4 py-2 ring-offset-background rounded-md text-foreground text-sm transition-colors whitespace-nowrap" data-on:click="$confirm_delete.open = false" type="button">
+            Cancel
+          </button>
+          <button class="bg-destructive disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring font-medium h-10 hover:bg-destructive/90 inline-flex items-center justify-center px-4 py-2 ring-offset-background rounded-md text-destructive-foreground text-sm transition-colors whitespace-nowrap" data-on:click="$confirm_delete.open = false; $confirm_delete.returnValue = 'confirmed'" type="button">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

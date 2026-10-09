@@ -1,0 +1,37 @@
+<div class="relative" data-on:click__outside="$role.open &amp;&amp; !evt.target.closest('[data-select-id=&quot;role&quot;]') ? $role.open = false : null" data-select-id="role" data-signals="{&quot;role&quot;:{&quot;open&quot;:false,&quot;value&quot;:&quot;&quot;,&quot;label&quot;:&quot;&quot;,&quot;highlighted&quot;:-1,&quot;_lastValue&quot;:&quot;&quot;}}" data-slot="select">
+  <button class="[&amp;&gt;span]:line-clamp-1 bg-transparent border border-input disabled:cursor-not-allowed disabled:opacity-50 flex focus:outline-none focus:ring-1 focus:ring-ring h-9 items-center justify-between placeholder:text-muted-foreground px-3 py-2 ring-offset-background rounded-md shadow-sm text-sm w-full whitespace-nowrap" data-attr:aria-expanded="$role.open" data-on:click="$role.open ? ($role.open = false, $role.highlighted = -1) : ($role.open = true, $role.highlighted = -1)" data-on:keydown="evt.key === 'ArrowDown' &amp;&amp; !$role.open ? ($role.open = true, $role.highlighted = 0, evt.preventDefault()) : null; evt.key === 'ArrowUp' &amp;&amp; !$role.open ? ($role.open = true, $role.highlighted = document.querySelector('[data-select-id=&quot;role&quot;]').querySelectorAll('[data-select-item]:not([data-disabled])').length - 1, evt.preventDefault()) : null; evt.key === ' ' &amp;&amp; !$role.open ? ($role.open = true, $role.highlighted = -1, evt.preventDefault()) : null; evt.key === 'Enter' &amp;&amp; !$role.open ? ($role.open = true, $role.highlighted = -1, evt.preventDefault()) : null" data-slot="select-trigger" role="combobox" type="button">
+    <span class="pointer-events-none truncate" data-slot="select-value" data-text="$role.label || 'Pick a role'">
+      Pick a role
+    </span>
+    <svg class="h-4 opacity-50 shrink-0 w-4" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+      <path d="m6 9 6 6 6-6">
+      </path>
+    </svg>
+  </button>
+  <div class="bg-popover border data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md shadow-md text-popover-foreground z-50" data-on:keydown__window="evt.key === 'ArrowDown' &amp;&amp; document.querySelector('[data-select-id=&quot;role&quot;]') &amp;&amp; $role.open ? (evt.preventDefault(), evt.stopPropagation(), $role.highlighted = Math.min(document.querySelector('[data-select-id=&quot;role&quot;]').querySelectorAll('[data-select-item]:not([data-disabled])').length - 1, $role.highlighted + 1)) : null; evt.key === 'ArrowUp' &amp;&amp; document.querySelector('[data-select-id=&quot;role&quot;]') &amp;&amp; $role.open ? (evt.preventDefault(), evt.stopPropagation(), $role.highlighted = Math.max(0, $role.highlighted - 1)) : null; (evt.key === 'Enter' || evt.key === ' ') &amp;&amp; document.querySelector('[data-select-id=&quot;role&quot;]') &amp;&amp; $role.open &amp;&amp; $role.highlighted &gt;= 0 ? (evt.preventDefault(), evt.stopPropagation(), document.querySelector('[data-select-id=&quot;role&quot;]').querySelector('[data-select-item][data-index=&quot;' + $role.highlighted + '&quot;]')?.click()) : null; evt.key === 'Escape' &amp;&amp; document.querySelector('[data-select-id=&quot;role&quot;]') &amp;&amp; $role.open ? (evt.preventDefault(), evt.stopPropagation(), $role.open = false) : null; evt.key === 'Tab' &amp;&amp; document.querySelector('[data-select-id=&quot;role&quot;]') &amp;&amp; $role.open ? $role.open = false : null" data-show="$role.open" data-slot="select-content" role="listbox" style="position: absolute; top: 100%; left: 0; right: 0; z-index: 50; display: none;" tabindex="-1">
+    <div class="p-1">
+      <div class="cursor-default data-[disabled]:opacity-50 data-[disabled]:pointer-events-none flex focus:bg-accent focus:text-accent-foreground items-center outline-none pl-2 pr-8 py-1.5 relative rounded-sm select-none text-sm w-full" data-class="{'bg-accent': $role.highlighted === 0, 'text-accent-foreground': $role.highlighted === 0}" data-index="0" data-on:click="$role.value = &quot;admin&quot;; $role.label = evt.currentTarget.querySelector('.select-item-text')?.textContent.trim() || ''; $role.open = false" data-on:keydown="(evt.key === 'Enter' || evt.key === ' ') ? (evt.preventDefault(), evt.target.click()) : null" data-select-item data-slot="select-item" data-value="admin" role="option" tabindex="0">
+        <span class="absolute flex h-3.5 items-center justify-center right-2 w-3.5">
+          <svg class="h-4 w-4" data-show="$role.value === &quot;admin&quot;" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 6 9 17l-5-5">
+            </path>
+          </svg>
+        </span>
+        <span class="select-item-text truncate">
+          Admin
+        </span>
+      </div>
+      <div class="cursor-default data-[disabled]:opacity-50 data-[disabled]:pointer-events-none flex focus:bg-accent focus:text-accent-foreground items-center outline-none pl-2 pr-8 py-1.5 relative rounded-sm select-none text-sm w-full" data-class="{'bg-accent': $role.highlighted === 1, 'text-accent-foreground': $role.highlighted === 1}" data-index="1" data-on:click="$role.value = &quot;member&quot;; $role.label = evt.currentTarget.querySelector('.select-item-text')?.textContent.trim() || ''; $role.open = false" data-on:keydown="(evt.key === 'Enter' || evt.key === ' ') ? (evt.preventDefault(), evt.target.click()) : null" data-select-item data-slot="select-item" data-value="member" role="option" tabindex="0">
+        <span class="absolute flex h-3.5 items-center justify-center right-2 w-3.5">
+          <svg class="h-4 w-4" data-show="$role.value === &quot;member&quot;" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 6 9 17l-5-5">
+            </path>
+          </svg>
+        </span>
+        <span class="select-item-text truncate">
+          Member
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,15 @@
+[
+  {"name": "input", "c": "input", "args": {"type": "text", "name": "title", "id": "title", "placeholder": "Task title"}},
+  {"name": "input.email", "c": "input", "args": {"type": "email", "name": "email", "id": "email", "placeholder": "you@example.com", "required": true}},
+  {"name": "input.disabled", "c": "input", "args": {"type": "text", "name": "x", "value": "Locked", "disabled": true}},
+  {"name": "input.formbound", "c": "input", "args": {"type": "text", "name": "title", "id": "task-title", "formID": "task-form"}},
+  {"name": "input.extra", "c": "input", "args": {"type": "search", "class": "max-w-xs", "attributes": {"data-bind": "$search", "autocomplete": "off"}}},
+  {"name": "input.notype", "c": "input", "args": {"name": "q"}},
+  {"name": "textarea", "c": "textarea", "args": {"name": "notes", "id": "notes", "placeholder": "Notes", "rows": 3}},
+  {"name": "textarea.value", "c": "textarea", "args": {"name": "notes", "value": "Hello", "required": true, "borderless": true, "formID": "brief-form"}},
+  {"name": "textarea.default", "c": "textarea", "args": {}},
+  {"name": "label", "c": "label", "args": {"for": "title"}, "children": ["Title"]},
+  {"name": "label.plain", "c": "label", "args": {"class": "mb-1"}, "children": ["Title"]},
+  {"name": "checkbox", "c": "checkbox", "args": {"id": "agree", "name": "agree", "checked": true}},
+  {"name": "checkbox.off", "c": "checkbox", "args": {"id": "task-done", "name": "done", "disabled": true, "className": "mt-1"}}
+]
