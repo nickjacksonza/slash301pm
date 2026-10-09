@@ -1,0 +1,1765 @@
+{
+    "version": 1,
+    "roles": [
+        "COO",
+        "ECD",
+        "AM",
+        "Traffic",
+        "PM",
+        "Producer",
+        "CD",
+        "Copywriter",
+        "Designer",
+        "QA",
+        "Developer",
+        "SEO",
+        "Social",
+        "Client"
+    ],
+    "values": {
+        "allow": "Any matching entity.",
+        "deny": "Never. Policy returns a reason.",
+        "assigned": "The actor holds a job_assignments row on the job (any role_on_job), or is assets.assigned_to / tasks.assigned_to on an asset of the job. Conditions narrow it further (for example CD slot only).",
+        "creator": "briefs.created_by (jobs.created_by for legacy jobs) is the actor.",
+        "assigned_or_creator": "assigned or creator.",
+        "own_brand": "The job campaign brand_id equals the Client users.brand_id."
+    },
+    "stage_sets": {
+        "active": [
+            "briefed",
+            "in_progress",
+            "in_review",
+            "approved_internal",
+            "approved_client"
+        ],
+        "workable": [
+            "draft",
+            "briefed",
+            "in_progress",
+            "in_review",
+            "approved_internal",
+            "approved_client"
+        ],
+        "open": [
+            "draft",
+            "briefed",
+            "in_progress",
+            "in_review",
+            "approved_internal",
+            "approved_client",
+            "waiting",
+            "on_hold"
+        ],
+        "closed": [
+            "done",
+            "archived",
+            "cancelled"
+        ]
+    },
+    "actions": [
+        {
+            "id": "create_brief",
+            "section": "Brief",
+            "phase": "beta",
+            "description": "Create a new job with a draft brief (stage draft, version 0.x). The creator is put in the AM slot when they hold the AM role.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "deny",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "api/permissions.php:81-83 allows every manager including Traffic; src/constants.js:93 Traffic canCreateJobs true, :121 ECD false, :164 Producer false."
+        },
+        {
+            "id": "view_brief_draft",
+            "section": "Brief",
+            "phase": "beta",
+            "description": "Read a draft brief (0.x) or the unsent working copy of a sent brief.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "Legacy has no drafts: a brief is a create-only modal."
+        },
+        {
+            "id": "view_brief_sent",
+            "section": "Brief",
+            "phase": "beta",
+            "description": "Read the latest sent brief version, its version list and diffs.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "allow",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "allow",
+                "Copywriter": "assigned",
+                "Designer": "assigned",
+                "QA": "assigned",
+                "Developer": "assigned",
+                "SEO": "assigned",
+                "Social": "assigned",
+                "Client": "own_brand"
+            },
+            "conditions": {
+                "Client": "Client-safe projection only (title, deliverables, dates, mandatories, references). Never budget, hours, team, internal notes, version diffs."
+            }
+        },
+        {
+            "id": "edit_brief_draft",
+            "section": "Brief",
+            "phase": "beta",
+            "description": "Edit any brief field while the brief is a draft: title, campaign, dates, creative_direction, mandatories, references, brief_pdf_url, server_link, budget, hours_estimate, deliverables.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "edit_brief_sent",
+            "section": "Brief",
+            "phase": "beta",
+            "description": "Edit the working copy of a sent brief. Creatives keep seeing the last sent version; has_unsent_changes is set.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage not in done, archived, cancelled."
+            }
+        },
+        {
+            "id": "send_brief",
+            "section": "Brief",
+            "phase": "beta",
+            "description": "First send to Traffic: creates v1.0.0, expands deliverables into assets, writes legacy columns, moves draft to briefed.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage draft; BriefRules pass; a Traffic user is assigned."
+            }
+        },
+        {
+            "id": "send_brief_update",
+            "section": "Brief",
+            "phase": "beta",
+            "description": "Send the working copy as a new version (major, minor or patch) and notify the team.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "has_unsent_changes; stage not in done, archived, cancelled; started assets are never cancelled."
+            }
+        },
+        {
+            "id": "recall_brief",
+            "section": "Brief",
+            "phase": "beta",
+            "description": "Pull a sent brief back to draft (briefed to draft).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage briefed and no asset has started."
+            }
+        },
+        {
+            "id": "assign_traffic",
+            "section": "Assignments",
+            "phase": "beta",
+            "description": "Set or change the Traffic person on a job.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "assign_creatives",
+            "section": "Assignments",
+            "phase": "beta",
+            "description": "Set or change the CD, Copywriter, Designer, QA, Developer, SEO and Social slots on a job, and the assignee of each asset.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "AM": "Only while stage is draft, as a suggestion Traffic can change.",
+                "PM": "Only while stage is draft.",
+                "Producer": "Only while stage is draft."
+            },
+            "legacy": "api/permissions.php:85-91 lets any manager and any assigned creative rewrite every assignment through update_job (audit M8)."
+        },
+        {
+            "id": "assign_account_roles",
+            "section": "Assignments",
+            "phase": "beta",
+            "description": "Set or change the AM, PM, Producer and Client contact slots on a job.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "manage_tasks",
+            "section": "Assets and tasks",
+            "phase": "later",
+            "description": "Create, split, reorder or remove tasks under a job or asset (not deliverables, which come from the brief).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "edit_asset_schedule",
+            "section": "Assets and tasks",
+            "phase": "later",
+            "description": "Change an asset internal due date and order.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "edit_asset_work",
+            "section": "Assets and tasks",
+            "phase": "later",
+            "description": "Edit the work on an asset or task: content, file_url, file_type, character_count, working status (Not Started, In Progress, Waiting).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "assigned",
+                "Copywriter": "assigned",
+                "Designer": "assigned",
+                "QA": "deny",
+                "Developer": "assigned",
+                "SEO": "assigned",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "Copywriter": "assets.assigned_to or tasks.assigned_to is the actor.",
+                "Designer": "assets.assigned_to or tasks.assigned_to is the actor.",
+                "Developer": "assets.assigned_to or tasks.assigned_to is the actor.",
+                "SEO": "assets.assigned_to or tasks.assigned_to is the actor.",
+                "Social": "assets.assigned_to or tasks.assigned_to is the actor.",
+                "CD": "Holds the CD slot on the job."
+            },
+            "legacy": "api/permissions.php:101-107 lets every manager (AM, PM, Traffic, Producer) edit any asset."
+        },
+        {
+            "id": "edit_job_field:title",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of title. Job title.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief-owned field: after first send the edit goes to the working copy and needs Send update."
+            },
+            "legacy": "api/api.php:831-840: any assigned creative can edit the title (audit M8)."
+        },
+        {
+            "id": "edit_job_field:campaign_id",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of campaign_id. Campaign the job belongs to (same brand only).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief-owned field: after first send the edit goes to the working copy and needs Send update."
+            }
+        },
+        {
+            "id": "edit_job_field:description",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of description. Short job description.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief-owned field: after first send the edit goes to the working copy and needs Send update."
+            }
+        },
+        {
+            "id": "edit_job_field:due_date",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of due_date. Client delivery date (briefs.due_date, mirrored to jobs.delivery_date).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief-owned field: after first send the edit goes to the working copy and needs Send update."
+            }
+        },
+        {
+            "id": "edit_job_field:brief_date",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of brief_date. Date the brief was received.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief-owned field: after first send the edit goes to the working copy and needs Send update."
+            }
+        },
+        {
+            "id": "edit_job_field:first_go_live",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of first_go_live. First go-live date.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief-owned field: after first send the edit goes to the working copy and needs Send update."
+            }
+        },
+        {
+            "id": "edit_job_field:last_go_live",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of last_go_live. Last go-live date.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief-owned field: after first send the edit goes to the working copy and needs Send update."
+            }
+        },
+        {
+            "id": "edit_job_field:hours_estimate",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of hours_estimate. Estimated hours (internal).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief-owned field: after first send the edit goes to the working copy and needs Send update."
+            },
+            "legacy": "api/api.php:831-840 update_job whitelist lets any manager and any assigned creative edit it."
+        },
+        {
+            "id": "edit_job_field:budget",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of budget. Budget (internal, money).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief-owned field: after first send the edit goes to the working copy and needs Send update."
+            }
+        },
+        {
+            "id": "edit_job_field:waiting_on",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of who the job is waiting on (user id or \"client\" or \"supplier\").",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage is waiting."
+            }
+        },
+        {
+            "id": "edit_job_field:waiting_reason",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Grid edit of the waiting reason (internal text, never shown to clients).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage is waiting."
+            }
+        },
+        {
+            "id": "edit_job_field:sort_order",
+            "section": "Job fields",
+            "phase": "beta",
+            "description": "Board and grid manual order.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "transition:draft->briefed",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Only through send_brief.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Same preconditions as send_brief."
+            }
+        },
+        {
+            "id": "transition:briefed->draft",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Only through recall_brief.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "No asset has started."
+            }
+        },
+        {
+            "id": "transition:briefed->in_progress",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Work starts: Traffic confirms the team, or a creative starts an assigned asset.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "assigned",
+                "Designer": "assigned",
+                "QA": "deny",
+                "Developer": "assigned",
+                "SEO": "assigned",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "At least one CD or creative is assigned.",
+                "Copywriter": "Implicit only: fires when they start an assigned asset.",
+                "Designer": "Implicit only.",
+                "Developer": "Implicit only.",
+                "SEO": "Implicit only.",
+                "Social": "Implicit only."
+            }
+        },
+        {
+            "id": "transition:in_progress->in_review",
+            "section": "Transitions",
+            "phase": "reviews",
+            "description": "Job goes to internal review.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "assigned",
+                "Designer": "assigned",
+                "QA": "deny",
+                "Developer": "assigned",
+                "SEO": "assigned",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Every non-cancelled asset is submitted.",
+                "Copywriter": "Implicit only: fires when the last required asset is submitted.",
+                "Designer": "Implicit only.",
+                "Developer": "Implicit only.",
+                "SEO": "Implicit only.",
+                "Social": "Implicit only."
+            }
+        },
+        {
+            "id": "transition:in_review->in_progress",
+            "section": "Transitions",
+            "phase": "reviews",
+            "description": "Sent back with internal feedback.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "assigned",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Feedback text is required."
+            },
+            "legacy": "api/permissions.php:130-136 also lets every manager send back."
+        },
+        {
+            "id": "transition:in_review->approved_internal",
+            "section": "Transitions",
+            "phase": "reviews",
+            "description": "Internal approval. Records the brief version checked.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "CD": "Holds the CD slot on the job."
+            },
+            "legacy": "api/permissions.php:118-121 lets any CD approve any job; src/data.js:752-763 auto-approves when a CD or ECD completes the last task."
+        },
+        {
+            "id": "transition:approved_internal->in_progress",
+            "section": "Transitions",
+            "phase": "reviews",
+            "description": "Reopen before or after it went to the client (AM not happy, or client feedback).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "own_brand"
+            },
+            "conditions": {
+                "Client": "Implicit only, through give_feedback_client after send_to_client.",
+                "*": "Feedback or reason text is required."
+            }
+        },
+        {
+            "id": "transition:approved_internal->approved_client",
+            "section": "Transitions",
+            "phase": "client_portal",
+            "description": "Client sign-off.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "own_brand"
+            },
+            "conditions": {
+                "Client": "users.client_signoff = 1 and the job was sent to the client.",
+                "AM": "On behalf: must name the client contact and how they approved.",
+                "PM": "On behalf, as AM.",
+                "Producer": "On behalf, as AM.",
+                "COO": "On behalf, as AM.",
+                "ECD": "On behalf, as AM."
+            },
+            "legacy": "api/permissions.php:123-128: any own-brand Client or admin; no sign-off distinction; managers refused."
+        },
+        {
+            "id": "transition:approved_client->in_progress",
+            "section": "Transitions",
+            "phase": "client_portal",
+            "description": "Client changes their mind after sign-off.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Reason required; client approval fields are cleared."
+            }
+        },
+        {
+            "id": "transition:approved_client->done",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Mark as done.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "No legacy path to Done (PLAN-v7.4 Q2)."
+        },
+        {
+            "id": "transition:workable->waiting",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Put on waiting with waiting_on and a reason. Workable = draft, briefed, in_progress, in_review, approved_internal, approved_client.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "waiting_on and waiting_reason required.",
+                "Traffic": "Not from draft (cannot see drafts).",
+                "CD": "Not from draft."
+            }
+        },
+        {
+            "id": "transition:waiting->resume",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Resume to the stage it was in before waiting.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Returns to the stored resume stage."
+            }
+        },
+        {
+            "id": "transition:workable->on_hold",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Put on hold (commercial or client pause).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Reason required.",
+                "Traffic": "Not from draft."
+            }
+        },
+        {
+            "id": "transition:on_hold->resume",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Resume to the stage it was in before the hold.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "transition:open->cancelled",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Cancel. Open = workable plus waiting and on_hold.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Reason required; started assets are kept and flagged."
+            },
+            "legacy": "Legacy has no cancel action (PLAN-v7.4 gap 3)."
+        },
+        {
+            "id": "transition:done->archived",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Archive a done job.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "transition:cancelled->archived",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Archive a cancelled job.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "transition:done->in_progress",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Reopen a done job.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Reason required."
+            }
+        },
+        {
+            "id": "transition:archived->restore",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Unarchive to the stage it was archived from (done or cancelled).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "transition:cancelled->draft",
+            "section": "Transitions",
+            "phase": "beta",
+            "description": "Reinstate a cancelled job as a draft (version history kept).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "submit_for_review",
+            "section": "Reviews",
+            "phase": "reviews",
+            "description": "Submit an asset or task for internal review.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "assigned",
+                "Copywriter": "assigned",
+                "Designer": "assigned",
+                "QA": "deny",
+                "Developer": "assigned",
+                "SEO": "assigned",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Asset is assigned to the actor (CD: CD slot on the job)."
+            }
+        },
+        {
+            "id": "qa_signoff",
+            "section": "Reviews",
+            "phase": "reviews",
+            "description": "Record a QA pass or fail on a submitted asset (advisory unless the owner makes QA a gate).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "assigned",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "Legacy QA has no action at all."
+        },
+        {
+            "id": "approve_internal",
+            "section": "Reviews",
+            "phase": "reviews",
+            "description": "Approve a job or asset internally, recording the brief version checked.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "CD": "Holds the CD slot on the job; not their own submitted asset unless no other CD or ECD exists."
+            },
+            "legacy": "api/permissions.php:118-121: any CD, not the assigned CD."
+        },
+        {
+            "id": "give_feedback_internal",
+            "section": "Reviews",
+            "phase": "reviews",
+            "description": "Leave internal review feedback. Only CD, ECD, COO and QA can also send the job back (see transition).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "assigned",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "route_feedback",
+            "section": "Reviews",
+            "phase": "reviews",
+            "description": "Assign a piece of client or internal feedback to a person to action.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "src/components/reviews.js:25 FEEDBACK_ASSIGNABLE_ROLES omits CD, QA, AM, Developer, SEO, Social."
+        },
+        {
+            "id": "send_to_client",
+            "section": "Reviews",
+            "phase": "client_portal",
+            "description": "Send an internally approved job to the client contact, recording the brief version and assets sent.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage approved_internal; a Client contact is assigned."
+            },
+            "legacy": "No legacy action; the client queue shows any Approved (Internal) or In Review job (src/components/operations.js:178)."
+        },
+        {
+            "id": "approve_client",
+            "section": "Reviews",
+            "phase": "client_portal",
+            "description": "Give client approval.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "own_brand"
+            },
+            "conditions": {
+                "Client": "users.client_signoff = 1.",
+                "AM": "On behalf, with contact and evidence note.",
+                "PM": "On behalf.",
+                "Producer": "On behalf.",
+                "COO": "On behalf.",
+                "ECD": "On behalf."
+            },
+            "legacy": "api/permissions.php:123-128: Client of the brand or admin only."
+        },
+        {
+            "id": "give_feedback_client",
+            "section": "Reviews",
+            "phase": "client_portal",
+            "description": "Give client feedback (moves approved_internal back to in_progress).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "own_brand"
+            },
+            "conditions": {
+                "AM": "On behalf: must name the client contact.",
+                "PM": "On behalf.",
+                "Producer": "On behalf.",
+                "COO": "On behalf.",
+                "ECD": "On behalf.",
+                "Client": "Job was sent to the client."
+            },
+            "legacy": "api/permissions.php:130-136 lets every manager post client feedback with no on-behalf record; is_internal comes from the body (api/api.php:1201)."
+        },
+        {
+            "id": "recommend_signoff",
+            "section": "Reviews",
+            "phase": "client_portal",
+            "description": "A client contact without sign-off rights marks sent work as ready for the Brand Director.",
+            "decisions": {
+                "COO": "deny",
+                "ECD": "deny",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "own_brand"
+            },
+            "conditions": {
+                "Client": "users.client_signoff = 0 and the job was sent to the client."
+            },
+            "legacy": "No legacy equivalent."
+        },
+        {
+            "id": "comment",
+            "section": "Reviews",
+            "phase": "later",
+            "description": "Comment and @mention on a job thread (internal only).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "allow",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "allow",
+                "Copywriter": "assigned",
+                "Designer": "assigned",
+                "QA": "assigned",
+                "Developer": "assigned",
+                "SEO": "assigned",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "legacy": "No comments in legacy."
+        },
+        {
+            "id": "manage_campaign",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "Create, rename or close a campaign under a brand.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "deny",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "No add_campaign endpoint exists; legacy creates campaigns only in localStorage."
+        },
+        {
+            "id": "manage_brand",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "Create or edit a brand (name, prefix).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "manage_users",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "Create users, change roles, deactivate, force password reset, set client_signoff.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "api/permissions.php:109-112 COO only; src/constants.js:124 ECD canEditPeople false."
+        },
+        {
+            "id": "admin_system",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "Open /admin/system (migration level, backups, SQLite version, demo mode).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "toggle_demo_mode",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "Turn demo mode on or off.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "deny",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "api/api.php:343 COO only (kept)."
+        },
+        {
+            "id": "view_all_jobs",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "See jobs in the grid, board and search. assigned = only jobs with an assignment; own_brand = client-visible jobs of their brand.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "allow",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "allow",
+                "Copywriter": "assigned",
+                "Designer": "assigned",
+                "QA": "assigned",
+                "Developer": "assigned",
+                "SEO": "assigned",
+                "Social": "assigned",
+                "Client": "own_brand"
+            },
+            "conditions": {
+                "Client": "Client-safe projection; drafts and internal-only stages show only as a coarse \"In production\" line."
+            },
+            "legacy": "api/api.php:438-520 get_jobs returns every job to creatives (audit M7); get_job refuses unassigned (api/permissions.php:138-148)."
+        },
+        {
+            "id": "view_budget",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "See budget values.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "view_hours",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "See hours estimates.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "allow",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "assigned",
+                "Copywriter": "assigned",
+                "Designer": "assigned",
+                "QA": "assigned",
+                "Developer": "assigned",
+                "SEO": "assigned",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "legacy": "api/api.php:42-45 hides hours_estimate from clients only."
+        },
+        {
+            "id": "view_internal_feedback",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "See internal feedback, waiting reasons and the activity log.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "allow",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "allow",
+                "Copywriter": "assigned",
+                "Designer": "assigned",
+                "QA": "assigned",
+                "Developer": "assigned",
+                "SEO": "assigned",
+                "Social": "assigned",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "view_staff_emails",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "See agency staff email addresses and usernames.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "allow",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "allow",
+                "Copywriter": "allow",
+                "Designer": "allow",
+                "QA": "allow",
+                "Developer": "allow",
+                "SEO": "allow",
+                "Social": "allow",
+                "Client": "deny"
+            },
+            "conditions": {
+                "Client": "Own email only."
+            },
+            "legacy": "Hotfixed for clients in api/api.php:363-400."
+        },
+        {
+            "id": "view_capacity",
+            "section": "Organisation and visibility",
+            "phase": "later",
+            "description": "See the capacity view. assigned = own row only.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "allow",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "allow",
+                "Copywriter": "assigned",
+                "Designer": "assigned",
+                "QA": "assigned",
+                "Developer": "assigned",
+                "SEO": "assigned",
+                "Social": "assigned",
+                "Client": "deny"
+            }
+        },
+        {
+            "id": "view_wiki",
+            "section": "Organisation and visibility",
+            "phase": "later",
+            "description": "Read wiki pages.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "allow",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "allow",
+                "Copywriter": "allow",
+                "Designer": "allow",
+                "QA": "allow",
+                "Developer": "allow",
+                "SEO": "allow",
+                "Social": "allow",
+                "Client": "own_brand"
+            },
+            "conditions": {
+                "Client": "Pages linked to own-brand jobs or campaigns."
+            }
+        },
+        {
+            "id": "edit_wiki",
+            "section": "Organisation and visibility",
+            "phase": "later",
+            "description": "Create or edit wiki pages (sanitised server-side).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "allow",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "src/components/wiki.js shows the editor to everyone; api/permissions.php:114-116 refuses non-managers."
+        }
+    ],
+    "notes": "Source of truth for Domain/Policy table tests; mirrors docs/roles.md section 4. A decision is necessary but not sufficient: the stage preconditions in \"conditions\" (key \"*\" applies to every role) and the read rule (view_* actions) must also pass. Actor and every *_by field come from the session. \"phase\" says when the action is first needed: beta (AM-first beta), reviews, client_portal, later. Condition texts that start with \"On behalf\" mean the activity log records actor and the named client contact. Client sign-off uses a proposed users.client_signoff column (additive), not a new role value, because users.role has a CHECK (api/db.php:70)."
+}
