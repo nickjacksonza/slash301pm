@@ -6,7 +6,12 @@ declare(strict_types=1);
 
 use App\Http\Handlers\AccountHandlers;
 use App\Http\Handlers\AdminUserHandlers;
+use App\Http\Handlers\AssignmentHandlers;
 use App\Http\Handlers\AuthHandlers;
+use App\Http\Handlers\BriefHandlers;
+use App\Http\Handlers\BriefLineHandlers;
+use App\Http\Handlers\CampaignHandlers;
+use App\Http\Handlers\JobHandlers;
 use App\Http\Handlers\SpikeHandlers;
 use App\Http\Handlers\SystemHandlers;
 
@@ -31,6 +36,28 @@ return [
 
     ['GET /admin/system', [SystemHandlers::class, 'adminSystem']],
     ['POST /admin/system/migrate', [SystemHandlers::class, 'migrate']],
+
+    ['GET /campaigns', [CampaignHandlers::class, 'list']],
+    ['POST /campaigns', [CampaignHandlers::class, 'create']],
+
+    ['GET /briefs', [BriefHandlers::class, 'mine']],
+    ['POST /briefs', [BriefHandlers::class, 'create']],
+    ['GET /jobs/{id}/brief', [BriefHandlers::class, 'editor']],
+    ['PATCH /jobs/{id}/brief', [BriefHandlers::class, 'autosave']],
+    ['GET /jobs/{id}/brief/send', [BriefHandlers::class, 'sendDialog']],
+    ['POST /jobs/{id}/brief/send', [BriefHandlers::class, 'send']],
+    ['GET /jobs/{id}/brief/update', [BriefHandlers::class, 'updateDialog']],
+    ['POST /jobs/{id}/brief/update', [BriefHandlers::class, 'sendUpdate']],
+    ['GET /jobs/{id}/brief/versions', [BriefHandlers::class, 'versions']],
+    ['GET /jobs/{id}/brief/versions/{v}', [BriefHandlers::class, 'version']],
+    ['GET /jobs/{id}/brief/print', [BriefHandlers::class, 'print']],
+    ['POST /jobs/{id}/brief/assets', [BriefLineHandlers::class, 'add']],
+    ['POST /jobs/{id}/brief/assets/order', [BriefLineHandlers::class, 'reorder']],
+    ['PATCH /jobs/{id}/brief/assets/{aid}', [BriefLineHandlers::class, 'update']],
+    ['DELETE /jobs/{id}/brief/assets/{aid}', [BriefLineHandlers::class, 'remove']],
+    ['POST /jobs/{id}/assignments/{role}', [AssignmentHandlers::class, 'set']],
+    ['POST /jobs/{id}/claim-am', [JobHandlers::class, 'claimAm']],
+    ['POST /jobs/{id}/transition', [JobHandlers::class, 'transition']],
 
     ['GET /system/spike', [SpikeHandlers::class, 'page']],
     ['GET /system/spike/patch/{mode}', [SpikeHandlers::class, 'patch']],

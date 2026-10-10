@@ -5,7 +5,15 @@ namespace App\Http;
 
 use App\Clock\Clock;
 use App\Config\Config;
+use App\Store\ActivityStore;
+use App\Store\AssetStore;
+use App\Store\AssignmentStore;
+use App\Store\BrandStore;
+use App\Store\BriefAssetStore;
+use App\Store\BriefStore;
+use App\Store\CampaignStore;
 use App\Store\Db;
+use App\Store\JobStore;
 use App\Store\LoginAttemptStore;
 use App\Store\Migrator;
 use App\Store\UserStore;
@@ -20,11 +28,22 @@ final class Deps
         public readonly LoginAttemptStore $loginAttempts,
         public readonly Migrator $migrator,
         public readonly Clock $clock,
+        public readonly BrandStore $brands,
+        public readonly CampaignStore $campaigns,
+        public readonly JobStore $jobs,
+        public readonly BriefStore $briefs,
+        public readonly BriefAssetStore $briefAssets,
+        public readonly AssignmentStore $assignments,
+        public readonly AssetStore $assets,
+        public readonly ActivityStore $activity,
     ) {}
 
     public static function build(Config $config, Clock $clock, string $driver = 'auto'): self
     {
         $db = Db::open($config->dbPath, $driver);
+        $activity = new ActivityStore($db);
+        $assets = new AssetStore($db);
+        $briefs = new BriefStore($db, $activity, $assets);
         return new self(
             $config,
             $db,
@@ -32,6 +51,14 @@ final class Deps
             new LoginAttemptStore($db),
             new Migrator($db, $config->migrationsDir(), $config->backupsDir(), $config->migrateLockPath(), $config->migrateFailurePath(), $clock),
             $clock,
+            new BrandStore($db),
+            new CampaignStore($db, $activity),
+            new JobStore($db, $activity),
+            $briefs,
+            new BriefAssetStore($db, $briefs),
+            new AssignmentStore($db, $activity),
+            $assets,
+            $activity,
         );
     }
 }

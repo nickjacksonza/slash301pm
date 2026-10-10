@@ -19,9 +19,10 @@ final class Shell
         $user = $r->user();
         $nav = [
             new NavItem('today', 'Today', url('/today'), true),
+            new NavItem('briefs', 'Briefs', url('/briefs'), true),
             new NavItem('jobs', 'Jobs', url('/jobs'), false),
             new NavItem('board', 'Board', url('/jobs/board'), false),
-            new NavItem('campaigns', 'Campaigns', url('/campaigns'), false),
+            new NavItem('campaigns', 'Campaigns', url('/campaigns'), true),
         ];
         $admin = [];
         if ($user !== null && Policy::isAdmin($user)) {

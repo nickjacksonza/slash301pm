@@ -36,8 +36,11 @@ function mt_root(): string
 return [
     'fresh install builds exactly the legacy api/db.php schema' => function (): void {
         $dir = ts_temp_dir();
+        // 0001 alone must equal the legacy schema; later files are checked by the rehearsal tests.
+        mkdir($dir . '/only1');
+        copy(mt_root() . '/migrations/0001_baseline.sql', $dir . '/only1/0001_baseline.sql');
         $db = Db::open($dir . '/new.db');
-        $m = mt_migrator($db, $dir, mt_root() . '/migrations');
+        $m = mt_migrator($db, $dir, $dir . '/only1');
         t_eq(0, $m->currentVersion());
         $res = $m->run();
         t_true($res->ok, $res->error);
@@ -60,6 +63,8 @@ return [
         $first = $m->run();
         t_true($first->backupPath !== null && is_file($first->backupPath), 'backup written');
         t_true(str_starts_with(basename((string) $first->backupPath), 'pre-0001-20261009-100000'), basename((string) $first->backupPath));
+        $latest = $m->latestVersion();
+        t_eq(range(1, $latest), $first->applied, 'every file applied in order');
         $second = $m->run();
         t_true($second->ok);
         t_eq([], $second->applied);
@@ -67,7 +72,7 @@ return [
         t_eq(1, count($m->backups()));
         $st = $m->status();
         t_true($st->isCurrent());
-        t_eq(1, count($st->applied));
+        t_eq($latest, count($st->applied));
         t_eq('baseline', $st->applied[0]->name);
         t_eq([], $st->modified);
     },

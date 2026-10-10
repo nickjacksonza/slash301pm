@@ -52,6 +52,16 @@ final class UserStore
         return $out;
     }
 
+    /** Active users holding a role, by name (team pickers). @return list<User> */
+    public function listActiveByRole(Role $role): array
+    {
+        $out = [];
+        foreach ($this->db->query('SELECT ' . self::COLS . ' FROM users WHERE is_active = 1 AND role = :r ORDER BY name', ['r' => $role->value]) as $row) {
+            $out[] = User::fromRow($row);
+        }
+        return $out;
+    }
+
     public function usernameTaken(string $username): bool
     {
         return $this->db->scalar('SELECT 1 FROM users WHERE username = :u', ['u' => $username]) !== null;

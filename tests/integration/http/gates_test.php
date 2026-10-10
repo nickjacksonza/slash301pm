@@ -112,14 +112,14 @@ return [
         t_eq(200, $h->status());
         $j = json_decode(ts_body($h), true);
         t_eq(true, $j['ok']);
-        t_eq(1, $j['migration']['current']);
+        t_eq($d->migrator->latestVersion(), $j['migration']['current']);
         t_eq(false, $j['demo_mode']);
         t_true($s->data === [], 'healthz starts no session');
         $am = gt_session($d, Role::AM);
         t_eq(403, (ts_app($am))(ts_request('GET', '/admin/system'), $d)->status());
         $coo = gt_session($d, Role::COO, 'boss');
         $page = ts_body((ts_app($coo))(ts_request('GET', '/admin/system'), $d));
-        t_contains('id="migration-level">1</strong>', $page);
+        t_contains('id="migration-level">' . $d->migrator->latestVersion() . '</strong>', $page);
         t_contains('pre-0001-', $page);
         t_contains('matches public/js/datastar.js.sha256', $page);
     },
