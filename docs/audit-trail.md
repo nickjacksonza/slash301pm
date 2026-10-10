@@ -12,7 +12,7 @@ Every state-changing request in the new app writes a row in `activity` (migratio
 | `PATCH /jobs/{id}/brief/assets/{aid}` | `deliverable_updated` | brief_asset | Coalesced like autosave. |
 | `POST /jobs/{id}/brief/assets/order` | `deliverables_reordered` | brief | |
 | `DELETE /jobs/{id}/brief/assets/{aid}` | `deliverable_removed` | brief_asset | |
-| `POST /jobs/{id}/assignments/{role}` | `assigned_to_job` / `unassigned_from_job` | job | |
+| `POST /jobs/{id}/assignments/{role}` | `assigned_to_job` / `unassigned_from_job` (`social_assigned` for the Social slot) | job | |
 | `POST /jobs/{id}/brief/send` | `brief_sent` (+ `deliverable_cancelled`, `started_asset_conflict`) | brief | |
 | `POST /jobs/{id}/brief/update` | `brief_updated` (+ the same extras) | brief | |
 | `PATCH /jobs/{id}/fields/{field}` | `brief_edited`, `job_waiting_updated`, `assigned_to_job` or `unassigned_from_job` | brief or job | Depends on the cell: brief fields, waiting fields or team slots. |
@@ -25,6 +25,18 @@ Every state-changing request in the new app writes a row in `activity` (migratio
 | `POST /admin/users/{id}/deactivate` | `user_deactivated` | user | |
 | `POST /admin/users/{id}/activate` | `user_activated` | user | |
 | `POST /account/password` | `password_changed` | user | |
+| `POST /social/jobs/{id}/ready` | `publication_ready` (`data.scope = brief`), plus the job's stage verb (`job_ready_to_schedule`, `data.via = social`) | job | Social publishing. N34: `data.recipients` = AM (or creator), PM and Producer slot holders. |
+| `POST /social/assets/{aid}/platforms/{platform}` | `publication_added` | publication | A new post record (status `checking`). |
+| `DELETE /social/publications/{pid}` | `publication_removed` | publication | Only while still being checked. |
+| `PATCH /social/publications/{pid}/checklist` | `publication_checked` | publication | Coalesced per person and post within 5 minutes. |
+| `PATCH /social/publications/{pid}/schedule` | `publication_rescheduled` | publication | |
+| `PATCH /social/publications/{pid}/live-link` | `publication_link_added`, or `publication_link_changed` after Live | publication | After Live: N39 to Social on the job and the AM. |
+| `PATCH /social/publications/{pid}/promoted` | `publication_promoted` | publication | N37 to the AM when the tick changes. |
+| `POST /social/publications/{pid}/ready` | `publication_ready` (+ job stage verb when the job moves) | publication | N34. |
+| `POST /social/publications/{pid}/scheduled` | `publication_scheduled` (+ `job_schedule`) | publication | N35 to the AM. |
+| `POST /social/publications/{pid}/live` | `publication_live` (+ `job_go_live`) | publication | N36 to the AM; `data.live_url`. |
+| `POST /social/publications/{pid}/archive` | `publication_archived` | publication | N38 to the AM; reason required. |
+| `POST /social/publications/{pid}/reopen` | `publication_reopened` (+ `job_social_step_back`) | publication | N39 to Social on the job and the AM; reason required. |
 
 ## Exempt routes
 

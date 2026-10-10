@@ -7,6 +7,8 @@ use App\Http\Deps;
 use App\Http\MemorySession;
 
 require_once dirname(__DIR__, 2) . '/support/jobs_fx.php';
+// Social publishing
+require_once dirname(__DIR__, 2) . '/support/social_fx.php';
 
 /**
  * Audit trail completeness (docs/audit-trail.md). Every POST, PUT, PATCH and
@@ -93,7 +95,34 @@ function ac_cases(Deps $d, array $c, array $p, string $jobId, string $legacyJob)
     $rv = static fn (): int => $d->briefs->getByJob($jobId)->rowVersion;
     $line = static fn (int $i, array $f): array => ['dl' => ['ln_' . $lines()[$i]->id => $f + ['template_id' => 'social-static', 'label' => 'Post', 'qty' => 1, 'channel' => 'Instagram', 'size_format' => '1080x1350', 'specs' => '']]];
     $q = JobQuery::defaults('board')->toSignalState();
+    // Social publishing: a sent, client-approved job with two statics; the COO works the posts.
+    $sj = sx_seed($d, $c['campaign'], $p['am'], $p['traffic'], 2, 'Social coverage');
+    sx_legacy_approve($d, $sj);
+    [$sa1, $sa2] = sx_assets($d, $sj);
+    $ig2 = sx_add($d, $coo, $sa2, 'instagram');
+    sx_tick_all($d, $coo, $ig2);
+    $fb1 = sx_add($d, $coo, $sa1, 'facebook');
+    $ig1 = static fn (): string => (string) $d->db->scalar("SELECT id FROM asset_publications WHERE asset_id = :a AND platform = 'instagram'", ['a' => $sa1]);
+    $pub = static fn (string $path, array $o = []): array => ['/social/publications/' . $ig1() . $path, sx_sig($d, $ig1(), $o)];
+    $social = static function (string $method, string $path, array $o = []) use ($d, $coo, $pub): void {
+        [$url, $sig] = $pub($path, $o);
+        sx_ok(bh_ds($d, $coo, $method, $url, $sig));
+    };
     return [
+        // Social publishing (run in this order: each step needs the one before)
+        'POST /social/assets/{aid}/platforms/{platform}' => ['publication_added', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/social/assets/' . $sa1 . '/platforms/instagram'))],
+        'PATCH /social/publications/{pid}/checklist' => ['publication_checked', 'coo', static fn () => $social('PATCH', '/checklist', ['cl' => ['copy' => true, 'image' => true, 'link' => true, 'hashtags' => true, 'test_result' => true]])],
+        'DELETE /social/publications/{pid}' => ['publication_removed', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'DELETE', '/social/publications/' . $fb1, sx_sig($d, $fb1)))],
+        'POST /social/publications/{pid}/ready' => ['publication_ready', 'coo', static fn () => $social('POST', '/ready')],
+        'POST /social/jobs/{id}/ready' => ['publication_ready', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/social/jobs/' . $sj . '/ready'))],
+        'POST /social/publications/{pid}/scheduled' => ['publication_scheduled', 'coo', static fn () => $social('POST', '/scheduled', ['scheduled_at' => '2026-10-12T09:30'])],
+        'PATCH /social/publications/{pid}/schedule' => ['publication_rescheduled', 'coo', static fn () => $social('PATCH', '/schedule', ['scheduled_at' => '2026-10-12T10:30'])],
+        'PATCH /social/publications/{pid}/live-link' => ['publication_link_added', 'coo', static fn () => $social('PATCH', '/live-link', ['live_url' => 'https://instagram.com/p/1'])],
+        'POST /social/publications/{pid}/live' => ['publication_live', 'coo', static fn () => $social('POST', '/live')],
+        'PATCH /social/publications/{pid}/promoted' => ['publication_promoted', 'coo', static fn () => $social('PATCH', '/promoted', ['promoted' => true])],
+        'POST /social/publications/{pid}/reopen' => ['publication_reopened', 'coo', static fn () => $social('POST', '/reopen', ['reason' => 'Wrong link'])],
+        'POST /social/publications/{pid}/archive' => ['publication_archived', 'coo', static fn () => $social('POST', '/archive', ['reason' => 'Taken down'])],
+
         'POST /briefs' => ['job_created', 'am', static fn () => ac_ds($d, $amy, 'POST', '/briefs', ['nb' => ['campaign_id' => $c['campaign'], 'title' => 'Second']])],
         'PATCH /jobs/{id}/brief' => ['brief_edited', 'am', static fn () => ac_ds($d, $amy, 'PATCH', '/jobs/' . $jobId . '/brief', ['brief' => [
             'title' => 'Launch', 'due_date' => '2026-10-20', 'creative_direction' => 'Warm and gold.', 'row_version' => $rv()]])],

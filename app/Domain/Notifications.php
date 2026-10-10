@@ -137,26 +137,24 @@ final class Notifications
     /** How a Social activity row reads ("marked Instagram Live"), or null for other verbs. @param array<string,mixed> $data */
     public static function socialPhrase(string $verb, array $data): ?string
     {
-        $platform = '';
         $p = isset($data['platform']) && is_string($data['platform']) ? Platform::tryFrom($data['platform']) : null;
-        if ($p !== null) {
-            $platform = $p->label() . ' ';
-        }
+        $post = $p !== null ? 'the ' . $p->label() . ' post' : 'a post';
+        $name = $p !== null ? $p->label() : 'a platform';
         $brief = ($data['scope'] ?? '') === 'brief';
         return match ($verb) {
-            self::PUBLICATION_READY => $brief ? 'marked the whole brief Ready to schedule' : 'marked a ' . $platform . 'post Ready to schedule',
-            self::PUBLICATION_SCHEDULED => 'scheduled a ' . $platform . 'post',
-            self::PUBLICATION_LIVE => 'marked a ' . $platform . 'post Live',
-            self::PUBLICATION_PROMOTED => (($data['promoted'] ?? null) === false ? 'changed Promoted on a ' : 'marked as promoted a ') . $platform . 'post',
-            self::PUBLICATION_ARCHIVED => 'archived a ' . $platform . 'post',
-            self::PUBLICATION_REOPENED => 'moved a ' . $platform . 'post back a step',
-            self::PUBLICATION_LINK_CHANGED => 'changed the live link of a ' . $platform . 'post',
+            self::PUBLICATION_READY => $brief ? 'marked the whole brief Ready to schedule' : 'marked ' . $post . ' Ready to schedule',
+            self::PUBLICATION_SCHEDULED => 'scheduled ' . $post,
+            self::PUBLICATION_LIVE => 'marked ' . $post . ' Live',
+            self::PUBLICATION_PROMOTED => (($data['promoted'] ?? null) === false ? 'unticked Promoted on ' : 'marked as promoted ') . $post,
+            self::PUBLICATION_ARCHIVED => 'archived ' . $post,
+            self::PUBLICATION_REOPENED => 'moved ' . $post . ' back a step',
+            self::PUBLICATION_LINK_CHANGED => 'changed the live link of ' . $post,
             self::SOCIAL_ASSIGNED => 'assigned Social',
-            'publication_added' => 'added ' . ($platform !== '' ? trim($platform) : 'a platform') . ' to a social asset',
-            'publication_removed' => 'removed ' . ($platform !== '' ? trim($platform) : 'a platform') . ' from a social asset',
-            'publication_checked' => 'updated a ' . $platform . 'checklist',
-            'publication_rescheduled' => 'changed the time of a ' . $platform . 'post',
-            'publication_link_added' => 'added the live link of a ' . $platform . 'post',
+            'publication_added' => 'added ' . $name . ' to a social asset',
+            'publication_removed' => 'removed ' . $name . ' from a social asset',
+            'publication_checked' => 'updated the checklist of ' . $post,
+            'publication_rescheduled' => 'changed the time of ' . $post,
+            'publication_link_added' => 'added the live link of ' . $post,
             'job_ready_to_schedule' => 'moved the job to Ready to schedule',
             'job_schedule' => 'moved the job to Scheduled',
             'job_go_live' => 'moved the job to Live',
