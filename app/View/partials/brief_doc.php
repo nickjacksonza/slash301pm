@@ -96,7 +96,7 @@ function partial_brief_doc(BriefDocVM $vm): string
 }
 
 /** The changes between two versions (or working copy vs last sent). */
-function partial_brief_diff(BriefDiff $d, bool $showBudget, string $id = 'brief-diff'): string
+function partial_brief_diff(BriefDiff $d, bool $showBudget, string $id = 'brief-diff', bool $showHours = true): string
 {
     ob_start(); ?>
 <div id="<?= attr($id) ?>" class="flex flex-col gap-3 text-sm">
@@ -105,7 +105,7 @@ function partial_brief_diff(BriefDiff $d, bool $showBudget, string $id = 'brief-
   <?php endif; ?>
   <?php if ($d->fields !== []): ?>
   <ul class="flex flex-col gap-2">
-    <?php foreach ($d->fields as $f): if ($f->field === 'budget' && !$showBudget) { echo '<li class="text-muted-foreground">Budget changed.</li>'; continue; } ?>
+    <?php foreach ($d->fields as $f): if ($f->field === 'budget' && !$showBudget) { echo '<li class="text-muted-foreground">Budget changed.</li>'; continue; } if ($f->field === 'hours_estimate' && !$showHours) { echo '<li class="text-muted-foreground">Hours changed.</li>'; continue; } ?>
       <li class="rounded-md border border-border p-2">
         <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground"><?= e($f->label) ?></div>
         <?php if ($f->before !== ''): ?><div class="mt-1 whitespace-pre-line text-muted-foreground line-through decoration-destructive/60"><?= e(fmt_diff_value($f->before)) ?></div><?php endif; ?>

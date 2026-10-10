@@ -31,7 +31,7 @@ function page_brief_versions(BriefVersionsVM $vm): string
   </div>
   <div class="flex min-w-0 flex-col gap-6">
     <?php if ($vm->diff !== null): ?>
-      <?= ui_card(new PartProps(class: 'px-6'), '<h3 class="text-base font-semibold">Changes since ' . e($vm->diffAgainst) . '</h3>' . partial_brief_diff($vm->diff, $vm->showBudget)) ?>
+      <?= ui_card(new PartProps(class: 'px-6'), '<h3 class="text-base font-semibold">Changes since ' . e($vm->diffAgainst) . '</h3>' . partial_brief_diff($vm->diff, $vm->showBudget, 'brief-diff', $vm->showHours)) ?>
     <?php endif; ?>
     <?php if ($vm->doc !== null): ?>
       <?= ui_card(new PartProps(class: 'px-6'), partial_brief_doc($vm->doc)) ?>

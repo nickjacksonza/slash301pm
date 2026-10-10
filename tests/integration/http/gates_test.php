@@ -17,9 +17,9 @@ function gt_session(App\Http\Deps $d, Role $role, string $name = 'pat'): MemoryS
 }
 
 return [
-    'BetaGate: roles outside AM, COO, ECD go to /legacy/ with a 302' => function (): void {
+    'BetaGate: Clients go to /legacy/ with a 302 (the client portal comes later)' => function (): void {
         $d = ts_deps();
-        foreach ([Role::Designer, Role::Client, Role::Traffic, Role::PM] as $i => $role) {
+        foreach ([Role::Client] as $i => $role) {
             $s = gt_session($d, $role, 'u' . $i);
             $resp = (ts_app($s))(ts_request('GET', '/today'), $d);
             t_eq(302, $resp->status(), $role->value);
@@ -30,7 +30,10 @@ return [
             // password change and sign out stay open to everyone
             t_eq(200, (ts_app($s))(ts_request('GET', '/account/password'), $d)->status());
         }
-        foreach ([Role::AM, Role::COO, Role::ECD] as $i => $role) {
+        foreach (Role::ordered() as $i => $role) {
+            if ($role === Role::Client) {
+                continue;
+            }
             $s = gt_session($d, $role, 'b' . $i);
             t_eq(200, (ts_app($s))(ts_request('GET', '/today'), $d)->status(), $role->value);
         }

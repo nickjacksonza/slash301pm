@@ -16,6 +16,12 @@ use App\Domain\Types\TransitionRequest;
 use App\Domain\Types\User;
 use App\Domain\WaitingOn;
 use App\Http\Deps;
+// Social publishing
+use App\Domain\SocialPolicy;
+use App\Domain\Types\JobAccess;
+use App\Domain\Types\Team;
+use App\View\ui\SelectOption;
+use App\View\VM\SocialSlotVM;
 use App\Http\PatchElements;
 use App\Http\Request;
 use App\Http\Response;
@@ -86,6 +92,11 @@ final class JobBoardHandlers
         $action = BoardMoves::actionFor($from, $to, $job->resumeStage);
         if ($action === null) {
             return $reply(Toast::error(BoardMoves::refusal($from, $to, $job->resumeStage)));
+        }
+        // Social publishing: the Social stages follow the posts on /social, never a drag.
+        if (in_array($action, [JobAction::ReadyToSchedule, JobAction::Schedule, JobAction::GoLive, JobAction::SocialStepBack], true)) {
+            return $reply(Toast::error('The Social stages follow the posts. Set Ready to schedule, Scheduled and Live on the Social page.')
+                ->withLink(url('/social/jobs/' . rawurlencode($job->id)), 'Open in Social'));
         }
         if ($action === JobAction::Send) {
             return $reply(Toast::error('A draft goes to Traffic through Send, which checks the brief first.')
@@ -176,7 +187,21 @@ final class JobBoardHandlers
         return Response::events(...$events);
     }
 
-    private static function sheetVm(Deps $d, User $u, string $jobId): ?JobSheetVM
+    // Social publishing: the Social slot picker on the sheet once the brief is sent.
+    private static function socialSlot(Deps $d, User $u, JobAccess $a, Team $team, bool $sent): ?SocialSlotVM
+    {
+        if (!$sent || !SocialPolicy::canSetSocialSlot($u, $a)->allowed) {
+            return null;
+        }
+        $h = $team->holder(Role::Social);
+        $options = [new SelectOption('', 'Nobody')];
+        foreach ($d->users->listActiveByRole(Role::Social) as $p) {
+            $options[] = new SelectOption($p->id, $p->name);
+        }
+        return new SocialSlotVM($a->jobId, $h !== null ? $h->userId : '', $h !== null ? $h->userName : '', $options, true);
+    }
+
+    public static function sheetVm(Deps $d, User $u, string $jobId): ?JobSheetVM
     {
         $res = JobsView::one($d, $u, $jobId);
         if ($res === null) {
@@ -212,7 +237,8 @@ final class JobBoardHandlers
             $latest !== null ? $latest->note : '',
             $latest !== null ? url('/jobs/' . $id . '/brief/versions/' . rawurlencode($latest->version->format())) : '',
             url('/jobs/' . $id . '/brief'), $row->workingCopy && $row->hasUnsentChanges,
-            BriefView::activity($d->activity->listForJob($row->id, 12)), JobsView::moves($u, $a, $row), $row->rowVersion, Ids::new(), url('/jobs/' . $id . '/move'),
+            BriefView::activity($d->activity->listForJob($row->id, 12), !$row->workingCopy), JobsView::moves($u, $a, $row), $row->rowVersion, Ids::new(), url('/jobs/' . $id . '/move'),
+            self::socialSlot($d, $u, $a, $team, $row->briefSent),
         );
     }
 }

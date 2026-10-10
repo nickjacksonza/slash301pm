@@ -134,6 +134,37 @@ final class Notifications
         return in_array($verb, ['brief_edited', 'deliverable_added', 'deliverable_updated', 'deliverable_removed', 'deliverables_reordered'], true);
     }
 
+    /** How a Social activity row reads ("marked Instagram Live"), or null for other verbs. @param array<string,mixed> $data */
+    public static function socialPhrase(string $verb, array $data): ?string
+    {
+        $platform = '';
+        $p = isset($data['platform']) && is_string($data['platform']) ? Platform::tryFrom($data['platform']) : null;
+        if ($p !== null) {
+            $platform = $p->label() . ' ';
+        }
+        $brief = ($data['scope'] ?? '') === 'brief';
+        return match ($verb) {
+            self::PUBLICATION_READY => $brief ? 'marked the whole brief Ready to schedule' : 'marked a ' . $platform . 'post Ready to schedule',
+            self::PUBLICATION_SCHEDULED => 'scheduled a ' . $platform . 'post',
+            self::PUBLICATION_LIVE => 'marked a ' . $platform . 'post Live',
+            self::PUBLICATION_PROMOTED => (($data['promoted'] ?? null) === false ? 'changed Promoted on a ' : 'marked as promoted a ') . $platform . 'post',
+            self::PUBLICATION_ARCHIVED => 'archived a ' . $platform . 'post',
+            self::PUBLICATION_REOPENED => 'moved a ' . $platform . 'post back a step',
+            self::PUBLICATION_LINK_CHANGED => 'changed the live link of a ' . $platform . 'post',
+            self::SOCIAL_ASSIGNED => 'assigned Social',
+            'publication_added' => 'added ' . ($platform !== '' ? trim($platform) : 'a platform') . ' to a social asset',
+            'publication_removed' => 'removed ' . ($platform !== '' ? trim($platform) : 'a platform') . ' from a social asset',
+            'publication_checked' => 'updated a ' . $platform . 'checklist',
+            'publication_rescheduled' => 'changed the time of a ' . $platform . 'post',
+            'publication_link_added' => 'added the live link of a ' . $platform . 'post',
+            'job_ready_to_schedule' => 'moved the job to Ready to schedule',
+            'job_schedule' => 'moved the job to Scheduled',
+            'job_go_live' => 'moved the job to Live',
+            'job_social_step_back' => 'moved the job back a Social step',
+            default => null,
+        };
+    }
+
     /** The activity verb written for a stage move (catalogue names where one exists). */
     public static function verbFor(JobAction $a): string
     {

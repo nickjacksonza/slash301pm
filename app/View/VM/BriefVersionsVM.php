@@ -17,5 +17,6 @@ final class BriefVersionsVM
         public readonly ?BriefDiff $diff,
         public readonly string $diffAgainst,
         public readonly bool $showBudget,
+        public readonly bool $showHours = true,
     ) {}
 }

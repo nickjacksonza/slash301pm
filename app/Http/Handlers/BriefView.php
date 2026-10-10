@@ -79,7 +79,7 @@ final class BriefView
             $note = 'Waiting on ' . ($s->job->waitingOn !== null ? strtolower($s->job->waitingOn->label()) : 'someone') . ($s->job->waitingReason !== '' ? ': ' . $s->job->waitingReason : '');
         } elseif ($s->job->stage === Stage::OnHold) {
             $note = 'On hold' . ($s->job->waitingReason !== '' ? ': ' . $s->job->waitingReason : '');
-        } elseif (!$a->hasAm()) {
+        } elseif (!$a->hasAm() && Policy::canClaimAm($u, $a)->allowed) {
             $note = 'This job has no AM yet.';
         }
         return new BriefRailVM(
@@ -101,23 +101,21 @@ final class BriefView
         $editable = Policy::canEditBrief($u, $s->access)->allowed || Policy::canAssign($u, $s->access, Role::Traffic)->allowed;
         $anyEditable = false;
         foreach (Team::slotRoles() as $role) {
-            $anyEditable = $anyEditable || ($editable && Policy::canAssign($u, $s->access, $role)->allowed);
+            $anyEditable = $anyEditable || ($editable && self::canSetSlot($u, $s->access, $role));
+        }
+        if (!$anyEditable) {
+            // Readers who can set nothing: the brief document already lists the team.
+            return [];
         }
         foreach (Team::slotRoles() as $role) {
             $holder = $s->team->holder($role);
-            // Readers who can set nothing see only the filled slots.
-            if (!$anyEditable && $holder === null) {
-                continue;
-            }
             $options = [new SelectOption('', 'Not assigned')];
             foreach ($d->users->listActiveByRole($role) as $p) {
                 $options[] = new SelectOption($p->id, $p->name);
             }
-            $can = $editable && Policy::canAssign($u, $s->access, $role)->allowed;
+            $can = $editable && self::canSetSlot($u, $s->access, $role);
             $hint = '';
-            if (!$anyEditable) {
-                $hint = '';
-            } elseif (!$can && in_array($role, [Role::CD, Role::Copywriter, Role::Designer, Role::QA, Role::Developer, Role::SEO, Role::Social], true) && $s->brief->isSent()) {
+            if (!$can && in_array($role, [Role::CD, Role::Copywriter, Role::Designer, Role::QA, Role::Developer, Role::SEO, Role::Social], true) && $s->brief->isSent()) {
                 $hint = 'Traffic assigns this after the brief is sent.';
             } elseif ($role === Role::Traffic && !$s->brief->isSent()) {
                 $hint = 'Required to send.';
@@ -127,6 +125,12 @@ final class BriefView
                 $holder !== null ? $holder->userId : '', $holder !== null ? $holder->userName : '', $options, $can, 'team-' . $key, $hint);
         }
         return $out;
+    }
+
+    // Social publishing: the Social slot follows SocialPolicy (it also opens after the send).
+    private static function canSetSlot(User $u, \App\Domain\Types\JobAccess $a, Role $role): bool
+    {
+        return $role === Role::Social ? \App\Domain\SocialPolicy::canSetSocialSlot($u, $a)->allowed : Policy::canAssign($u, $a, $role)->allowed;
     }
 
     public static function doc(BriefState $s, BriefSnapshot $snap, string $versionLabel, ?BriefVersionRecord $rec, User $u, bool $working): BriefDocVM
@@ -236,7 +240,8 @@ final class BriefView
             'job_done' => 'marked the job done',
             'deliverable_cancelled' => 'cancelled ' . (isset($d['asset_ids']) && is_array($d['asset_ids']) ? count($d['asset_ids']) : 0) . ' unstarted assets',
             'started_asset_conflict' => 'kept started assets: ' . $str('message'),
-            default => str_replace('_', ' ', $a->verb),
+            // Social publishing
+            default => Notifications::socialPhrase($a->verb, $d) ?? str_replace('_', ' ', $a->verb),
         };
     }
 }

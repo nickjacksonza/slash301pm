@@ -57,7 +57,9 @@ final class AssignmentStore
                 $this->activity->append($tx, new ActivityEntry($jobId, $actorId, 'unassigned_from_job', 'job', $jobId,
                     ['role' => $slot->value, 'user_id' => $old, 'user_name' => $this->name($tx, $old), 'recipients' => $old === $actorId ? [] : [$old]]), $now);
             }
-            $this->activity->append($tx, new ActivityEntry($jobId, $actorId, 'assigned_to_job', 'job', $jobId,
+            // Social publishing: the Social slot logs social_assigned (the assignee is told, as N05).
+            $verb = $slot === Role::Social ? 'social_assigned' : 'assigned_to_job';
+            $this->activity->append($tx, new ActivityEntry($jobId, $actorId, $verb, 'job', $jobId,
                 ['role' => $slot->value, 'user_id' => $userId, 'user_name' => (string) $u['name'], 'recipients' => $userId === $actorId ? [] : [$userId]]), $now);
             return '';
         });

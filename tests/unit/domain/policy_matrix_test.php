@@ -39,6 +39,8 @@ function pmt_cases(): array
         'assign_account_roles' => [$j('draft'), static fn (User $u, JobAccess $a) => Policy::canAssign($u, $a, Role::AM)],
         'transition:draft->briefed' => [$j('draft'), static fn (User $u, JobAccess $a) => Policy::canTransition($u, $a, JobAction::Send)],
         'transition:briefed->draft' => [$j('briefed'), static fn (User $u, JobAccess $a) => Policy::canTransition($u, $a, JobAction::Recall)],
+        // Start work: needs a CD or creative on the job (an asset assignee here, so every relation keeps it)
+        'transition:briefed->in_progress' => [$j('briefed', ['assetAssigneeIds' => ['maker9']]), static fn (User $u, JobAccess $a) => Policy::canTransition($u, $a, JobAction::Start)],
         'transition:approved_client->done' => [$j('approved_client'), static fn (User $u, JobAccess $a) => Policy::canTransition($u, $a, JobAction::MarkDone)],
         'transition:approved_client->ready_to_schedule' => [$j('approved_client'), static fn (User $u, JobAccess $a) => Policy::canTransition($u, $a, JobAction::ReadyToSchedule)],
         'transition:ready_to_schedule->scheduled' => [$j('ready_to_schedule'), static fn (User $u, JobAccess $a) => Policy::canTransition($u, $a, JobAction::Schedule)],
@@ -64,6 +66,67 @@ function pmt_cases(): array
     ];
 }
 
+/**
+ * Matrix cells whose condition makes the explicit action impossible for some
+ * roles: makers start a job only implicitly, by starting their asset.
+ * @return array<string,list<string>>
+ */
+function pmt_implicit_only(): array
+{
+    return ['transition:briefed->in_progress' => ['Copywriter', 'Designer', 'Developer', 'SEO', 'Social']];
+}
+
+/**
+ * Matrix actions with no screen or route yet, each with the reason. Every
+ * matrix action must be checked by pmt_cases() or listed here.
+ * @return array<string,string>
+ */
+function pmt_not_yet(): array
+{
+    $out = [
+        'manage_tasks' => 'tasks are edited in legacy',
+        'edit_asset_schedule' => 'asset scheduling comes with the creative queue',
+        'edit_asset_work' => 'asset work comes with the creative queue',
+        'edit_job_field:description' => 'no grid cell; edited in the brief editor (edit_brief_*)',
+        'edit_job_field:brief_date' => 'no grid cell; edited in the brief editor (edit_brief_*)',
+        'edit_job_field:first_go_live' => 'no grid cell; edited in the brief editor (edit_brief_*)',
+        'edit_job_field:last_go_live' => 'no grid cell; edited in the brief editor (edit_brief_*)',
+        'edit_job_field:budget' => 'no grid cell; edited in the brief editor (edit_brief_*)',
+        'edit_job_field:sort_order' => 'no manual job ordering yet',
+        'transition:in_progress->in_review' => 'needs asset submission (reviews phase)',
+        'transition:in_review->in_progress' => 'reviews phase',
+        'transition:in_review->approved_internal' => 'reviews phase',
+        'transition:approved_internal->in_progress' => 'reviews and client portal phases',
+        'transition:approved_internal->approved_client' => 'client portal phase',
+        'transition:approved_client->in_progress' => 'reopen flow not built',
+        'transition:done->in_progress' => 'reopen flow not built',
+        'transition:archived->restore' => 'restore flow not built',
+        'transition:cancelled->draft' => 'reinstate flow not built',
+        'submit_for_review' => 'reviews phase',
+        'qa_signoff' => 'reviews phase',
+        'approve_internal' => 'reviews phase',
+        'give_feedback_internal' => 'reviews phase',
+        'route_feedback' => 'reviews phase',
+        'send_to_client' => 'client portal phase',
+        'approve_client' => 'client portal phase',
+        'give_feedback_client' => 'client portal phase',
+        'recommend_signoff' => 'client portal phase',
+        'comment' => 'comments come later',
+        'manage_brand' => 'no brand admin screen',
+        'toggle_demo_mode' => 'the owner flips the demo flag by hand',
+        'view_internal_feedback' => 'reviews phase',
+        'view_staff_emails' => 'no screen shows staff emails to non-admins',
+        'view_capacity' => 'capacity screen comes later',
+        'view_wiki' => 'wiki stays in legacy',
+        'edit_wiki' => 'wiki stays in legacy',
+    ];
+    foreach (['social_view_queue', 'social_edit_checklist', 'social_set_ready_to_schedule', 'social_set_scheduled', 'social_set_live',
+        'social_edit_live_link', 'social_set_promoted', 'social_archive_post'] as $id) {
+        $out[$id] = 'Social publishing: SocialPolicy, checked in social_test.php';
+    }
+    return $out;
+}
+
 function pmt_expected(string $cell, string $relation): bool
 {
     return match ($cell) {
@@ -82,11 +145,14 @@ return [
         $m = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/fixtures/roles/policy-matrix.json'), true);
         t_eq(Policy::COLUMNS, $m['roles'], 'column order');
         $cases = pmt_cases();
+        $notYet = pmt_not_yet();
+        $implicit = pmt_implicit_only();
         $skipped = [];
         $checked = 0;
         foreach ($m['actions'] as $action) {
             $id = (string) $action['id'];
             if (!isset($cases[$id])) {
+                t_true(isset($notYet[$id]), $id . ' is neither checked nor listed as not yet functional');
                 $skipped[] = $id;
                 continue;
             }
@@ -110,7 +176,7 @@ return [
                         }
                         $access = bf_access($fixture[0], $o);
                     }
-                    $want = pmt_expected($cell, $rel);
+                    $want = pmt_expected($cell, $rel) && !in_array($roleName, $implicit[$id] ?? [], true);
                     $got = $fn($user, $access);
                     t_eq($want, $got->allowed, "$id: $roleName ($rel): " . $got->reason);
                     $checked++;
@@ -118,7 +184,14 @@ return [
             }
         }
         t_true($checked > 1000, 'checked ' . $checked);
-        fwrite(STDERR, 'note: policy matrix test skipped ' . count($skipped) . ' actions not implemented in Phase 2: ' . implode(', ', $skipped) . "\n");
+        foreach (array_keys($notYet) as $id) {
+            $known = false;
+            foreach ($m['actions'] as $action) {
+                $known = $known || $action['id'] === $id;
+            }
+            t_true($known, $id . ' is listed as not yet functional but is not in the matrix');
+        }
+        fwrite(STDERR, 'note: policy matrix: ' . count($cases) . ' actions checked for all 14 roles; ' . count($skipped) . ' not yet functional: ' . implode(', ', $skipped) . "\n");
     },
     'policy: stage conditions on brief and job actions' => function (): void {
         $am = bf_user(Role::AM, 'am1');

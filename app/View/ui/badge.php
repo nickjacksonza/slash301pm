@@ -28,6 +28,10 @@ function ui_badge(BadgeProps $p, string $children = ''): string
         'in_review' => 'border border-transparent bg-stage-in_review text-stage-in_review-foreground',
         'approved_internal' => 'border border-transparent bg-stage-approved_internal text-stage-approved_internal-foreground',
         'approved_client' => 'border border-transparent bg-stage-approved_client text-stage-approved_client-foreground',
+        // Social publishing
+        'ready_to_schedule' => 'border border-transparent bg-stage-ready_to_schedule text-stage-ready_to_schedule-foreground',
+        'scheduled' => 'border border-transparent bg-stage-scheduled text-stage-scheduled-foreground',
+        'live' => 'border border-transparent bg-stage-live text-stage-live-foreground',
         'done' => 'border border-transparent bg-stage-done text-stage-done-foreground',
         'archived' => 'border border-transparent bg-stage-archived text-stage-archived-foreground',
         'cancelled' => 'border border-transparent bg-stage-cancelled text-stage-cancelled-foreground',

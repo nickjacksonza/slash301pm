@@ -198,7 +198,12 @@ final class JobsView
             $by[$row->stage->value][] = $row;
         }
         $cols = [];
+        // No Draft column for roles that never see drafts (Traffic, CD, makers, QA).
+        $drafts = Policy::rule('view_brief_draft', $u->role) !== PolicyRule::Deny;
         foreach ($q->stages as $s) {
+            if ($s === Stage::Draft && !$drafts) {
+                continue;
+            }
             $cols[] = self::column($s, $by[$s->value] ?? [], $r, $u, $now);
         }
         return new BoardColumnsVM($cols, $r->total, count($r->rows), $r->cap, self::pageUrl($q));
@@ -236,6 +241,11 @@ final class JobsView
                 JobAction::Recall => 'Recall to draft',
                 default => $t->action->label(),
             };
+            // Social publishing: the Social stages are set on /social (a link, like Send).
+            if (in_array($t->action, [JobAction::ReadyToSchedule, JobAction::Schedule, JobAction::GoLive], true)) {
+                $out[] = new MoveOptionVM($t->to->value, $t->action->label() . ' (in Social)', false, false, true, url('/social/jobs/' . rawurlencode($row->id)));
+                continue;
+            }
             $out[] = new MoveOptionVM($t->to->value, $label, $t->needsReason, $t->needsWaitingOn, $t->viaBrief,
                 $t->viaBrief ? url('/jobs/' . rawurlencode($row->id) . '/brief') : '');
         }
@@ -302,7 +312,12 @@ final class JobsView
             $v->builtin ? '' : url('/views/' . rawurlencode($v->id)), $v->id === $activeId,
         );
         $builtins = [];
+        // "My jobs" and "Unowned" are about the AM slot: only for roles that own jobs.
+        $owns = Policy::rule('create_brief', $u->role) !== PolicyRule::Deny;
         foreach (SavedViews::builtins($screen) as $v) {
+            if (!$owns && ($v->id === 'builtin:mine' || $v->id === 'builtin:unowned')) {
+                continue;
+            }
             $builtins[] = $item($v, false);
         }
         $mine = [];

@@ -40,6 +40,8 @@ final class Shell
             new NavItem('jobs', 'Jobs', url('/jobs'), true),
             new NavItem('board', 'Board', url('/jobs/board'), true),
             new NavItem('campaigns', 'Campaigns', url('/campaigns'), true),
+            // Social publishing (visibility: Policy::canSeeNav 'social')
+            new NavItem('social', 'Social', url('/social'), true),
         ];
         $adminItems = [
             new NavItem('admin-users', 'Users', url('/admin/users'), true),

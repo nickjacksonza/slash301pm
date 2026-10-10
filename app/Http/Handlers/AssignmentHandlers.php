@@ -5,6 +5,8 @@ namespace App\Http\Handlers;
 
 use App\Domain\Policy;
 use App\Domain\Role;
+// Social publishing
+use App\Domain\SocialPolicy;
 use App\Domain\Signals\SignalInput;
 use App\Domain\Types\Team;
 use App\Http\BriefState;
@@ -33,11 +35,14 @@ final class AssignmentHandlers
         if ($s === null || !Policy::canViewJob($u, $s->access)->allowed) {
             return Response::events(Toast::error('This job no longer exists.'));
         }
-        $dec = Policy::canAssign($u, $s->access, $role);
+        // Social publishing: the Social slot also opens after the send (SocialPolicy).
+        $dec = $role === Role::Social ? SocialPolicy::canSetSocialSlot($u, $s->access) : Policy::canAssign($u, $s->access, $role);
         if (!$dec->allowed) {
             return Shell::deny($r, $dec->reason);
         }
-        $value = trim(SignalInput::str(SignalInput::obj($r->signals(), 'team_' . strtolower($role->value)), 'value'));
+        // Social publishing: the job sheet's Social picker sends sheet_social.value and gets the sheet back.
+        $fromSheet = $role === Role::Social && SignalInput::has($r->signals(), 'sheet_social');
+        $value = trim(SignalInput::str(SignalInput::obj($r->signals(), $fromSheet ? 'sheet_social' : 'team_' . strtolower($role->value)), 'value'));
         $now = $d->clock->now();
         $toast = '';
         if ($value === '') {
@@ -47,6 +52,11 @@ final class AssignmentHandlers
             if ($problem !== '') {
                 $toast = $problem;
             }
+        }
+        if ($fromSheet) {
+            $sheet = JobBoardHandlers::sheetVm($d, $u, $s->job->id);
+            $done = $toast !== '' ? Toast::error($toast) : Toast::ok($value === '' ? 'Social slot cleared.' : 'Social assigned. They have been told.');
+            return $sheet === null ? Response::events($done) : Response::events(PatchElements::html(partial_job_sheet($sheet)), $done);
         }
         $fresh = BriefHandlers::reconcile($d, $s->job->id);
         $events = [

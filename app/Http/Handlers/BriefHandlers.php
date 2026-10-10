@@ -356,7 +356,11 @@ final class BriefHandlers
             // backfilled sent brief without version rows yet
             $doc = BriefView::doc($s, $s->lastSent, $s->brief->version->label(), null, $u, false);
         }
-        $vm = new BriefVersionsVM($s->job->id, $s->job->jobNumber, $s->brief->title, $rows, $doc, $diff, $against, Policy::canViewBudget($u, $s->access)->allowed);
+        // Readers without view_brief_draft get the last sent title, never the working copy's.
+        $title = Policy::canViewBriefDraft($u, $s->access)->allowed || Policy::canEditBrief($u, $s->access)->allowed
+            ? $s->brief->title : ($s->lastSent !== null ? $s->lastSent->title : $s->job->title);
+        $vm = new BriefVersionsVM($s->job->id, $s->job->jobNumber, $title, $rows, $doc, $diff, $against, Policy::canViewBudget($u, $s->access)->allowed,
+            Policy::canViewHours($u, $s->access)->allowed);
         return Shell::page($r, $d, $s->job->jobNumber . ' versions', 'briefs', page_brief_versions($vm));
     }
 }

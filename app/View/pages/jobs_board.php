@@ -122,9 +122,11 @@ function partial_board_card(BoardCardVM $c): string
         ui_dropdown_trigger(new DropdownTriggerProps(id: $menuId, class: 'rounded-sm px-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground', attrs: ['aria-label' => 'Move ' . $c->jobNumber . ' to...']), 'Move')
         . ui_dropdown_content(new DropdownContentProps(id: $menuId, align: 'end', class: 'w-56'),
             ui_dropdown_label(new DropdownLabelProps(class: 'text-xs text-muted-foreground'), 'Move to...') . $items));
-    return '<article id="card-' . attr($c->id) . '" data-card="' . attr($c->id) . '" data-stage="' . attr($c->stage->value) . '" draggable="true"'
-        . ' class="flex cursor-grab flex-col gap-2 rounded-md border border-border bg-card p-3 text-sm text-card-foreground shadow-xs active:cursor-grabbing"'
-        . ' data-on:dragstart="' . attr($start) . '" data-on:dragend="' . attr("el.classList.remove('opacity-50')") . '">'
+    // Only cards the user can move are draggable (no dead drag for read-only roles).
+    $drag = $c->moves === [] ? ' class="flex flex-col gap-2 rounded-md border border-border bg-card p-3 text-sm text-card-foreground shadow-xs">'
+        : ' draggable="true" class="flex cursor-grab flex-col gap-2 rounded-md border border-border bg-card p-3 text-sm text-card-foreground shadow-xs active:cursor-grabbing"'
+        . ' data-on:dragstart="' . attr($start) . '" data-on:dragend="' . attr("el.classList.remove('opacity-50')") . '">';
+    return '<article id="card-' . attr($c->id) . '" data-card="' . attr($c->id) . '" data-stage="' . attr($c->stage->value) . '"' . $drag
         . '<div class="flex items-center justify-between gap-2">'
         . '<button type="button" class="font-mono text-xs text-primary underline-offset-2 hover:underline" title="Open the job sheet" data-on:click="'
         . attr(act_raw('get', $c->sheetUrl, 'filterSignals: {include: /^q\\.cols/}')) . '">' . e($c->jobNumber) . '</button>' . $menu . '</div>'

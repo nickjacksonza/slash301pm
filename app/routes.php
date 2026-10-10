@@ -16,6 +16,8 @@ use App\Http\Handlers\JobGridHandlers;
 use App\Http\Handlers\JobHandlers;
 use App\Http\Handlers\MyDayHandlers;
 use App\Http\Handlers\SavedViewHandlers;
+// Social publishing
+use App\Http\Handlers\SocialHandlers;
 use App\Http\Handlers\SpikeHandlers;
 use App\Http\Handlers\SystemHandlers;
 
@@ -80,6 +82,24 @@ return [
     ['POST /views', [SavedViewHandlers::class, 'create']],
     ['PATCH /views/{id}', [SavedViewHandlers::class, 'update']],
     ['DELETE /views/{id}', [SavedViewHandlers::class, 'delete']],
+
+    // Social publishing
+    ['GET /social', [SocialHandlers::class, 'page']],
+    ['GET /social/list', [SocialHandlers::class, 'list']],
+    ['GET /social/jobs/{id}', [SocialHandlers::class, 'job']],
+    ['POST /social/jobs/{id}/ready', [SocialHandlers::class, 'markReady']],
+    ['POST /social/assets/{aid}/platforms/{platform}', [SocialHandlers::class, 'addPlatform']],
+    ['DELETE /social/publications/{pid}', [SocialHandlers::class, 'removePlatform']],
+    ['PATCH /social/publications/{pid}/checklist', [SocialHandlers::class, 'checklist']],
+    ['PATCH /social/publications/{pid}/schedule', [SocialHandlers::class, 'schedule']],
+    ['PATCH /social/publications/{pid}/live-link', [SocialHandlers::class, 'liveLink']],
+    ['PATCH /social/publications/{pid}/promoted', [SocialHandlers::class, 'promoted']],
+    ['POST /social/publications/{pid}/ready', [SocialHandlers::class, 'ready']],
+    ['POST /social/publications/{pid}/scheduled', [SocialHandlers::class, 'scheduled']],
+    ['POST /social/publications/{pid}/live', [SocialHandlers::class, 'live']],
+    ['POST /social/publications/{pid}/archive', [SocialHandlers::class, 'archive']],
+    ['POST /social/publications/{pid}/reopen', [SocialHandlers::class, 'reopen']],
+    ['GET /today/social', [SocialHandlers::class, 'todaySection']],
 
     ['GET /system/spike', [SpikeHandlers::class, 'page']],
     ['GET /system/spike/patch/{mode}', [SpikeHandlers::class, 'patch']],

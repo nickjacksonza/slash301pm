@@ -18,7 +18,7 @@ use App\View\VM\MyDayVM;
  * a card with id today-section-<key> that GET /today/sections/<key> patches;
  * the page asks for all of them every 60 seconds.
  */
-function page_today(MyDayVM $vm): string
+function page_today(MyDayVM $vm, ?\App\View\VM\SocialDayVM $social = null): string
 {
     $refresh = [];
     foreach (MyDay::sectionKeys($vm->result->mode) as $key) {
@@ -30,6 +30,8 @@ function page_today(MyDayVM $vm): string
     <h2 class="text-2xl font-semibold leading-tight"><?= e($vm->greeting) ?></h2>
     <p class="text-sm text-muted-foreground"><?= e($vm->dateLabel) ?></p>
   </div>
+  <?php // Social publishing: role Social or a Social slot holder (refreshes itself via GET /today/social) ?>
+  <?php if ($social !== null): ?><?= partial_today_social($social) ?><?php endif; ?>
   <?php foreach (MyDay::sectionKeys($vm->result->mode) as $key): ?>
     <?= partial_today_section($key, $vm) ?>
   <?php endforeach; ?>

@@ -38,5 +38,7 @@ final class JobSheetVM
         public readonly int $rowVersion,
         public readonly string $nonce,
         public readonly string $moveUrl,
+        // Social publishing: the Social slot picker, for who may set it after the send
+        public readonly ?SocialSlotVM $social = null,
     ) {}
 }

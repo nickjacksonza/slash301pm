@@ -279,6 +279,13 @@ function partial_job_sheet_body(JobSheetVM $vm): string
         <?php endforeach; ?>
       </ul>
       <?php endif; ?>
+      <?php if ($vm->social !== null): /* Social publishing: the Social slot after the send */ ?>
+        <div class="mt-3 flex flex-col gap-1" data-signals="<?= attr(jobs_js(['sheet_social' => ['value' => $vm->social->holderId]])) ?>">
+          <label for="sheet-social" class="text-xs text-muted-foreground">Social (posts after client approval)</label>
+          <?= ui_native_select(new NativeSelectProps(id: 'sheet-social', options: $vm->social->options, value: $vm->social->holderId, attrs: ['data-bind' => 'sheet_social.value',
+              'data-on:change' => act_raw('post', url('/jobs/' . rawurlencode($vm->id) . '/assignments/social'), 'filterSignals: {include: /^sheet_social\\./}, retryMaxCount: 0')])) ?>
+        </div>
+      <?php endif; ?>
     </section>
     <section>
       <h3 class="mb-1 font-semibold">Deliverables</h3>

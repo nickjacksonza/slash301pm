@@ -126,6 +126,21 @@ final class SocialPolicy
         return self::cell('social_assign', $u, $j, 'Only the job owner, Traffic, the COO or the ECD can choose Social.');
     }
 
+    /**
+     * The Social slot picker (brief team section, job sheet): before the send
+     * the usual creative-team rule (Policy::canAssign, a suggestion Traffic can
+     * change), after it canAssignSocial. Either one allows.
+     */
+    public static function canSetSocialSlot(User $u, JobAccess $j): Decision
+    {
+        $after = self::canAssignSocial($u, $j);
+        if ($after->allowed) {
+            return $after;
+        }
+        $before = Policy::canAssign($u, $j, Role::Social);
+        return $before->allowed ? $before : $after;
+    }
+
     /** approved_client, the three Social stages, or done. */
     public static function isPastClientApproval(Stage $s): bool
     {

@@ -65,7 +65,8 @@ return [
         [$d, $p, $c, $j] = jf_world();
         $cases = [
             ['another AM\'s job', $p['am'], $j['other_am'], 'title', 'Hijack', 'You cannot change the title'],
-            ['Traffic is outside the beta (BetaGate)', $p['traffic'], $j['mine_overdue'], 'title', 'Hijack', '/legacy/'],
+            ['Traffic cannot edit brief fields', $p['traffic'], $j['mine_overdue'], 'title', 'Hijack', 'You cannot change the title'],
+            ['a Designer cannot see a job they are not on', $p['designer'], $j['mine_overdue'], 'title', 'Hijack', 'no longer exists'],
             ['COO may not pick a Designer as Traffic', $p['coo'], $j['mine_overdue'], 'traffic', $p['designer'], 'Only a Traffic'],
             ['waiting reason while not waiting', $p['am'], $j['mine_overdue'], 'waiting_reason', 'x', 'Only a waiting job'],
             ['closed job', $p['am'], $j['done'], 'title', 'x', 'can no longer change'],

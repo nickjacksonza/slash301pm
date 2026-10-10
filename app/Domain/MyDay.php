@@ -276,7 +276,8 @@ final class MyDay
             'deliverable_updated' => 'changed a deliverable',
             'deliverable_removed' => 'removed a deliverable',
             'deliverables_reordered' => 'reordered the deliverables',
-            default => str_replace('_', ' ', $verb),
+            // Social publishing
+            default => Notifications::socialPhrase($verb, []) ?? str_replace('_', ' ', $verb),
         };
     }
 

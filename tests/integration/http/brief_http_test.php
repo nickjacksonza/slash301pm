@@ -92,13 +92,13 @@ return [
         t_eq('draft', $d->jobs->get($jobId)->stage->value);
         t_eq(1, (int) $d->db->scalar('SELECT COUNT(*) FROM jobs'));
     },
-    'brief http: Designer is kept out (BetaGate) and refused by Policy even past the gate' => function (): void {
+    'brief http: a Designer is let in (BetaGate) but refused by Policy: 404 on a draft, no edits' => function (): void {
         [$d, $c, $p, $jobId] = bh_world();
         $s = bh_session($d, $p['designer']);
         $page = (ts_app($s))(ts_request('GET', '/jobs/' . $jobId . '/brief'), $d);
-        t_eq(302, $page->status());
-        t_contains('{"_redirect":"/slash301pm/legacy/"}', ts_body(bh_ds($d, $s, 'PATCH', '/jobs/' . $jobId . '/brief', ['brief' => ['title' => 'x']])));
-        // straight to the handlers (as if the gate opened to Designers): Policy still refuses
+        t_eq(404, $page->status(), 'a draft does not leak through the gate');
+        t_contains('Only the brief owner can edit this draft.', ts_body(bh_ds($d, $s, 'PATCH', '/jobs/' . $jobId . '/brief', ['brief' => ['title' => 'x']])));
+        // straight to the handlers: Policy refuses
         $designer = $d->users->findById($p['designer']);
         $req = ts_ds_request('PATCH', '/jobs/' . $jobId . '/brief', $s, ['brief' => ['title' => 'Designer edit']])->withUser($designer)->withPathValues(['id' => $jobId]);
         t_contains('Only the brief owner can edit this draft.', ts_body(BriefHandlers::autosave($req, $d)));

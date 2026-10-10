@@ -55,7 +55,7 @@ return [
             ['reason required', $p['am'], $j['mine_overdue'], 'waiting', ['on' => 'client'], 'Say what the job is waiting for'],
             ['waiting on required', $p['am'], $j['mine_overdue'], 'waiting', ['reason' => 'x'], 'Choose who the job is waiting on'],
             ['someone else\'s job', $p['am'], $j['other_am'], 'on_hold', ['reason' => 'x'], 'You cannot put on hold'],
-            ['not available yet (Start)', $p['coo'], $j['designer_job'], 'in_progress', [], 'not available yet'],
+            ['not available yet (approve internally)', $p['coo'], $j['aura_review'], 'approved_internal', [], 'not available yet'],
             ['unknown stage', $p['am'], $j['mine_overdue'], 'Done; DROP', [], 'Unknown stage'],
             ['stale row_version', $p['am'], $j['mine_overdue'], 'on_hold', ['reason' => 'x', 'rv' => 0], 'changed by someone else'],
         ];

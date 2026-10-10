@@ -22,7 +22,9 @@ final class MyDayHandlers
     public static function page(Request $r, Deps $d): Response
     {
         $vm = self::vm(self::user($r), $d);
-        return Shell::page($r, $d, 'My day', 'today', page_today($vm));
+        // Social publishing
+        $social = SocialHandlers::today($d, self::user($r));
+        return Shell::page($r, $d, 'My day', 'today', page_today($vm, $social));
     }
 
     /** One section, patched by id; the page asks for each every 60 seconds. */

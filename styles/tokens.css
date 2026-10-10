@@ -50,6 +50,12 @@
     --stage-approved_internal-foreground: 182 55% 15%;
     --stage-approved_client: 130 36% 84%;
     --stage-approved_client-foreground: 130 55% 15%;
+    --stage-ready_to_schedule: 196 48% 88%;
+    --stage-ready_to_schedule-foreground: 198 60% 20%;
+    --stage-scheduled: 228 52% 91%;
+    --stage-scheduled-foreground: 230 45% 28%;
+    --stage-live: 330 58% 91%;
+    --stage-live-foreground: 330 55% 26%;
     --stage-done: 148 38% 78%;
     --stage-done-foreground: 148 60% 12%;
     --stage-archived: 30 6% 86%;
@@ -109,6 +115,12 @@
     --stage-approved_internal-foreground: 182 45% 84%;
     --stage-approved_client: 130 28% 20%;
     --stage-approved_client-foreground: 130 40% 85%;
+    --stage-ready_to_schedule: 198 34% 20%;
+    --stage-ready_to_schedule-foreground: 196 60% 86%;
+    --stage-scheduled: 230 28% 24%;
+    --stage-scheduled-foreground: 228 70% 90%;
+    --stage-live: 330 30% 23%;
+    --stage-live-foreground: 330 70% 90%;
     --stage-done: 148 32% 24%;
     --stage-done-foreground: 148 50% 88%;
     --stage-archived: 30 5% 18%;
@@ -140,6 +152,12 @@
   --color-stage-approved_internal-foreground: hsl(var(--stage-approved_internal-foreground));
   --color-stage-approved_client: hsl(var(--stage-approved_client));
   --color-stage-approved_client-foreground: hsl(var(--stage-approved_client-foreground));
+  --color-stage-ready_to_schedule: hsl(var(--stage-ready_to_schedule));
+  --color-stage-ready_to_schedule-foreground: hsl(var(--stage-ready_to_schedule-foreground));
+  --color-stage-scheduled: hsl(var(--stage-scheduled));
+  --color-stage-scheduled-foreground: hsl(var(--stage-scheduled-foreground));
+  --color-stage-live: hsl(var(--stage-live));
+  --color-stage-live-foreground: hsl(var(--stage-live-foreground));
   --color-stage-done: hsl(var(--stage-done));
   --color-stage-done-foreground: hsl(var(--stage-done-foreground));
   --color-stage-archived: hsl(var(--stage-archived));

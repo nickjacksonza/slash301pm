@@ -22,6 +22,8 @@ use App\Store\RateLimitStore;
 use App\Store\SeedPasswordAudit;
 use App\Store\SavedViewStore;
 use App\Store\MyDayStore;
+// Social publishing
+use App\Store\PublicationStore;
 use App\Store\UserStore;
 
 /** Everything a handler may use, passed explicitly. Go: type Deps struct. */
@@ -51,6 +53,8 @@ final class Deps
         // Phase 5: hardening
         public readonly RateLimitStore $rateLimits,
         public readonly SeedPasswordAudit $seedPasswords,
+        // Social publishing
+        public readonly PublicationStore $publications,
     ) {}
 
     public static function build(Config $config, Clock $clock, string $driver = 'auto'): self
@@ -83,6 +87,8 @@ final class Deps
             // Phase 5: hardening
             new RateLimitStore($db),
             new SeedPasswordAudit($db, $config->dataDir . '/seed-password-check.json'),
+            // Social publishing
+            new PublicationStore($db, $activity, new JobStore($db, $activity)),
         );
     }
 }
