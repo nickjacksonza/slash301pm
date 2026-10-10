@@ -1,6 +1,6 @@
 # ADR 0006: Client sign-in through Authorizer (researched, not decided)
 
-Status: proposed, researched 2026-10-10 against Authorizer 2.4.1. Nothing is built.
+Status: decided 2026-10-10 (owner agreed). The client portal launches on our own login (single-use invite links that set a password, behind an identity-provider seam, with a nullable users.auth_subject column added now). Clients move to Authorizer later, when MFA, Google or Microsoft sign-in, or a client security review calls for it. Researched against Authorizer 2.4.1; nothing of Authorizer is built.
 Paths below are inside github.com/authorizerdev/authorizer (cloned at tag 2.4.1 / main of 2026-10-06). "Unconfirmed" means I could not verify it from the source.
 
 ## Context
