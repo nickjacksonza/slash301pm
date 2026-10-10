@@ -149,6 +149,16 @@ enum Stage: string
     }
 
     /** Waiting or on hold: paused, resumes to the stored resume stage. */
+    /**
+     * Whether the job's due date still applies (counts for Overdue and Due soon).
+     * It stops applying once the client has approved: from approved_client on,
+     * dates belong to Social scheduling, not delivery (roles.md N13).
+     */
+    public function countsDueDate(): bool
+    {
+        return $this->isOpen() && !in_array($this, [self::ApprovedClient, self::ReadyToSchedule, self::Scheduled, self::Live], true);
+    }
+
     public function isPaused(): bool
     {
         return $this === self::Waiting || $this === self::OnHold;

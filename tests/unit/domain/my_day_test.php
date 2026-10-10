@@ -44,6 +44,18 @@ return [
         t_eq(2, $r->strip->overdue);
         t_eq(1, $r->strip->dueThisWeek, 'only b is due from today to Sunday');
     },
+    'client-approved and Social stages are never overdue or due soon (N13)' => function (): void {
+        $owned = [
+            md_job('ac', ['stage' => Stage::ApprovedClient, 'due' => '2026-10-01']),
+            md_job('rs', ['stage' => Stage::ReadyToSchedule, 'due' => '2026-10-09']),
+            md_job('lv', ['stage' => Stage::Live, 'due' => '2026-10-02']),
+            md_job('ai', ['stage' => Stage::ApprovedInternal, 'due' => '2026-10-01']),
+        ];
+        $r = MyDay::build('me', Role::AM, $owned, [], [], '2026-10-01 00:00:00', md_now());
+        t_eq(['AI'], array_map(static fn ($i) => strtoupper($i->jobId), $r->overdue->items));
+        t_eq([], $r->dueSoon->items);
+        t_true(!Stage::ApprovedClient->countsDueDate() && Stage::InReview->countsDueDate() && !Stage::Done->countsDueDate());
+    },
     'waiting on me: am waits, unsent changes, drafts; not client waits; dedupe by priority' => function (): void {
         $owned = [
             md_job('w1', ['stage' => Stage::Waiting, 'waitingOn' => WaitingOn::Am, 'reason' => 'Chase']),

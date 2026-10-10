@@ -72,7 +72,9 @@ final class MyDay
             }
             $bucket = Dates::bucket($j->dueDate, $now);
             $due = Dates::normalize($j->dueDate);
-            if ($bucket === DueBucket::Overdue) {
+            if (!$j->stage->countsDueDate()) {
+                // Client-approved and Social stages: the delivery date no longer applies (N13).
+            } elseif ($bucket === DueBucket::Overdue) {
                 $overdue[] = self::item($j, $bucket, $today, '');
                 $attention[$j->jobId] = true;
             } elseif ($bucket === DueBucket::Today || $bucket === DueBucket::Next3BusinessDays) {
@@ -156,7 +158,9 @@ final class MyDay
             }
             $bucket = Dates::bucket($j->dueDate, $now);
             $due = Dates::normalize($j->dueDate);
-            if ($bucket === DueBucket::Overdue) {
+            if (!$j->stage->countsDueDate()) {
+                // Client-approved and Social stages: the delivery date no longer applies (N13).
+            } elseif ($bucket === DueBucket::Overdue) {
                 $overdue[] = self::item($j, $bucket, $today, '');
                 $attention[$j->jobId] = true;
             } elseif ($bucket === DueBucket::Today || $bucket === DueBucket::Next3BusinessDays) {

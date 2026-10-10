@@ -134,7 +134,7 @@ final class MyDayStore
         return (int) $this->db->scalar(
             "SELECT COUNT(*) FROM jobs j
              WHERE " . self::OPEN . " AND j.stage <> 'draft' AND " . self::ASSIGNED . "
-               AND ((j.delivery_date IS NOT NULL AND j.delivery_date <> '' AND SUBSTR(j.delivery_date, 1, 10) < :today)" . $team . ')',
+               AND ((j.stage NOT IN ('approved_client', 'ready_to_schedule', 'scheduled', 'live') AND j.delivery_date IS NOT NULL AND j.delivery_date <> '' AND SUBSTR(j.delivery_date, 1, 10) < :today)" . $team . ')',
             ['u' => $userId, 'today' => $todaySast],
         );
     }
@@ -149,7 +149,7 @@ final class MyDayStore
         return (int) $this->db->scalar(
             "SELECT COUNT(*) FROM jobs j LEFT JOIN briefs br ON br.job_id = j.id
              WHERE " . self::OPEN . ' AND ' . self::OWNED . "
-               AND ((COALESCE(NULLIF(br.due_date, ''), j.delivery_date) IS NOT NULL AND SUBSTR(COALESCE(NULLIF(br.due_date, ''), j.delivery_date), 1, 10) < :today)
+               AND ((j.stage NOT IN ('approved_client', 'ready_to_schedule', 'scheduled', 'live') AND COALESCE(NULLIF(br.due_date, ''), j.delivery_date) IS NOT NULL AND SUBSTR(COALESCE(NULLIF(br.due_date, ''), j.delivery_date), 1, 10) < :today)
                  OR (j.stage = 'waiting' AND j.waiting_on = 'am' AND EXISTS (SELECT 1 FROM job_assignments am WHERE am.job_id = j.id AND am.user_id = :u AND am.role_on_job = 'AM'))
                  OR (j.stage = 'draft' AND br.sent_at IS NULL)
                  OR (br.sent_at IS NOT NULL AND br.has_unsent_changes = 1))",
