@@ -5,8 +5,6 @@ namespace App\Http\Handlers;
 
 use App\Domain\Policy;
 use App\Domain\Role;
-// Social publishing
-use App\Domain\SocialPolicy;
 use App\Domain\Signals\SignalInput;
 use App\Domain\Types\Team;
 use App\Http\BriefState;
@@ -35,8 +33,8 @@ final class AssignmentHandlers
         if ($s === null || !Policy::canViewJob($u, $s->access)->allowed) {
             return Response::events(Toast::error('This job no longer exists.'));
         }
-        // Social publishing: the Social slot also opens after the send (SocialPolicy).
-        $dec = $role === Role::Social ? SocialPolicy::canSetSocialSlot($u, $s->access) : Policy::canAssign($u, $s->access, $role);
+        // Social (SocialPolicy), Developer, SEO and Producer also open after the send (Policy::canSetSlot).
+        $dec = Policy::canSetSlot($u, $s->access, $role);
         if (!$dec->allowed) {
             return Shell::deny($r, $dec->reason);
         }

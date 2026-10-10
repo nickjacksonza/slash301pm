@@ -59,6 +59,13 @@ final class Policy
         'edit_job_field:budget' => 'Y Y AC - AC AC - - - - - - - -',
         'edit_job_field:waiting_on' => 'Y Y AC Y AC AC A - - - - - - -',
         'edit_job_field:waiting_reason' => 'Y Y AC Y AC AC A - - - - - - -',
+        // Owner decisions 2026-10: brand logos, asset status overrides, role task slots, demo tasks
+        'manage_brand_logo' => 'Y Y Y - Y Y - - - - - - - -',
+        'assign_task_roles' => 'Y Y AC Y AC AC - - - - - - - -',
+        'view_all_assets' => 'Y Y - Y - - - - - - - - - -',
+        'override_asset_status' => 'Y Y - Y - - - - - - - - - -',
+        'view_overrides_report' => 'Y - - - - - - - - - - - - -',
+        'add_demo_role_tasks' => 'Y - - - - - - - - - - - - -',
     ];
 
     public static function canManageUsers(User $actor): Decision
@@ -210,6 +217,47 @@ final class Policy
         return $d;
     }
 
+    /**
+     * Developer, SEO and Producer after the send (owner decision: their
+     * template tasks are assigned to the job's holder of the role): Traffic
+     * and the job's owners, like the Social slot. Before the send canAssign
+     * already allows the owners.
+     */
+    public static function canAssignTaskRole(User $u, JobAccess $j, Role $slot): Decision
+    {
+        if (!in_array($slot, self::TASK_ROLES, true)) {
+            return Decision::deny('That slot is not chosen this way.');
+        }
+        if (!$j->briefSent || $j->stage === Stage::Draft) {
+            return Decision::deny('This slot is chosen after the brief is sent.');
+        }
+        if ($j->stage->isClosed()) {
+            return Decision::deny('The job is ' . strtolower($j->stage->label()) . '.');
+        }
+        return self::cell('assign_task_roles', $u, $j, 'Only the job owner, Traffic, the COO or the ECD can fill the ' . $slot->value . ' slot.');
+    }
+
+    /** Roles whose slot holder receives template tasks (AssetTemplate::defaultRole). */
+    public const TASK_ROLES = [Role::Developer, Role::SEO, Role::Producer];
+
+    /**
+     * The one check for a team slot picker (brief team section, job sheet):
+     * Social follows SocialPolicy, Developer, SEO and Producer also open after
+     * the send (canAssignTaskRole), everything else canAssign.
+     */
+    public static function canSetSlot(User $u, JobAccess $j, Role $slot): Decision
+    {
+        if ($slot === Role::Social) {
+            return SocialPolicy::canSetSocialSlot($u, $j);
+        }
+        $d = self::canAssign($u, $j, $slot);
+        if ($d->allowed || !in_array($slot, self::TASK_ROLES, true)) {
+            return $d;
+        }
+        $after = self::canAssignTaskRole($u, $j, $slot);
+        return $after->allowed ? $after : $d;
+    }
+
     /** "Make me AM": a manager takes the empty AM slot (existing jobs have no AM; no backfill). */
     public static function canClaimAm(User $u, JobAccess $j): Decision
     {
@@ -292,6 +340,61 @@ final class Policy
         return Decision::deny('Drafts are only visible to the brief owner.');
     }
 
+    /** A brand's logo link (Campaigns page): the roles that manage campaigns. */
+    public static function canSetBrandLogo(User $u): Decision
+    {
+        return self::cell('manage_brand_logo', $u, null, 'Only account managers, PMs, producers, the COO and the ECD change brand logos.');
+    }
+
+    /**
+     * Every asset of a sent job (job sheet list, GET /jobs/{id}/assets):
+     * Traffic, the COO and the ECD (owner decision: crunch time and workflow reviews).
+     */
+    public static function canViewJobAssets(User $u, JobAccess $j): Decision
+    {
+        if (!$j->briefSent) {
+            return Decision::deny('The brief has not been sent, so there are no assets yet.');
+        }
+        return self::cell('view_all_assets', $u, $j, 'Only Traffic, the COO and the ECD see every asset of a job.');
+    }
+
+    /**
+     * Override an asset's status, or a Social post's status, with a reason.
+     * Bypasses the normal flow on purpose; every use is logged as an override.
+     */
+    public static function canOverrideAssetStatus(User $u, JobAccess $j): Decision
+    {
+        if (!$j->briefSent) {
+            return Decision::deny('The brief has not been sent, so there are no assets yet.');
+        }
+        return self::cell('override_asset_status', $u, $j, 'Only Traffic, the COO and the ECD can override an asset status.');
+    }
+
+    /** GET /admin/overrides: the COO's workflow review. */
+    public static function canViewOverridesReport(User $u): Decision
+    {
+        return self::cell('view_overrides_report', $u, null, 'Only the COO sees the overrides report.');
+    }
+
+    /** "Add demo role tasks" on /admin/system: the COO, and only while demo mode is on. */
+    public static function canAddDemoRoleTasks(User $u, bool $demoMode): Decision
+    {
+        if (!$demoMode) {
+            return Decision::deny('Demo tasks can only be added while demo mode is on.');
+        }
+        return self::cell('add_demo_role_tasks', $u, null, 'Only the COO can add demo tasks.');
+    }
+
+    /**
+     * Roles that see only the jobs they are assigned to (view_all_jobs = A):
+     * their filter lists hold only the brands and campaigns of those jobs, and
+     * they get no Owner filter.
+     */
+    public static function seesOnlyAssignedJobs(User $u): bool
+    {
+        return self::rule('view_all_jobs', $u->role) === PolicyRule::Assigned;
+    }
+
     public static function canViewBudget(User $u, JobAccess $j): Decision
     {
         return self::cell('view_budget', $u, $j, 'Budget is visible to the job owner, the COO and the ECD.');
@@ -344,7 +447,7 @@ final class Policy
      * Nav visibility: show only what the role can use (no dead links). Not an
      * authorization check; every route still runs its own Policy function.
      * Items: today, briefs, jobs, board, campaigns, social, admin-users,
-     * admin-system, spike. Unknown items are hidden.
+     * admin-system, admin-overrides, spike. Unknown items are hidden.
      */
     public static function canSeeNav(User $u, string $item): bool
     {
@@ -360,6 +463,7 @@ final class Policy
             'social' => in_array($u->role, [Role::COO, Role::ECD, Role::AM, Role::PM, Role::Producer, Role::Social], true),
             'admin-users' => self::canManageUsers($u)->allowed,
             'admin-system', 'spike' => self::canViewSystem($u)->allowed,
+            'admin-overrides' => self::canViewOverridesReport($u)->allowed,
             default => false,
         };
     }

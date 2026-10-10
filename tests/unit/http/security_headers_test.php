@@ -40,7 +40,7 @@ return [
         t_eq(["'self'", "'unsafe-eval'"], $csp['script-src'], 'Datastar needs eval; nothing inline, no CDN');
         t_eq(["'self'"], $csp['style-src-elem'], 'no <style> elements');
         t_eq(["'unsafe-inline'"], $csp['style-src-attr'], 'style attributes (data-show, UI kit)');
-        t_eq(["'self'", 'data:'], $csp['img-src']);
+        t_eq(["'self'", 'data:', 'https:'], $csp['img-src'], 'brand logos are https links (ADR 0007)');
         t_eq(["'self'"], $csp['connect-src']);
         t_eq(["'none'"], $csp['frame-ancestors']);
         t_eq(["'self'"], $csp['base-uri']);

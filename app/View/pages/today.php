@@ -8,36 +8,79 @@ use App\Domain\Types\MyDayChange;
 use App\Domain\Types\MyDayItem;
 use App\Domain\Types\MyDaySection;
 use App\Domain\Types\MyDayStrip;
+use App\View\ui\AvatarProps;
 use App\View\ui\BadgeProps;
 use App\View\ui\ButtonProps;
 use App\View\ui\PartProps;
 use App\View\VM\MyDayVM;
 
 /**
- * GET /today. No form signals; the only signals are the shell's. Each section is
+ * GET /today. One signal, today.brand (the brand row's filter). Each section is
  * a card with id today-section-<key> that GET /today/sections/<key> patches;
- * the page asks for all of them every 60 seconds.
+ * every 60 seconds the page asks for #today-body (brand row and sections).
  */
 function page_today(MyDayVM $vm, ?\App\View\VM\SocialDayVM $social = null): string
 {
-    $refresh = [];
-    foreach (MyDay::sectionKeys($vm->result->mode) as $key) {
-        $refresh[] = act_raw('get', url('/today/sections/' . $key));
-    }
+    // One request refreshes the brand row and every section (they all follow today.brand).
+    $refresh = act_raw('get', url('/today/body'), 'filterSignals: {include: /^today\\./}');
     ob_start(); ?>
-<div id="today" class="mx-auto flex w-full max-w-4xl flex-col gap-6" data-on-interval__duration.60s="<?= attr(implode('; ', $refresh)) ?>">
+<div id="today" class="mx-auto flex w-full max-w-4xl flex-col gap-6" data-signals="<?= attr(jobs_js(['today' => ['brand' => $vm->brandId]])) ?>" data-on-interval__duration.60s="<?= attr($refresh) ?>">
   <div>
     <h2 class="text-2xl font-semibold leading-tight"><?= e($vm->greeting) ?></h2>
     <p class="text-sm text-muted-foreground"><?= e($vm->dateLabel) ?></p>
   </div>
   <?php // Social publishing: role Social or a Social slot holder (refreshes itself via GET /today/social) ?>
   <?php if ($social !== null): ?><?= partial_today_social($social) ?><?php endif; ?>
-  <?php foreach (MyDay::sectionKeys($vm->result->mode) as $key): ?>
-    <?= partial_today_section($key, $vm) ?>
-  <?php endforeach; ?>
+  <?= partial_today_body($vm) ?>
 </div>
 <?php
     return (string) ob_get_clean();
+}
+
+/** #today-body: the brand row and every section, patched as one by GET /today/body. */
+function partial_today_body(MyDayVM $vm): string
+{
+    $out = '<div id="today-body" class="flex flex-col gap-6">' . partial_today_brands($vm);
+    foreach (MyDay::sectionKeys($vm->result->mode) as $key) {
+        $out .= partial_today_section($key, $vm);
+    }
+    return $out . '</div>';
+}
+
+/**
+ * The brand filter row (owner decision 2026-10): one button per brand with
+ * open jobs in this My day, showing its logo (an https link checked again
+ * here) or a coloured initials badge, with the job count. A button sets
+ * today.brand and fetches #today-body; "All" clears it. Buttons are real
+ * <button>s with aria-pressed and the brand name as the accessible label.
+ */
+function partial_today_brands(MyDayVM $vm): string
+{
+    if ($vm->brands === []) {
+        return '';
+    }
+    $fetch = act_raw('get', url('/today/body'), 'filterSignals: {include: /^today\\./}');
+    $total = 0;
+    foreach ($vm->brands as $b) {
+        $total += $b->jobCount;
+    }
+    $count = static fn (int $n): string => '<span class="rounded-full bg-muted px-1.5 text-xs font-medium tabular-nums text-muted-foreground">' . $n . '</span>';
+    $all = $vm->brandId === '';
+    $html = ui_button(new ButtonProps(variant: $all ? 'default' : 'outline', size: 'sm', attrs: [
+        'aria-pressed' => $all ? 'true' : 'false', 'aria-label' => 'All brands, ' . $total . ($total === 1 ? ' job' : ' jobs'),
+        'data-on:click' => "\$today.brand = ''; " . $fetch,
+    ]), 'All ' . $count($total));
+    foreach ($vm->brands as $b) {
+        $on = $vm->brandId === $b->id;
+        $logo = \App\Domain\Links::isHttpsUrl($b->logoUrl)
+            ? '<img src="' . attr($b->logoUrl) . '" alt="" class="size-6 rounded-sm bg-white object-contain" loading="lazy" referrerpolicy="no-referrer" width="24" height="24">'
+            : ui_avatar(new AvatarProps(name: $b->name, class: 'size-6 text-[10px] font-semibold', attrs: ['aria-hidden' => 'true']));
+        $html .= ui_button(new ButtonProps(variant: $on ? 'default' : 'outline', size: 'sm', attrs: [
+            'aria-pressed' => $on ? 'true' : 'false', 'aria-label' => $b->name . ', ' . $b->jobCount . ($b->jobCount === 1 ? ' job' : ' jobs'), 'title' => $b->name,
+            'data-on:click' => '$today.brand = ' . jobs_js($b->id) . '; ' . $fetch,
+        ]), $logo . '<span class="max-w-32 truncate">' . e($b->name) . '</span>' . $count($b->jobCount));
+    }
+    return '<nav id="today-brands" aria-label="Filter My day by brand" class="flex flex-wrap items-center gap-2">' . $html . '</nav>';
 }
 
 /** One refreshable block of the page, by section key. Top-level id: today-section-<key>. */

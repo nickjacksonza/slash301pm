@@ -224,6 +224,28 @@ final class JobQueryStore
     }
 
     /**
+     * The brands and campaigns of every job the viewer can see (any stage, at
+     * most CAP jobs): the filter lists of roles that see only their assigned
+     * jobs. Same scope as search(). @return array{brands:list<string>,campaigns:list<string>}
+     */
+    public function visibleBrandsAndCampaigns(JobViewer $v, string $today, string $soonEnd): array
+    {
+        $q = JobQuery::fromState(['stages' => 'all'], JobQuery::SCREEN_JOBS);
+        [$sql, $p] = $this->sql($q, $v, $today, $soonEnd, self::CAP);
+        $brands = [];
+        $campaigns = [];
+        foreach ($this->db->query('SELECT DISTINCT y.brand_id, y.campaign_id FROM (' . $sql . ') y', $p) as $r) {
+            if ($r['brand_id'] !== null && $r['brand_id'] !== '' && !in_array((string) $r['brand_id'], $brands, true)) {
+                $brands[] = (string) $r['brand_id'];
+            }
+            if ($r['campaign_id'] !== null && $r['campaign_id'] !== '' && !in_array((string) $r['campaign_id'], $campaigns, true)) {
+                $campaigns[] = (string) $r['campaign_id'];
+            }
+        }
+        return ['brands' => $brands, 'campaigns' => $campaigns];
+    }
+
+    /**
      * Every slot of the given jobs in one query (IN list of bound ids).
      * @param list<string> $jobIds
      * @return array<string,Team>

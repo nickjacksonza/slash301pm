@@ -9,6 +9,7 @@ use App\Domain\Role;
 use App\Http\Deps;
 use App\Http\Request;
 use App\Http\Response;
+use App\Http\Toast;
 use App\Store\MigrationLocked;
 use App\View\VM\SystemVM;
 use Throwable;
@@ -85,6 +86,27 @@ final class SystemHandlers
         return Response::redirect(url('/admin/system', ['notice' => $result->ok ? 'migrated' : 'failed']));
     }
 
+    /**
+     * POST /admin/system/demo-role-tasks (COO, demo mode only): the three role
+     * tasks on up to 3 open sent jobs (DemoTaskStore). Answers with a toast.
+     */
+    public static function demoRoleTasks(Request $r, Deps $d): Response
+    {
+        $user = $r->user();
+        $decision = $user === null ? null : Policy::canAddDemoRoleTasks($user, $d->config->demoMode());
+        if ($user === null || $decision === null || !$decision->allowed) {
+            return Shell::deny($r, $decision !== null ? $decision->reason : 'Sign in first.');
+        }
+        $res = $d->demoTasks->addRoleTasks($user->id, $d->clock->now());
+        $msg = $res->jobNumbers === []
+            ? ($res->skipped === [] ? 'No open sent job to add demo tasks to.' : 'Nothing to add: ' . implode(', ', $res->skipped) . ' already have the demo tasks.')
+            : 'Added UTM link generation, Campaign hashtags and Asset test report to ' . implode(', ', $res->jobNumbers) . '.';
+        if ($res->missingRoles !== []) {
+            $msg .= ' No active ' . implode(', ', $res->missingRoles) . ' user exists, so ' . (count($res->missingRoles) === 1 ? 'that task stays' : 'those tasks stay') . ' unassigned.';
+        }
+        return Response::events($res->jobNumbers === [] || $res->missingRoles !== [] ? Toast::warn($msg) : Toast::ok($msg));
+    }
+
     private static function vm(Request $r, Deps $d, string $notice): SystemVM
     {
         $pinned = '';
@@ -108,6 +130,9 @@ final class SystemHandlers
             $d->config->demoMode(), $d->seedPasswords->check(), count($d->users->listActiveByRole(Role::AM)),
             $status->failureJson !== null, count($status->pending), count($status->modified), count($status->backups), $isPinned,
         );
-        return new SystemVM($status, $versions, $d->config->demoMode(), $isPinned, $r->csrfToken(), $notice, $gate);
+        $user = $r->user();
+        $demoTasks = $user !== null && Policy::canAddDemoRoleTasks($user, $d->config->demoMode())->allowed;
+        return new SystemVM($status, $versions, $d->config->demoMode(), $isPinned, $r->csrfToken(), $notice, $gate, $demoTasks,
+            $user !== null && Policy::canViewOverridesReport($user)->allowed);
     }
 }

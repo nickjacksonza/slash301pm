@@ -13,5 +13,9 @@ final class MyDayVM
         public readonly string $dateLabel,
         public readonly MyDayResult $result,
         public readonly bool $canCreate,
+        /** @var list<\App\Domain\Types\MyDayBrand> brand filter row (owner decision 2026-10) */
+        public readonly array $brands = [],
+        /** The applied brand filter ('' = all). */
+        public readonly string $brandId = '',
     ) {}
 }

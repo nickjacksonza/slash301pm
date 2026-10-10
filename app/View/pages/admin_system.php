@@ -18,6 +18,17 @@ function page_admin_system(SystemVM $vm): string
     </p>
   <?php endif; ?>
 <?= partial_beta_gate($vm->betaGate) ?>
+  <?php if ($vm->canAddDemoTasks): ?>
+  <section class="<?= attr($card) ?>" aria-labelledby="demo-tasks-title">
+    <h2 id="demo-tasks-title" class="text-base font-semibold">Demo role tasks</h2>
+    <p class="mt-2 text-sm text-muted-foreground">Adds UTM link generation (Developer), Campaign hashtags (SEO) and Asset test report (Producer) to up to 3 open, sent jobs, as deliverables and assets given to the first active Developer, SEO and Producer. Jobs that already have them are skipped. Demo mode only.</p>
+    <div class="mt-4"><?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', attrs: ['data-indicator' => '_demo_busy', 'data-attr:disabled' => '$_demo_busy',
+        'data-on:click' => act_raw('post', url('/admin/system/demo-role-tasks'), 'filterSignals: {include: /^$/}, retryMaxCount: 0')]), 'Add demo role tasks') ?></div>
+  </section>
+  <?php endif; ?>
+  <?php if ($vm->canSeeOverrides): ?>
+    <p class="text-sm"><a class="text-primary underline-offset-4 hover:underline" href="<?= attr(url('/admin/overrides')) ?>">Status overrides report</a> (asset and post overrides by Traffic, the COO and the ECD).</p>
+  <?php endif; ?>
 
   <section class="<?= attr($card) ?>">
     <h2 class="text-base font-semibold">Database schema</h2>

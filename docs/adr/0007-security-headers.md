@@ -14,17 +14,19 @@ Before this ADR the app sent `X-Content-Type-Options`, `X-Frame-Options` and `Re
   ```
   default-src 'self'; script-src 'self' 'unsafe-eval';
   style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline';
-  img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none';
+  img-src 'self' data: https:; font-src 'self'; connect-src 'self'; object-src 'none';
   frame-ancestors 'none'; base-uri 'self'; form-action 'self'
   ```
 
   plus `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()`, `Cross-Origin-Opener-Policy: same-origin`, and on live only `Strict-Transport-Security: max-age=63072000; includeSubDomains` (local runs on plain http).
 - No inline scripts anywhere. `Redirect` is now a signal patch (`{"_redirect": "/slash301pm/..."}`, `application/json` in the html transport) and the body of both layouts watches it: `data-effect="$_redirect && $_redirect.startsWith('/') && !$_redirect.startsWith('//') && window.location.assign($_redirect)"`. Only same-origin paths are followed.
 - Style attributes are allowed (`style-src-attr 'unsafe-inline'`), `<style>` elements are not (`style-src-elem 'self'`). The brief print page's `@page` rule moved from an inline `<style>` to `public/css/print.css`. `style-src` keeps `'unsafe-inline'` only as the fallback for browsers without the CSP Level 3 split directives (Chrome 75+, Firefox 108+ and Safari 15.4+ use the split ones).
-- No fonts, images or scripts from other origins. If a web font is added later it must be self-hosted under `public/` (`font-src 'self'`).
+- No fonts or scripts from other origins. If a web font is added later it must be self-hosted under `public/` (`font-src 'self'`).
+- Images: `img-src 'self' data: https:` (amended 2026-10-10). Brand logos on My day are links the account roles paste on the Campaigns page, hosted by the brand (owner decision: no uploads). Only `https://` links pass `Links::isHttpsUrl` on save, and the view checks the stored value again before it writes an `<img src>`, so a `javascript:`, `data:` or plain `http:` value written straight into `brands.logo_url` is never rendered. Plain `http:` is not allowed (mixed content).
 - `tests/integration/http/hostile_pages_test.php` renders every GET route and fails on any inline `<script>`, `<style>` element, `on*=` handler or `javascript:`/`data:` URL, and checks the header set on every response. `tests/unit/http/security_headers_test.php` pins the policy.
 
 ## Consequences
+- `img-src https:` lets a page load an image from any https host, which tells that host the viewer's IP address and that the page was opened (the `<img>` carries `referrerpolicy="no-referrer"`, so not the URL). Images cannot run script. The alternative was initials only, which the owner did not want; a later self-hosted upload could narrow this back to `'self'`.
 - `'unsafe-eval'` means an attacker who can inject a `data-*` attribute can run script through Datastar. The defence is output escaping: every value in an attribute goes through `attr()`/`js()`, and the hostile-string test covers every page and fragment. `'unsafe-eval'` does not allow inline `<script>` or `on*=` handlers, so classic injected markup is still blocked.
 - `style-src-attr 'unsafe-inline'` allows CSS in style attributes. CSS cannot run script in current browsers; the residual risk is UI redressing inside our own pages, which escaping also prevents.
 - The legacy React app (`/legacy/`, `api/`) is served by Apache directly and gets none of these headers. It is retired area by area after the beta; adding a policy for it is out of scope.

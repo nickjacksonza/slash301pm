@@ -28,6 +28,10 @@ final class SocialPolicy
         'social_edit_live_link' => 'Y Y - - - - - - - - - - A -',
         'social_set_promoted' => 'Y Y - - - - - - - - - - A -',
         'social_archive_post' => 'Y Y - - - - - - - - - - A -',
+        // Owner decision 2026-10: the Producer owns asset test reports, so on their
+        // jobs they may send a post back to checking and fill the test result item.
+        'social_set_checking' => 'Y Y - - - AC - - - - - - A -',
+        'social_edit_test_result' => 'Y Y - - - AC - - - - - - A -',
         // Not in the matrix (owner defaults for this phase): reopen one step back, and
         // filling the Social slot after the brief is sent.
         'social_reopen' => 'Y Y - - - - - - - - - - A -',
@@ -99,6 +103,22 @@ final class SocialPolicy
         return self::write('social_reopen', $u, $j);
     }
 
+    /** Send a post back to checking (from Ready to schedule or Scheduled), with a reason. */
+    public static function canSetChecking(User $u, JobAccess $j): Decision
+    {
+        return self::write('social_set_checking', $u, $j);
+    }
+
+    /**
+     * The checklist's Test result item only (asset test reports). Whoever may
+     * edit the whole checklist may edit this item too.
+     */
+    public static function canEditTestResult(User $u, JobAccess $j): Decision
+    {
+        $all = self::canEditChecklist($u, $j);
+        return $all->allowed ? $all : self::write('social_edit_test_result', $u, $j);
+    }
+
     /** The decision for a publication move. */
     public static function canAct(User $u, JobAccess $j, PublicationAction $a): Decision
     {
@@ -108,6 +128,7 @@ final class SocialPolicy
             PublicationAction::GoLive => self::canSetLive($u, $j),
             PublicationAction::Archive => self::canArchive($u, $j),
             PublicationAction::Reopen => self::canReopen($u, $j),
+            PublicationAction::Recheck => self::canSetChecking($u, $j),
         };
     }
 
@@ -169,9 +190,11 @@ final class SocialPolicy
                     : 'Social work starts once the client has approved the job.'
             );
         }
-        return self::cell($action, $u, $j, $u->role === Role::Social
-            ? 'You need the Social slot on this job (or an asset assigned to you) to change its posts.'
-            : 'Only Social, the COO or the ECD can change the posts.');
+        return self::cell($action, $u, $j, match (true) {
+            $u->role === Role::Social => 'You need the Social slot on this job (or an asset assigned to you) to change its posts.',
+            $u->role === Role::Producer && self::rule($action, $u->role) !== PolicyRule::Deny => 'Only the Producer on this job can do this.',
+            default => 'Only Social, the COO or the ECD can change the posts.',
+        });
     }
 
     private static function cell(string $action, User $u, JobAccess $j, string $denyReason): Decision

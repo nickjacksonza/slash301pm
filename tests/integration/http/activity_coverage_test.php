@@ -115,6 +115,18 @@ function ac_cases(Deps $d, array $c, array $p, string $jobId, string $legacyJob)
         'DELETE /social/publications/{pid}' => ['publication_removed', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'DELETE', '/social/publications/' . $fb1, sx_sig($d, $fb1)))],
         'POST /social/publications/{pid}/ready' => ['publication_ready', 'coo', static fn () => $social('POST', '/ready')],
         'POST /social/jobs/{id}/ready' => ['publication_ready', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/social/jobs/' . $sj . '/ready'))],
+        // Owner decisions 2026-10: back to checking, then an override of the same post (ig2 is Ready to schedule here)
+        'POST /social/publications/{pid}/recheck' => ['publication_rechecked', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/social/publications/' . $ig2 . '/recheck', sx_sig($d, $ig2, ['reason' => 'UTM test failed'])))],
+        'POST /jobs/{id}/publications/override' => ['asset_status_overridden', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/jobs/' . $sj . '/publications/override',
+            ['ovp' => ['pub_id' => $ig2, 'rv' => $d->publications->get($ig2)->rowVersion, 'to' => 'ready_to_schedule', 'reason' => 'Checked by phone']]))],
+        'POST /jobs/{id}/assets/override' => ['asset_status_overridden', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/jobs/' . $sj . '/assets/override',
+            ['ova' => ['asset_id' => $sa2, 'from' => $d->assets->listByJob($sj)[1]->status, 'to' => 'In Review', 'reason' => 'Crunch']]))],
+        'POST /brands/logo' => ['brand_logo_changed', 'am', static fn () => sx_ok(bh_ds($d, $amy, 'POST', '/brands/logo', ['eb' => ['brand_id' => $c['brand'], 'logo_url' => 'https://example.com/merc.png']]))],
+        'POST /admin/system/demo-role-tasks' => ['demo_role_tasks_added', 'coo', static function () use ($d, $coo): void {
+            file_put_contents($d->config->demoFlagPath(), '1');   // the temp data dir of this test, never the real data/
+            sx_ok(bh_ds($d, $coo, 'POST', '/admin/system/demo-role-tasks'));
+            unlink($d->config->demoFlagPath());
+        }],
         'POST /social/publications/{pid}/scheduled' => ['publication_scheduled', 'coo', static fn () => $social('POST', '/scheduled', ['scheduled_at' => '2026-10-12T09:30'])],
         'PATCH /social/publications/{pid}/schedule' => ['publication_rescheduled', 'coo', static fn () => $social('PATCH', '/schedule', ['scheduled_at' => '2026-10-12T10:30'])],
         'PATCH /social/publications/{pid}/live-link' => ['publication_link_added', 'coo', static fn () => $social('PATCH', '/live-link', ['live_url' => 'https://instagram.com/p/1'])],

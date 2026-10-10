@@ -24,6 +24,8 @@ use App\Store\SavedViewStore;
 use App\Store\MyDayStore;
 // Social publishing
 use App\Store\PublicationStore;
+use App\Store\AssetOverrideStore;
+use App\Store\DemoTaskStore;
 use App\Store\UserStore;
 
 /** Everything a handler may use, passed explicitly. Go: type Deps struct. */
@@ -55,6 +57,9 @@ final class Deps
         public readonly SeedPasswordAudit $seedPasswords,
         // Social publishing
         public readonly PublicationStore $publications,
+        // Owner decisions 2026-10: asset status overrides, demo role tasks
+        public readonly AssetOverrideStore $assetOverrides,
+        public readonly DemoTaskStore $demoTasks,
     ) {}
 
     public static function build(Config $config, Clock $clock, string $driver = 'auto'): self
@@ -70,7 +75,7 @@ final class Deps
             new LoginAttemptStore($db),
             new Migrator($db, $config->migrationsDir(), $config->backupsDir(), $config->migrateLockPath(), $config->migrateFailurePath(), $clock),
             $clock,
-            new BrandStore($db),
+            new BrandStore($db, $activity),
             new CampaignStore($db, $activity),
             new JobStore($db, $activity),
             $briefs,
@@ -89,6 +94,8 @@ final class Deps
             new SeedPasswordAudit($db, $config->dataDir . '/seed-password-check.json'),
             // Social publishing
             new PublicationStore($db, $activity, new JobStore($db, $activity)),
+            new AssetOverrideStore($db, $activity),
+            new DemoTaskStore($db, $activity, $assets),
         );
     }
 }

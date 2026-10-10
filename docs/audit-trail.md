@@ -20,6 +20,10 @@ Every state-changing request in the new app writes a row in `activity` (migratio
 | `POST /jobs/{id}/move` | the stage verb, `data.via = board` or `grid` | job | |
 | `POST /jobs/{id}/claim-am` | `assigned_to_job` (`data.claimed = true`) | job | |
 | `POST /campaigns` | `campaign_created` | campaign | No job. |
+| `POST /brands/logo` | `brand_logo_changed` | brand | No job. data: from, to (https link or empty). |
+| `POST /jobs/{id}/assets/override` | `asset_status_overridden` | asset | Traffic, COO, ECD. data: kind asset, asset name, from, to, reason; recipients: asset assignee, AM (or brief creator), CD. Marked as an override in the activity feed; listed on `/admin/overrides`. |
+| `POST /jobs/{id}/publications/override` | `asset_status_overridden` (+ `job_*` Social steps) | publication | As above with kind publication and the platform; the job's Social stage follows in either direction. |
+| `POST /admin/system/demo-role-tasks` | `demo_role_tasks_added` | job | COO, demo mode only; one row per job that got the three role tasks; recipients: the assignees. |
 | `POST /admin/users` | `user_created` | user | No job; data holds the username and role, never a user id, so these rows never reach anyone's My day. |
 | `POST /admin/users/{id}/reset` | `password_reset` | user | The new password is never logged. |
 | `POST /admin/users/{id}/deactivate` | `user_deactivated` | user | |
@@ -37,6 +41,7 @@ Every state-changing request in the new app writes a row in `activity` (migratio
 | `POST /social/publications/{pid}/live` | `publication_live` (+ `job_go_live`) | publication | N36 to the AM; `data.live_url`. |
 | `POST /social/publications/{pid}/archive` | `publication_archived` | publication | N38 to the AM; reason required. |
 | `POST /social/publications/{pid}/reopen` | `publication_reopened` (+ `job_social_step_back`) | publication | N39 to Social on the job and the AM; reason required. |
+| `POST /social/publications/{pid}/recheck` | `publication_rechecked` (+ `job_social_step_back`) | publication | Back to checking (the job's Producer, Social, COO, ECD); to Social on the job and the AM; reason required. |
 
 ## Exempt routes
 

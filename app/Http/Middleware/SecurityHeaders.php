@@ -25,12 +25,15 @@ use Closure;
  *   positions) use style attributes. <style> elements stay blocked
  *   (style-src-elem 'self'); style-src keeps 'unsafe-inline' only as the
  *   fallback for browsers without the CSP3 split directives.
+ * - img-src https:: brand logos are links to images on other sites (owner
+ *   decision 2026-10, no uploads). Images cannot run script; only https links
+ *   are stored (Links::isHttpsUrl) and rendered.
  */
 final class SecurityHeaders
 {
     public const CSP = "default-src 'self'; script-src 'self' 'unsafe-eval'; "
         . "style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; "
-        . "img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; "
+        . "img-src 'self' data: https:; font-src 'self'; connect-src 'self'; object-src 'none'; "
         . "frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 
     public const PERMISSIONS = 'camera=(), microphone=(), geolocation=(), payment=(), usb=()';

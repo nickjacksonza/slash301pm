@@ -48,7 +48,7 @@ final class JobBoardHandlers
         $u = BriefHandlers::user($r);
         [$q, $viewId] = SavedViewHandlers::resolve($r, $d, $u, JobQuery::SCREEN_BOARD);
         $res = JobsView::search($d, $u, $q);
-        $vm = new JobsPageVM(JobQuery::SCREEN_BOARD, $q->toSignalState(), JobsView::filters(JobQuery::SCREEN_BOARD, $d),
+        $vm = new JobsPageVM(JobQuery::SCREEN_BOARD, $q->toSignalState(), JobsView::filters(JobQuery::SCREEN_BOARD, $d, $u),
             SavedViewHandlers::menu($d, $u, JobQuery::SCREEN_BOARD, $q, $viewId), null, JobsView::board($res, $q, $u, $d->clock->now()),
             url('/jobs'), url('/jobs/board'));
         return Shell::page($r, $d, 'Board', 'board', page_jobs_board($vm));
@@ -227,6 +227,18 @@ final class JobBoardHandlers
             $deliverables[] = $l->qty . ' x ' . $l->label . ($l->channel !== '' ? ', ' . $l->channel : '') . ($l->sizeFormat !== '' ? ' (' . $l->sizeFormat . ')' : '');
         }
         $id = rawurlencode($row->id);
+        // Every asset of the job for Traffic, the COO and the ECD (owner decision 2026-10).
+        $assetRows = null;
+        if (Policy::canViewJobAssets($u, $a)->allowed) {
+            $byAsset = [];
+            foreach ($d->publications->listByJob($row->id) as $p) {
+                $byAsset[$p->assetId][] = $p;
+            }
+            $assetRows = [];
+            foreach ($d->assetOverrides->jobAssets($row->id) as $x) {
+                $assetRows[] = AssetHandlers::row($x, $byAsset[$x->id] ?? []);
+            }
+        }
         return new JobSheetVM(
             $row->id, $row->jobNumber, $row->title !== '' ? $row->title : '(untitled)', $row->stage, JobsView::waitingText($row), $row->brandName, $row->campaignName,
             fmt_date($row->dueDate), JobsView::dueBadge($row->dueDate, $row->stage, $now),
@@ -239,6 +251,7 @@ final class JobBoardHandlers
             url('/jobs/' . $id . '/brief'), $row->workingCopy && $row->hasUnsentChanges,
             BriefView::activity($d->activity->listForJob($row->id, 12), !$row->workingCopy), JobsView::moves($u, $a, $row), $row->rowVersion, Ids::new(), url('/jobs/' . $id . '/move'),
             self::socialSlot($d, $u, $a, $team, $row->briefSent),
+            $assetRows, $assetRows !== null ? url('/jobs/' . $id . '/assets') : '',
         );
     }
 }

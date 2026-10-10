@@ -26,11 +26,10 @@ return [
         t_contains('Good morning, Am_amy', $html);
         t_not_contains('data-nav-count', $html);
         t_not_contains('Mark all seen', $html);
-        // the 60 second refresh asks for every section with the CSRF header
+        // the 60 second refresh asks for the whole body (brand row and every section) with the CSRF header
         t_contains('data-on-interval__duration.60s', $html);
-        foreach (['strip', 'overdue', 'due-soon', 'waiting', 'changed'] as $k) {
-            t_contains('/slash301pm/today/sections/' . $k, $html);
-        }
+        t_contains('/slash301pm/today/body', $html);
+        t_contains('id="today-body"', $html);
         t_contains('X-CSRF-Token', $html);
     },
     'my day: sections, nav badge, section patches and mark all seen' => function (): void {

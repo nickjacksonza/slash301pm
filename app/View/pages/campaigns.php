@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use App\View\ui\AvatarProps;
 use App\View\ui\ButtonProps;
 use App\View\ui\DialogCloseProps;
 use App\View\ui\DialogProps;
@@ -30,7 +31,18 @@ function partial_campaigns_panel(CampaignsVM $vm): string
   <?php if ($vm->notice !== ''): ?><p role="status" class="rounded-md bg-muted px-3 py-2 text-sm"><?= e($vm->notice) ?></p><?php endif; ?>
   <?php foreach ($vm->groups as $g): ?>
     <section class="bg-card border border-border flex flex-col gap-3 p-6 rounded-xl shadow-sm text-card-foreground" aria-labelledby="brand-<?= attr($g->brandId) ?>">
-      <h2 id="brand-<?= attr($g->brandId) ?>" class="text-base font-semibold"><?= e($g->brandName) ?> <span class="ml-1 font-mono text-xs font-normal text-muted-foreground"><?= e($g->prefix) ?></span></h2>
+      <div class="flex flex-wrap items-center gap-3">
+        <?php if ($g->logoUrl !== ''): ?>
+          <img src="<?= attr($g->logoUrl) ?>" alt="" class="size-8 rounded-sm bg-white object-contain" loading="lazy" referrerpolicy="no-referrer" width="32" height="32">
+        <?php else: ?>
+          <?= ui_avatar(new AvatarProps(name: $g->brandName, class: 'size-8 text-xs font-semibold', attrs: ['aria-hidden' => 'true'])) ?>
+        <?php endif; ?>
+        <h2 id="brand-<?= attr($g->brandId) ?>" class="flex-1 text-base font-semibold"><?= e($g->brandName) ?> <span class="ml-1 font-mono text-xs font-normal text-muted-foreground"><?= e($g->prefix) ?></span></h2>
+        <?php if ($vm->canSetLogo): ?>
+          <?= ui_button(new ButtonProps(variant: 'ghost', size: 'sm', attrs: ['aria-label' => 'Edit brand ' . $g->brandName,
+              'data-on:click' => '$eb.brand_id = ' . jobs_js($g->brandId) . '; $eb.logo_url = ' . jobs_js($g->logoUrl) . '; $eb.name = ' . jobs_js($g->brandName) . '; $edit_brand.open = true']), 'Brand') ?>
+        <?php endif; ?>
+      </div>
       <?php if ($g->campaigns === []): ?>
         <p class="text-sm text-muted-foreground">No campaigns yet.</p>
       <?php else: ?>
@@ -55,6 +67,20 @@ function partial_campaigns_panel(CampaignsVM $vm): string
   <?php if ($vm->createdId !== ''): ?>
     <?php /* A new element runs data-init once; an unchanged data-signals attribute would not re-apply, so this is how the dialog closes. */ ?>
     <div id="campaign-created-<?= attr($vm->createdId) ?>" hidden data-init="$new_campaign.open = false"></div>
+  <?php endif; ?>
+  <?php if ($vm->brandSaved !== ''): ?>
+    <div id="brand-saved-<?= attr($vm->brandSaved) ?>" hidden data-init="$edit_brand.open = false"></div>
+  <?php endif; ?>
+  <?php if ($vm->canSetLogo): ?>
+  <?= ui_dialog(new DialogProps(id: 'edit-brand'),
+      '<div data-signals="' . js(['eb' => ['brand_id' => '', 'logo_url' => '', 'name' => '']]) . '">'
+      . ui_dialog_header(new PartProps(), ui_dialog_title(new PartProps(), 'Brand <span data-text="$eb.name"></span>')
+          . ui_dialog_description(new PartProps(), 'Paste a link to the brand logo (https only). My day shows it on the brand filter row; leave it empty for coloured initials.'))
+      . ui_dialog_content(new PartProps(class: 'flex flex-col gap-4'),
+          brief_field('eb-logo', 'Logo link', ui_input(new InputProps(id: 'eb-logo', type: 'url', placeholder: 'https://example.com/logo.png', attrs: ['data-bind' => 'eb.logo_url', 'maxlength' => '2000']))))
+      . ui_dialog_footer(new PartProps(), ui_dialog_close(new DialogCloseProps(dialogId: 'edit-brand', variant: 'outline'), 'Close')
+          . ui_button(new ButtonProps(attrs: ['data-on:click' => act_raw('post', url('/brands/logo'), 'filterSignals: {include: /^eb\\./}, retryMaxCount: 0')]), 'Save logo'))
+      . '</div>') ?>
   <?php endif; ?>
   <?php if ($vm->canManage): ?>
   <?= ui_dialog(new DialogProps(id: 'new-campaign'),

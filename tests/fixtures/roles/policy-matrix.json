@@ -332,6 +332,32 @@
             }
         },
         {
+            "id": "assign_task_roles",
+            "section": "Assignments",
+            "phase": "beta",
+            "description": "Fill or clear the Developer, SEO or Producer slot after the brief is sent (owner decision 2026-10: their template tasks go to the slot holder). Before the send assign_creatives and assign_account_roles apply.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief sent (stage not draft) and the job not closed. AM, PM and Producer: their own jobs. The holder must have the slot role."
+            },
+            "legacy": "No legacy equivalent: legacy has no Developer, SEO or Producer slot workflow."
+        },
+        {
             "id": "manage_tasks",
             "section": "Assets and tasks",
             "phase": "later",
@@ -405,6 +431,58 @@
                 "CD": "Holds the CD slot on the job."
             },
             "legacy": "api/permissions.php:101-107 lets every manager (AM, PM, Traffic, Producer) edit any asset."
+        },
+        {
+            "id": "view_all_assets",
+            "section": "Assets and tasks",
+            "phase": "beta",
+            "description": "See every asset of a sent job, by deliverable, with status, assignee and due date (job sheet list and GET /jobs/{id}/assets). Owner decision 2026-10 for crunch time and COO workflow reviews.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "allow",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief sent. Makers and owners keep their usual job views."
+            },
+            "legacy": "Legacy lists every asset to managers (api/permissions.php:85-107)."
+        },
+        {
+            "id": "override_asset_status",
+            "section": "Assets and tasks",
+            "phase": "beta",
+            "description": "Override an asset status (any legacy assets.status value) or a Social post status (any publication status) outside the normal flow, with a required reason.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "allow",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief sent. Reason required (one line, at most 1000 characters). Writes asset_status_overridden (data: from, to, reason) in the same transaction, notifying the asset assignee, the AM (or brief creator) and the CD. Post overrides move the job Social stage in either direction. Shown as an override in the activity feed and on the Overrides report."
+            },
+            "legacy": "Legacy managers can set any asset status with no reason and no log (api/permissions.php:85-107)."
         },
         {
             "id": "edit_job_field:title",
@@ -1685,6 +1763,81 @@
             "legacy": "api/api.php:343 COO only (kept)."
         },
         {
+            "id": "manage_brand_logo",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "Set or clear a brand logo link on the Campaigns page (shown on the My day brand filter row).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "deny",
+                "PM": "allow",
+                "Producer": "allow",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "https links only (Links::isHttpsUrl); no uploads. The view checks the stored link again before rendering it."
+            },
+            "legacy": "No legacy equivalent: legacy brands have no logo."
+        },
+        {
+            "id": "view_overrides_report",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "GET /admin/overrides: every status override in a date range (who, job, asset, from and to, reason) for workflow reviews.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "deny",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "No legacy equivalent."
+        },
+        {
+            "id": "add_demo_role_tasks",
+            "section": "Organisation and visibility",
+            "phase": "beta",
+            "description": "\"Add demo role tasks\" on /admin/system: for up to 3 open sent jobs, add the UTM link generation, Campaign hashtags and Asset test report deliverables, expand them into assets and give them to the first active Developer, SEO and Producer.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "deny",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Demo mode on only. Idempotent: jobs that already have the tasks are skipped. Logged as demo_role_tasks_added."
+            },
+            "legacy": "No legacy equivalent."
+        },
+        {
             "id": "view_all_jobs",
             "section": "Organisation and visibility",
             "phase": "beta",
@@ -2081,6 +2234,60 @@
             },
             "conditions": {
                 "*": "Archive only, with a reason. Hard delete is not offered to Social. Notifies the AM."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "social_set_checking",
+            "section": "Social publishing",
+            "phase": "later",
+            "description": "Send a post back to checking (from Ready to Schedule or Scheduled), with a reason, when the asset test report finds a problem. Notifies Social and the AM.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage approved_client to live. Reason required. The job Social stage moves back with it.",
+                "Producer": "Own jobs: the Producer slot, an asset assigned to them, or the brief creator."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "social_edit_test_result",
+            "section": "Social publishing",
+            "phase": "later",
+            "description": "Tick or note the checklist Test result item only (asset test reports).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Post still being checked. Whoever may edit the whole checklist (social_edit_checklist) may edit this item too.",
+                "Producer": "Own jobs; the other checklist items stay as stored."
             },
             "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
         }

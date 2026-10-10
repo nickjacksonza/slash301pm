@@ -19,5 +19,9 @@ final class CampaignsVM
         public readonly string $notice,
         /** set after a create: renders a one-off element that closes the dialog */
         public readonly string $createdId = '',
+        /** May set brand logos (Policy::canSetBrandLogo) */
+        public readonly bool $canSetLogo = false,
+        /** set after a logo save: a one-off element that closes the brand dialog */
+        public readonly string $brandSaved = '',
     ) {}
 }

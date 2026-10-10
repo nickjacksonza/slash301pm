@@ -23,13 +23,14 @@ final class AssetPlan
     /**
      * @param list<BriefLine> $lines current working copy
      * @param list<Asset> $assets every asset of the job
+     * @param int $sortFrom lowest sort order for new assets (when $assets is not every asset of the job)
      */
-    public static function plan(array $lines, array $assets, AssetNaming $ctx): AssetPlanResult
+    public static function plan(array $lines, array $assets, AssetNaming $ctx, int $sortFrom = 0): AssetPlanResult
     {
         $create = [];
         $cancel = [];
         $warnings = [];
-        $sort = 0;
+        $sort = $sortFrom;
         foreach ($assets as $a) {
             $sort = max($sort, $a->sortOrder + 1);
         }
@@ -57,7 +58,8 @@ final class AssetPlan
                         $base === '' ? '' : ($numbered ? $base . $seq : $base),
                         $seq, 1, AssetName::sizeToken($line->sizeFormat), $ctx->now,
                     );
-                    $create[] = new PlannedAsset($line->id, $name, $type, $line->templateId, $line->dueDate ?? $ctx->briefDueDate, $sort);
+                    $create[] = new PlannedAsset($line->id, $name, $type, $line->templateId, $line->dueDate ?? $ctx->briefDueDate, $sort,
+                        $template !== null ? $template->defaultRole : null);
                     $sort++;
                 }
             } elseif (count($live) > $qty) {

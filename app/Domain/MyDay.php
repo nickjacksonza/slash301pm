@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Domain;
 
+use App\Domain\Types\MyDayBrand;
 use App\Domain\Types\MyDayChange;
 use App\Domain\Types\MyDayItem;
 use App\Domain\Types\MyDayJob;
@@ -216,6 +217,80 @@ final class MyDay
         );
     }
 
+    // ---- brand filter row (owner decision 2026-10) ---------------------------------
+
+    /**
+     * The brands of the open jobs My day shows (owned jobs for owners; sent,
+     * assigned jobs otherwise), with a job count each, by name. Jobs without a
+     * brand get no button.
+     * @param list<MyDayJob> $jobs
+     * @return list<MyDayBrand>
+     */
+    public static function brands(array $jobs, MyDayMode $mode): array
+    {
+        $by = [];
+        foreach ($jobs as $j) {
+            if (!$j->stage->isOpen() || $j->brandId === '' || ($mode !== MyDayMode::Owner && $j->stage === Stage::Draft)) {
+                continue;
+            }
+            if (!isset($by[$j->brandId])) {
+                $by[$j->brandId] = ['name' => $j->brandName, 'logo' => $j->brandLogoUrl, 'n' => 0];
+            }
+            $by[$j->brandId]['n']++;
+        }
+        $out = [];
+        foreach ($by as $id => $b) {
+            $out[] = new MyDayBrand((string) $id, $b['name'], $b['logo'], $b['n']);
+        }
+        usort($out, static fn (MyDayBrand $a, MyDayBrand $b): int => strcasecmp($a->name, $b->name) ?: strcmp($a->id, $b->id));
+        return $out;
+    }
+
+    /**
+     * The brand filter actually applied: $wanted when it is one of $brands
+     * (a signal is user input; anything else means "All"), else ''.
+     * @param list<MyDayBrand> $brands
+     */
+    public static function selectedBrand(string $wanted, array $brands): string
+    {
+        foreach ($brands as $b) {
+            if ($b->id === $wanted) {
+                return $wanted;
+            }
+        }
+        return '';
+    }
+
+    /** @param list<MyDayJob> $jobs @return list<MyDayJob> only $brandId's jobs ('' keeps all) */
+    public static function jobsOfBrand(array $jobs, string $brandId): array
+    {
+        if ($brandId === '') {
+            return $jobs;
+        }
+        $out = [];
+        foreach ($jobs as $j) {
+            if ($j->brandId === $brandId) {
+                $out[] = $j;
+            }
+        }
+        return $out;
+    }
+
+    /** @param list<MyDayChange> $changes @return list<MyDayChange> only changes on $brandId's jobs ('' keeps all) */
+    public static function changesOfBrand(array $changes, string $brandId): array
+    {
+        if ($brandId === '') {
+            return $changes;
+        }
+        $out = [];
+        foreach ($changes as $c) {
+            if ($c->brandId === $brandId) {
+                $out[] = $c;
+            }
+        }
+        return $out;
+    }
+
     /** "New brief v1.0.0" or "Brief updated to v1.2.0". */
     public static function briefNews(MyDayJob $j): string
     {
@@ -280,6 +355,7 @@ final class MyDay
             'deliverable_updated' => 'changed a deliverable',
             'deliverable_removed' => 'removed a deliverable',
             'deliverables_reordered' => 'reordered the deliverables',
+            Notifications::ASSET_STATUS_OVERRIDDEN => 'overrode an asset status',
             // Social publishing
             default => Notifications::socialPhrase($verb, []) ?? str_replace('_', ' ', $verb),
         };

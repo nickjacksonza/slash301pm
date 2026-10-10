@@ -123,7 +123,7 @@ function partial_jobs_filters(JobFiltersVM $vm): string
       </div>
     </div>
   </details>
-  <?= $select('jf-owner', 'Owner', 'q.owner', $vm->ownerOptions) ?>
+  <?php if ($vm->ownerOptions !== []): /* none for roles that see only their assigned jobs */ ?><?= $select('jf-owner', 'Owner', 'q.owner', $vm->ownerOptions) ?><?php endif; ?>
   <?= $select('jf-brand', 'Brand', 'q.brand', $vm->brandOptions, "\$q.campaign = ''; ") ?>
   <?= $select('jf-campaign', 'Campaign', 'q.campaign', $vm->campaignOptions) ?>
   <?= $select('jf-due', 'Due', 'q.due', $vm->dueOptions) ?>
@@ -293,6 +293,20 @@ function partial_job_sheet_body(JobSheetVM $vm): string
       <ul class="list-disc pl-5"><?php foreach ($vm->deliverables as $line): ?><li><?= e($line) ?></li><?php endforeach; ?></ul>
       <?php endif; ?>
     </section>
+    <?php if ($vm->assets !== null): /* Traffic, COO, ECD: every asset (owner decision 2026-10) */ ?>
+    <section>
+      <h3 class="mb-1 flex items-baseline justify-between gap-2 font-semibold">Assets <span class="text-xs font-normal text-muted-foreground"><?= count($vm->assets) ?></span></h3>
+      <?php if ($vm->assets === []): ?><p class="text-muted-foreground">No assets yet.</p><?php else: ?>
+      <ul class="flex flex-col gap-1">
+        <?php foreach (array_slice($vm->assets, 0, 12) as $as): ?>
+          <li class="flex flex-wrap items-baseline gap-x-2"><span class="min-w-0 flex-1 truncate font-mono text-xs" title="<?= attr($as->name) ?>"><?= e($as->name) ?></span>
+            <span class="text-xs"><?= e($as->status) ?></span><span class="w-full text-xs text-muted-foreground"><?= $as->assigneeName !== '' ? e($as->assigneeName) : 'Unassigned' ?><?= $as->posts !== [] ? ' · ' . count($as->posts) . ' ' . (count($as->posts) === 1 ? 'post' : 'posts') : '' ?></span></li>
+        <?php endforeach; ?>
+      </ul>
+      <?php endif; ?>
+      <p class="mt-1"><a class="text-primary underline-offset-4 hover:underline" href="<?= attr($vm->assetsUrl) ?>">All assets<?= count($vm->assets) > 12 ? ' (' . count($vm->assets) . ')' : '' ?> and status overrides</a></p>
+    </section>
+    <?php endif; ?>
     <section>
       <h3 class="mb-1 font-semibold">Brief</h3>
       <p><?= e($vm->versionLabel) ?><?= $vm->unsent ? ' <span class="text-xs text-primary">(unsent changes)</span>' : '' ?></p>
@@ -321,7 +335,7 @@ function partial_job_sheet_body(JobSheetVM $vm): string
       <?php if ($vm->activity === []): ?><p class="text-muted-foreground">Nothing yet.</p><?php else: ?>
       <ol class="flex flex-col gap-2">
         <?php foreach ($vm->activity as $a): ?>
-          <li><span class="font-medium"><?= e($a->actor) ?></span> <?= e($a->text) ?><div class="text-xs text-muted-foreground"><?= e($a->at) ?></div></li>
+          <li><?php if ($a->override): ?><?= ui_badge(new BadgeProps(variant: 'destructive'), 'Override') ?> <?php endif; ?><span class="font-medium"><?= e($a->actor) ?></span> <?= e($a->text) ?><div class="text-xs text-muted-foreground"><?= e($a->at) ?></div></li>
         <?php endforeach; ?>
       </ol>
       <?php endif; ?>

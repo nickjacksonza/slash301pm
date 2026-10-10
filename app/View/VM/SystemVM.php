@@ -20,5 +20,9 @@ final class SystemVM
         public readonly string $csrf,
         public readonly string $notice,
         public readonly array $betaGate = [],
+        /** "Add demo role tasks" (COO, demo mode on: Policy::canAddDemoRoleTasks) */
+        public readonly bool $canAddDemoTasks = false,
+        /** Link to the Overrides report (COO) */
+        public readonly bool $canSeeOverrides = false,
     ) {}
 }

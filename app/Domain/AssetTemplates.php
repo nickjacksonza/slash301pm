@@ -5,7 +5,12 @@ namespace App\Domain;
 
 use App\Domain\Types\AssetTemplate;
 
-/** The 18 deliverable templates, moved from legacy src/constants.js ASSET_TEMPLATES (same ids, names, types). */
+/**
+ * The 18 deliverable templates moved from legacy src/constants.js
+ * ASSET_TEMPLATES (same ids, names, types), plus three role tasks (owner
+ * decision 2026-10) whose assets go to the job's Developer, SEO or Producer.
+ * Legacy reads assets.template_id only for display, so new ids are safe there.
+ */
 final class AssetTemplates
 {
     /** @return list<AssetTemplate> */
@@ -30,7 +35,22 @@ final class AssetTemplates
             new AssetTemplate('blog-post', 'Blog Post', 'copy'),
             new AssetTemplate('press-release', 'Press Release', 'copy'),
             new AssetTemplate('presentation', 'Presentation', 'document'),
+            new AssetTemplate('utm-links', 'UTM link generation', 'document', Role::Developer),
+            new AssetTemplate('campaign-hashtags', 'Campaign hashtags', 'copy', Role::SEO),
+            new AssetTemplate('asset-test-report', 'Asset test report', 'document', Role::Producer),
         ];
+    }
+
+    /** The templates that carry a default role (the demo "role tasks"). @return list<AssetTemplate> */
+    public static function roleTasks(): array
+    {
+        $out = [];
+        foreach (self::all() as $t) {
+            if ($t->defaultRole !== null) {
+                $out[] = $t;
+            }
+        }
+        return $out;
     }
 
     public static function find(?string $id): ?AssetTemplate

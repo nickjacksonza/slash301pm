@@ -63,6 +63,13 @@ function pmt_cases(): array
         'edit_job_field:hours_estimate' => [$j('in_review'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::HoursEstimate)],
         'edit_job_field:waiting_on' => [$j('waiting'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::WaitingOn)],
         'edit_job_field:waiting_reason' => [$j('waiting'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::WaitingReason)],
+        // Owner decisions 2026-10
+        'assign_task_roles' => [$j('in_progress'), static fn (User $u, JobAccess $a) => Policy::canAssignTaskRole($u, $a, Role::Developer)],
+        'view_all_assets' => [$j('in_progress'), static fn (User $u, JobAccess $a) => Policy::canViewJobAssets($u, $a)],
+        'override_asset_status' => [$j('scheduled'), static fn (User $u, JobAccess $a) => Policy::canOverrideAssetStatus($u, $a)],
+        'manage_brand_logo' => [null, static fn (User $u, ?JobAccess $a) => Policy::canSetBrandLogo($u)],
+        'view_overrides_report' => [null, static fn (User $u, ?JobAccess $a) => Policy::canViewOverridesReport($u)],
+        'add_demo_role_tasks' => [null, static fn (User $u, ?JobAccess $a) => Policy::canAddDemoRoleTasks($u, true)],
     ];
 }
 
@@ -121,7 +128,7 @@ function pmt_not_yet(): array
         'edit_wiki' => 'wiki stays in legacy',
     ];
     foreach (['social_view_queue', 'social_edit_checklist', 'social_set_ready_to_schedule', 'social_set_scheduled', 'social_set_live',
-        'social_edit_live_link', 'social_set_promoted', 'social_archive_post'] as $id) {
+        'social_edit_live_link', 'social_set_promoted', 'social_archive_post', 'social_set_checking', 'social_edit_test_result'] as $id) {
         $out[$id] = 'Social publishing: SocialPolicy, checked in social_test.php';
     }
     return $out;
@@ -220,6 +227,42 @@ return [
         t_true(!Policy::canTransition(bf_user(Role::COO), bf_access('in_review'), JobAction::ApproveInternal)->allowed, 'reviews not available yet');
         t_true(!Policy::canTransition($am, $own('scheduled'), JobAction::GoLive)->allowed, 'AM cannot set live');
         t_true(Policy::canTransition($am, $own('live'), JobAction::MarkDone)->allowed);
+    },
+    'policy: owner decisions 2026-10: task slots, assets, overrides, demo tasks, assigned-only filters' => function (): void {
+        $tr = bf_user(Role::Traffic, 't');
+        $am = bf_user(Role::AM, 'am1');
+        $own = static fn (string $stage): JobAccess => bf_access($stage, ['creatorId' => 'am1']);
+        // [user, access, slot, canSetSlot]: Developer, SEO, Producer open to Traffic after the send; owners before and after.
+        $cases = [
+            [$tr, bf_access('draft'), Role::Producer, false], [$tr, bf_access('briefed'), Role::Developer, true], [$tr, bf_access('in_progress'), Role::SEO, true],
+            [$tr, bf_access('in_progress'), Role::Producer, true], [$tr, bf_access('in_progress'), Role::PM, false], [$tr, bf_access('done'), Role::Developer, false],
+            [$am, $own('draft'), Role::Developer, true], [$am, $own('briefed'), Role::Developer, true], [$am, $own('briefed'), Role::Designer, false],
+            [$am, bf_access('briefed'), Role::SEO, false], [$am, $own('in_progress'), Role::Producer, true],
+            [bf_user(Role::Designer, 'd'), bf_access('in_progress'), Role::Developer, false], [bf_user(Role::Developer, 'dev'), bf_access('in_progress'), Role::Developer, false],
+        ];
+        foreach ($cases as $i => [$u, $a, $slot, $want]) {
+            t_eq($want, Policy::canSetSlot($u, $a, $slot)->allowed, "slot case $i " . $u->role->value . ' ' . $slot->value . ' ' . $a->stage->value);
+        }
+        t_true(!Policy::canAssignTaskRole($tr, bf_access('in_progress'), Role::Designer)->allowed, 'only the three task roles');
+        // Assets page and overrides: Traffic, COO, ECD on sent jobs only.
+        foreach ([Role::Traffic, Role::COO, Role::ECD] as $r) {
+            t_true(Policy::canOverrideAssetStatus(bf_user($r), bf_access('live'))->allowed, $r->value);
+            t_true(!Policy::canOverrideAssetStatus(bf_user($r), bf_access('draft'))->allowed, $r->value . ' draft');
+            t_true(Policy::canViewJobAssets(bf_user($r), bf_access('done'))->allowed, $r->value . ' done job readable');
+        }
+        foreach ([Role::Designer, Role::AM, Role::CD, Role::Producer, Role::Social, Role::Client] as $r) {
+            $mine = bf_access('in_progress', ['assignments' => [new Assignment($r, 'u1', 'U', $r)], 'creatorId' => 'u1']);
+            t_true(!Policy::canOverrideAssetStatus(bf_user($r), $mine)->allowed, $r->value . ' cannot override, even on their job');
+        }
+        t_true(!Policy::canAddDemoRoleTasks(bf_user(Role::COO), false)->allowed, 'demo tasks need demo mode');
+        t_true(!Policy::canAddDemoRoleTasks(bf_user(Role::ECD), true)->allowed, 'COO only');
+        t_true(Policy::canSeeNav(bf_user(Role::COO), 'admin-overrides'));
+        t_true(!Policy::canSeeNav(bf_user(Role::ECD), 'admin-overrides'));
+        // Assigned-only roles: filter lists limited, no Owner filter.
+        $assignedOnly = [Role::Copywriter, Role::Designer, Role::Developer, Role::SEO, Role::QA, Role::Social];
+        foreach (Role::cases() as $r) {
+            t_eq(in_array($r, $assignedOnly, true), Policy::seesOnlyAssignedJobs(bf_user($r)), 'assigned only: ' . $r->value);
+        }
     },
     'policy: claim AM' => function (): void {
         foreach ([Role::AM, Role::PM, Role::Producer, Role::COO, Role::ECD] as $r) {

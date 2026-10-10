@@ -17,6 +17,7 @@ use DateTimeImmutable;
  *   scheduled -> live               live link required (http or https, Links::isWebUrl)
  *   any but archived -> archived    reason required
  *   reopen: one step back           reason required (COO, ECD, assigned Social)
+ *   recheck: ready or scheduled -> checking, reason required (also the job's Producer)
  *
  * The job follows its publications: its Social stage is the lowest status over
  * the job's social assets, where an asset's status is the lowest of its
@@ -101,6 +102,12 @@ final class PublicationRules
                 $to = $from->previous();
                 if ($to !== null && $reason === '') {
                     $errors = $errors->with('reason', 'Say why it moves back a step.');
+                }
+                break;
+            case PublicationAction::Recheck:
+                $to = $from === PublicationStatus::ReadyToSchedule || $from === PublicationStatus::Scheduled ? PublicationStatus::Checking : null;
+                if ($to !== null && $reason === '') {
+                    $errors = $errors->with('reason', 'Say why it goes back to checking.');
                 }
                 break;
         }

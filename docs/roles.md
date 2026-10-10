@@ -171,6 +171,7 @@ Each section uses the same headings. Field names are the planned column names (`
 2. Open `/jobs` grouped by brand or AM to scan load.
 3. Act on escalations (reassign Traffic, cancel, reopen).
 4. Weekly: `/admin/system` (migration level, backups, demo banner) and `/admin/users`.
+5. Workflow reviews: `/admin/overrides` lists every asset and post status override (who, job, from and to, reason) in a date range (owner decision 2026-10). While demo mode is on, `/admin/system` also offers "Add demo role tasks" (`add_demo_role_tasks`).
 
 **Reads**: everything, all scopes. Budget all.
 
@@ -228,6 +229,7 @@ Each section uses the same headings. Field names are the planned column names (`
 3. Check "Due soon / overdue assets"; change asset due dates, reassign, or put the job on waiting.
 4. Route client feedback that came back to the right maker.
 5. Mark approved_client jobs as done; archive done and cancelled jobs.
+6. Crunch time and crises (owner decision 2026-10): the job sheet lists every asset; `GET /jobs/{id}/assets` shows every deliverable, asset and Social post, and Traffic (like the COO and the ECD) can override any asset or post status with a reason (`override_asset_status`). Each override is logged and marked as an override in the activity feed. After the send Traffic also fills the Developer, SEO and Producer slots (`assign_task_roles`).
 
 **Reads**
 
@@ -325,6 +327,8 @@ All in-app now; email later (immediate for N01, N03; digest for the rest).
 **Daily workflow**: as PM; the home screen filter defaults to jobs where they hold the Producer slot.
 
 **Reads, creates, edits, transitions, approvals, never sees, notifications, My day**: identical to PM, keyed on the Producer slot instead of the PM slot. Recommendation (Q6): keep the role label, share the Policy rules; add supplier and cost fields later only if the owner asks.
+
+**Asset test reports (owner decision 2026-10)**: the "Asset test report" template (`asset-test-report`) defaults to the job's Producer: when a brief with that deliverable is sent, its assets are assigned to the Producer slot holder (unassigned when the slot is empty). On their own jobs the Producer may tick or note the Social checklist's Test result item (`social_edit_test_result`) and send a post back to checking with a reason (`social_set_checking`); the rest of the checklist and the other Social moves stay with Social, the COO and the ECD.
 
 ### 2.7 CD (Creative Director)
 
@@ -455,6 +459,8 @@ Same as Copywriter. Differences are only asset types and home filters:
 | SEO | Audits, metadata, keyword sets, copy optimisation | report_url |
 
 Not in the beta (Q7). Social is a Maker too but has its own section because it publishes.
+
+**Default tasks (owner decision 2026-10)**: the "UTM link generation" template (`utm-links`) defaults to the job's Developer and "Campaign hashtags" (`campaign-hashtags`) to the job's SEO: when a brief with those deliverables is sent, their assets are assigned to the slot holder (unassigned when the slot is empty). Traffic and the job's owners fill these slots after the send (`assign_task_roles`). Like every assigned-only role, their grid and board filter lists hold only the brands and campaigns of their jobs (no Owner filter), and My day starts with a row of brand buttons (logo or coloured initials, with job counts) that filters every section.
 
 ### 2.13 Social (Publisher)
 
@@ -650,6 +656,7 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `assign_traffic` | Y | Y | AC | Y | AC | AC | - | - | - | - | - | - | - | - |
 | `assign_creatives` * | Y | Y | AC | Y | AC | AC | - | - | - | - | - | - | - | - |
 | `assign_account_roles` | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | - |
+| `assign_task_roles` * | Y | Y | AC | Y | AC | AC | - | - | - | - | - | - | - | - |
 
 #### Assets and tasks
 
@@ -658,6 +665,8 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `manage_tasks` | Y | Y | - | Y | AC | AC | A | - | - | - | - | - | - | - |
 | `edit_asset_schedule` | Y | Y | - | Y | AC | AC | - | - | - | - | - | - | - | - |
 | `edit_asset_work` * | Y | Y | - | - | - | - | A | A | A | - | A | A | A | - |
+| `view_all_assets` * | Y | Y | - | Y | - | - | - | - | - | - | - | - | - | - |
+| `override_asset_status` * | Y | Y | - | Y | - | - | - | - | - | - | - | - | - | - |
 
 #### Job fields
 
@@ -729,6 +738,9 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `manage_users` | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
 | `admin_system` | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
 | `toggle_demo_mode` | Y | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| `manage_brand_logo` * | Y | Y | Y | - | Y | Y | - | - | - | - | - | - | - | - |
+| `view_overrides_report` | Y | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| `add_demo_role_tasks` * | Y | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | `view_all_jobs` * | Y | Y | Y | Y | Y | Y | Y | A | A | A | A | A | A | B |
 | `view_budget` | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | - |
 | `view_hours` | Y | Y | Y | Y | Y | Y | A | A | A | A | A | A | A | - |
@@ -752,6 +764,8 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `social_edit_live_link` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
 | `social_set_promoted` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
 | `social_archive_post` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `social_set_checking` * | Y | Y | - | - | - | AC | - | - | - | - | - | - | A | - |
+| `social_edit_test_result` * | Y | Y | - | - | - | AC | - | - | - | - | - | - | A | - |
 
 #### Conditions (marked * above)
 
@@ -820,6 +834,15 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `social_edit_live_link` | all allowed roles | Stage scheduled or later; edits after Live are logged and notify the AM. |
 | `social_set_promoted` | all allowed roles | Stage scheduled or later; checkbox plus optional note. |
 | `social_archive_post` | all allowed roles | Archive with a reason; hard delete is not offered to Social. |
+| `social_set_checking` | all allowed roles | Post Ready to Schedule or Scheduled; reason required; notifies Social and the AM; the job Social stage moves back with it. |
+| `social_set_checking` | Producer | Own jobs (Producer slot, an assigned asset, or brief creator): asset test reports. |
+| `social_edit_test_result` | all allowed roles | Post still being checked; only the Test result item (whoever may edit the whole checklist may edit it too). |
+| `social_edit_test_result` | Producer | Own jobs; the other checklist items stay as stored. |
+| `assign_task_roles` | all allowed roles | Brief sent, job not closed: the Developer, SEO and Producer slots (their template tasks are assigned to the slot holder when a brief is sent). Before the send `assign_creatives` / `assign_account_roles` apply. |
+| `view_all_assets` | all allowed roles | Brief sent: the job sheet asset list and GET /jobs/{id}/assets (deliverables, assets, status, assignee, due). |
+| `override_asset_status` | all allowed roles | Brief sent. Any legacy asset status, or any Social post status, with a required reason. Writes `asset_status_overridden` (from, to, reason; recipients: asset assignee, AM or brief creator, CD) in the same transaction; shown as an override in the activity feed and on the COO's Overrides report. |
+| `manage_brand_logo` | all allowed roles | https links only (no uploads), set on the Campaigns page; the view re-checks the stored link before it renders an image. |
+| `add_demo_role_tasks` | COO | Demo mode on only; up to 3 open sent jobs; idempotent. |
 | `transition:workable->waiting` | all allowed roles | waiting_on and waiting_reason required. |
 | `transition:workable->waiting` | Traffic | Not from draft (cannot see drafts). |
 | `transition:workable->waiting` | CD | Not from draft. |

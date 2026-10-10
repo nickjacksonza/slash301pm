@@ -13,5 +13,7 @@ final class CampaignGroupVM
         public readonly string $brandName,
         public readonly string $prefix,
         public readonly array $campaigns,
+        /** https logo link that passed Links::isHttpsUrl, or '' */
+        public readonly string $logoUrl = '',
     ) {}
 }

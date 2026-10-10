@@ -273,6 +273,8 @@ function partial_social_card(Publication $p, SocialPermsVM $perms): string
     $s = '$' . $root;
     $st = $p->status;
     $editChecklist = $perms->checklist && $st === PublicationStatus::Checking;
+    // The job's Producer: only the Test result item (asset test reports).
+    $editTest = !$editChecklist && $perms->testResult && $st === PublicationStatus::Checking;
     $complete = [];
     foreach (ChecklistItem::cases() as $item) {
         $complete[] = $s . '.cl.' . $item->value;
@@ -290,16 +292,16 @@ function partial_social_card(Publication $p, SocialPermsVM $perms): string
     </span>
   </header>
 
-  <fieldset class="flex flex-col gap-2" <?= $editChecklist ? '' : 'disabled' ?>>
+  <fieldset class="flex flex-col gap-2" <?= $editChecklist || $editTest ? '' : 'disabled' ?>>
     <legend class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Final check <span class="normal-case tracking-normal">(<?= $p->checklist->tickedCount() ?>/5)</span></legend>
-    <?php foreach (ChecklistItem::cases() as $item): $en = $p->checklist->entry($item); $cid = $id . '-' . $item->value; ?>
+    <?php foreach (ChecklistItem::cases() as $item): $en = $p->checklist->entry($item); $cid = $id . '-' . $item->value; $editItem = $editChecklist || ($editTest && $item === ChecklistItem::TestResult); ?>
       <div class="grid grid-cols-[8rem_1fr] items-center gap-2">
         <label for="<?= attr($cid) ?>" class="flex items-center gap-2 text-sm">
           <input id="<?= attr($cid) ?>" type="checkbox" class="size-4 accent-primary" data-bind="<?= attr($root . '.cl.' . $item->value) ?>"<?= $en->ok ? ' checked' : '' ?>
-            <?php if ($editChecklist): ?> data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy) ?>" data-on:change="<?= attr($act('patch', '/checklist')) ?>"<?php endif; ?>>
+            <?php if ($editItem): ?> data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy) ?>" data-on:change="<?= attr($act('patch', '/checklist')) ?>"<?php else: ?> disabled<?php endif; ?>>
           <?= e($item->label()) ?>
         </label>
-        <?php if ($editChecklist): ?>
+        <?php if ($editItem): ?>
           <?= ui_input(new InputProps(type: 'text', class: 'h-8', placeholder: 'Note', attrs: ['aria-label' => $item->label() . ' note', 'maxlength' => '500', 'data-bind' => $root . '.cl.' . $item->value . '_note', 'data-indicator' => $busy, 'data-on:change' => $act('patch', '/checklist')])) ?>
         <?php else: ?>
           <span class="truncate text-xs text-muted-foreground"><?= e($en->note) ?></span>
@@ -377,8 +379,10 @@ function partial_social_card(Publication $p, SocialPermsVM $perms): string
     </div>
   <?php endif; ?>
 
-  <?php $canBack = $perms->reopen && $st->previous() !== null; $canArchive = $perms->archive && $st !== PublicationStatus::Archived && $st !== PublicationStatus::Checking; ?>
-  <?php if ($canBack || $canArchive): ?>
+  <?php $canBack = $perms->reopen && $st->previous() !== null; $canArchive = $perms->archive && $st !== PublicationStatus::Archived && $st !== PublicationStatus::Checking;
+        // Back to checking: the Producer's test report found a problem (shown when "Move back" does not already land there).
+        $canRecheck = $perms->recheck && ($st === PublicationStatus::Scheduled || ($st === PublicationStatus::ReadyToSchedule && !$canBack)); ?>
+  <?php if ($canBack || $canArchive || $canRecheck): ?>
   <details class="rounded-md border border-dashed border-border px-3 py-2 text-sm">
     <summary class="cursor-pointer text-muted-foreground">Move back or archive</summary>
     <div class="mt-2 flex flex-col gap-2">
@@ -386,6 +390,9 @@ function partial_social_card(Publication $p, SocialPermsVM $perms): string
       <div class="flex flex-wrap gap-2">
         <?php if ($canBack): ?>
           <button type="button" class="<?= attr($btn . ' border border-border hover:bg-accent hover:text-accent-foreground') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy . ' || !' . $s . '.reason') ?>" data-on:click="<?= attr($act('post', '/reopen')) ?>">Move back to <?= e(strtolower($st->previous()?->label() ?? '')) ?></button>
+        <?php endif; ?>
+        <?php if ($canRecheck): ?>
+          <button type="button" class="<?= attr($btn . ' border border-border hover:bg-accent hover:text-accent-foreground') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy . ' || !' . $s . '.reason') ?>" data-on:click="<?= attr($act('post', '/recheck')) ?>">Back to checking</button>
         <?php endif; ?>
         <?php if ($canArchive): ?>
           <button type="button" class="<?= attr($btn . ' bg-destructive text-white hover:bg-destructive/90') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy . ' || !' . $s . '.reason') ?>" data-on:click="<?= attr($act('post', '/archive')) ?>">Archive post</button>

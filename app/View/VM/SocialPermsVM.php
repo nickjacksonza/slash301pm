@@ -15,10 +15,15 @@ final class SocialPermsVM
         public readonly bool $promote,
         public readonly bool $archive,
         public readonly bool $reopen,
+        /** Only the Test result item of the checklist (the job's Producer: asset test reports). */
+        public readonly bool $testResult = false,
+        /** Back to checking from Ready to schedule or Scheduled. */
+        public readonly bool $recheck = false,
     ) {}
 
     public function any(): bool
     {
-        return $this->checklist || $this->ready || $this->schedule || $this->live || $this->liveLink || $this->promote || $this->archive || $this->reopen;
+        return $this->checklist || $this->ready || $this->schedule || $this->live || $this->liveLink || $this->promote || $this->archive || $this->reopen
+            || $this->testResult || $this->recheck;
     }
 }
