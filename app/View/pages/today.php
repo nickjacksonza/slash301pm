@@ -66,7 +66,7 @@ function partial_today_brands(MyDayVM $vm): string
     }
     $count = static fn (int $n): string => '<span class="rounded-full bg-muted px-1.5 text-xs font-medium tabular-nums text-muted-foreground">' . $n . '</span>';
     $all = $vm->brandId === '';
-    $html = ui_button(new ButtonProps(variant: $all ? 'default' : 'outline', size: 'sm', attrs: [
+    $html = ui_button(new ButtonProps(variant: $all ? 'secondary' : 'outline', size: 'sm', class: 'aria-pressed:ring-2 aria-pressed:ring-primary', attrs: [
         'aria-pressed' => $all ? 'true' : 'false', 'aria-label' => 'All brands, ' . $total . ($total === 1 ? ' job' : ' jobs'),
         'data-on:click' => "\$today.brand = ''; " . $fetch,
     ]), 'All ' . $count($total));
@@ -75,7 +75,7 @@ function partial_today_brands(MyDayVM $vm): string
         $logo = \App\Domain\Links::isHttpsUrl($b->logoUrl)
             ? '<img src="' . attr($b->logoUrl) . '" alt="" class="size-6 rounded-sm bg-white object-contain" loading="lazy" referrerpolicy="no-referrer" width="24" height="24">'
             : ui_avatar(new AvatarProps(name: $b->name, class: 'size-6 text-[10px] font-semibold', attrs: ['aria-hidden' => 'true']));
-        $html .= ui_button(new ButtonProps(variant: $on ? 'default' : 'outline', size: 'sm', attrs: [
+        $html .= ui_button(new ButtonProps(variant: $on ? 'secondary' : 'outline', size: 'sm', class: 'aria-pressed:ring-2 aria-pressed:ring-primary', attrs: [
             'aria-pressed' => $on ? 'true' : 'false', 'aria-label' => $b->name . ', ' . $b->jobCount . ($b->jobCount === 1 ? ' job' : ' jobs'), 'title' => $b->name,
             'data-on:click' => '$today.brand = ' . jobs_js($b->id) . '; ' . $fetch,
         ]), $logo . '<span class="max-w-32 truncate">' . e($b->name) . '</span>' . $count($b->jobCount));

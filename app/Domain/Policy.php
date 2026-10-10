@@ -352,7 +352,8 @@ final class Policy
      */
     public static function canViewJobAssets(User $u, JobAccess $j): Decision
     {
-        if (!$j->briefSent) {
+        if (!$j->briefSent && $j->stage === Stage::Draft) {
+            // Legacy jobs past draft count as sent (their brief predates the new app).
             return Decision::deny('The brief has not been sent, so there are no assets yet.');
         }
         return self::cell('view_all_assets', $u, $j, 'Only Traffic, the COO and the ECD see every asset of a job.');
@@ -364,7 +365,8 @@ final class Policy
      */
     public static function canOverrideAssetStatus(User $u, JobAccess $j): Decision
     {
-        if (!$j->briefSent) {
+        if (!$j->briefSent && $j->stage === Stage::Draft) {
+            // Legacy jobs past draft count as sent (their brief predates the new app).
             return Decision::deny('The brief has not been sent, so there are no assets yet.');
         }
         return self::cell('override_asset_status', $u, $j, 'Only Traffic, the COO and the ECD can override an asset status.');

@@ -28,7 +28,7 @@ function od_send(Deps $d, string $campaignId, string $amId, string $title, array
     $body = ts_body(bh_ds($d, $amy, 'POST', '/briefs', ['nb' => ['campaign_id' => $campaignId, 'title' => $title]]));
     t_true(preg_match('#/slash301pm/jobs/([0-9a-f]{32})/brief#', $body, $m) === 1, 'brief created');
     $jobId = $m[1];
-    sx_ok(bh_ds($d, $amy, 'PATCH', '/jobs/' . $jobId . '/brief', ['brief' => ['title' => $title, 'due_date' => '2026-10-07', 'row_version' => $d->briefs->getByJob($jobId)->rowVersion]]));
+    sx_ok(bh_ds($d, $amy, 'PATCH', '/jobs/' . $jobId . '/brief', ['brief' => ['title' => $title, 'brief_date' => '2026-10-01', 'due_date' => '2026-10-07', 'creative_direction' => 'Warm and gold.', 'row_version' => $d->briefs->getByJob($jobId)->rowVersion]]));
     foreach ($lines as $i => [$tpl, $qty, $channel]) {
         sx_ok(bh_ds($d, $amy, 'POST', '/jobs/' . $jobId . '/brief/assets', ['new_line' => ['template_id' => $tpl]]));
         $line = $d->briefAssets->listByBrief($d->briefs->getByJob($jobId)->id)[$i];
@@ -222,7 +222,8 @@ return [
         t_contains('id="today-body"', $html);
         t_contains('Aura overdue', $html);
         t_not_contains('Merc overdue', $html);
-        t_contains('aria-label="Aura Spa, 1 job" aria-pressed="true"', str_replace(["\n"], '', preg_replace('/\s+data-on:click="[^"]*"/', '', $html) ?? ''), 'pressed state');
+        t_true(preg_match('/<button(?=[^>]*aria-label="Aura Spa, 1 job")(?=[^>]*aria-pressed="true")[^>]*>/', $html) === 1, 'Aura pressed');
+        t_true(preg_match('/<button(?=[^>]*aria-label="All brands, 2 jobs")(?=[^>]*aria-pressed="false")[^>]*>/', $html) === 1, 'All not pressed');
         // a single section keeps the filter too (the 60 second refresh)
         t_not_contains('Merc overdue', ts_body(bh_ds($d, $kim, 'GET', '/today/sections/overdue', ['today' => ['brand' => $c['aura_brand']]])));
         // a brand the Designer has no job on, or garbage, shows everything
@@ -322,5 +323,20 @@ return [
         // the Developer now has work on My day and the brand row
         t_contains('id="today-brands"', ts_body(od_page($d, bh_session($d, $p['dev']), '/today')));
         unlink($d->config->demoFlagPath());
+    },
+    'overrides: legacy jobs past draft (no sent brief) are covered too; drafts are not' => function (): void {
+        require_once dirname(__DIR__, 2) . '/support/jobs_fx.php';
+        [$d, $p, $c] = od_world();
+        $legacy = jf_job($d, 'MERC-500', $c['merc'], 'Legacy job', ['status' => 'In Progress', 'asset' => $p['designer'], 'asset_status' => 'In Progress']);
+        $tr = bh_session($d, $p['traffic']);
+        t_eq(200, od_page($d, $tr, '/jobs/' . $legacy . '/assets')->status());
+        $asset = $d->assets->listByJob($legacy)[0];
+        t_contains('Logged as an override', ts_body(bh_ds($d, $tr, 'POST', '/jobs/' . $legacy . '/assets/override',
+            ['ova' => ['asset_id' => $asset->id, 'from' => 'In Progress', 'to' => 'Done', 'reason' => 'Delivered by email']])));
+        t_eq('Done', $d->assets->listByJob($legacy)[0]->status);
+        $coo = bh_session($d, $p['coo']);
+        $draft = ts_body(bh_ds($d, bh_session($d, $p['am']), 'POST', '/briefs', ['nb' => ['campaign_id' => $c['merc'], 'title' => 'Draft']]));
+        preg_match('#/jobs/([0-9a-f]{32})/brief#', $draft, $m);
+        t_eq(403, od_page($d, $coo, '/jobs/' . $m[1] . '/assets')->status(), 'a draft has no assets page');
     },
 ];

@@ -839,8 +839,8 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `social_edit_test_result` | all allowed roles | Post still being checked; only the Test result item (whoever may edit the whole checklist may edit it too). |
 | `social_edit_test_result` | Producer | Own jobs; the other checklist items stay as stored. |
 | `assign_task_roles` | all allowed roles | Brief sent, job not closed: the Developer, SEO and Producer slots (their template tasks are assigned to the slot holder when a brief is sent). Before the send `assign_creatives` / `assign_account_roles` apply. |
-| `view_all_assets` | all allowed roles | Brief sent: the job sheet asset list and GET /jobs/{id}/assets (deliverables, assets, status, assignee, due). |
-| `override_asset_status` | all allowed roles | Brief sent. Any legacy asset status, or any Social post status, with a required reason. Writes `asset_status_overridden` (from, to, reason; recipients: asset assignee, AM or brief creator, CD) in the same transaction; shown as an override in the activity feed and on the COO's Overrides report. |
+| `view_all_assets` | all allowed roles | Brief sent (or a legacy job past draft): the job sheet asset list and GET /jobs/{id}/assets (deliverables, assets, status, assignee, due). |
+| `override_asset_status` | all allowed roles | Brief sent (or a legacy job past draft). Any legacy asset status, or any Social post status, with a required reason. Writes `asset_status_overridden` (from, to, reason; recipients: asset assignee, AM or brief creator, CD) in the same transaction; shown as an override in the activity feed and on the COO's Overrides report. |
 | `manage_brand_logo` | all allowed roles | https links only (no uploads), set on the Campaigns page; the view re-checks the stored link before it renders an image. |
 | `add_demo_role_tasks` | COO | Demo mode on only; up to 3 open sent jobs; idempotent. |
 | `transition:workable->waiting` | all allowed roles | waiting_on and waiting_reason required. |

@@ -454,7 +454,7 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Brief sent. Makers and owners keep their usual job views."
+                "*": "Brief sent (or a legacy job past draft). Makers and owners keep their usual job views."
             },
             "legacy": "Legacy lists every asset to managers (api/permissions.php:85-107)."
         },
@@ -480,7 +480,7 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Brief sent. Reason required (one line, at most 1000 characters). Writes asset_status_overridden (data: from, to, reason) in the same transaction, notifying the asset assignee, the AM (or brief creator) and the CD. Post overrides move the job Social stage in either direction. Shown as an override in the activity feed and on the Overrides report."
+                "*": "Brief sent (or a legacy job past draft). Reason required (one line, at most 1000 characters). Writes asset_status_overridden (data: from, to, reason) in the same transaction, notifying the asset assignee, the AM (or brief creator) and the CD. Post overrides move the job Social stage in either direction. Shown as an override in the activity feed and on the Overrides report."
             },
             "legacy": "Legacy managers can set any asset status with no reason and no log (api/permissions.php:85-107)."
         },
