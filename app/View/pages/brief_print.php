@@ -14,7 +14,7 @@ function page_brief_print(BriefDocVM $vm, string $backUrl): string
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($vm->jobNumber . ' ' . $vm->snapshot->title) ?> · Brief <?= e($vm->versionLabel) ?></title>
 <?= layout_head_assets() ?>
-<style>@page { size: A4; margin: 16mm 14mm; }</style>
+<link rel="stylesheet" href="<?= attr(asset('css/print.css')) ?>">
 </head>
 <body class="min-h-screen bg-muted/40 text-foreground antialiased print:bg-white print:text-black">
 <div class="mx-auto flex max-w-[210mm] items-center justify-between gap-2 px-4 py-4 print:hidden">

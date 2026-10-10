@@ -25,10 +25,16 @@ require_once __DIR__ . '/autoload.php';
 require_once __DIR__ . '/View/load.php';
 
 $s301Config = require __DIR__ . '/config.php';
-if ($s301Config->isLive()) {
-    ini_set('display_errors', '0');
+$s301Logs = $s301Config->logsDir();
+if (!is_dir($s301Logs)) {
+    @mkdir($s301Logs, 0750, true);
 }
-ini_set('log_errors', '1');
+foreach ($s301Config->iniSettings(date('Y-m-d')) as $s301Key => $s301Value) {
+    if ($s301Key === 'error_log' && !is_dir($s301Logs)) {
+        continue;   // keep the host default rather than lose the log
+    }
+    ini_set($s301Key, $s301Value);
+}
 app_base_path($s301Config->basePath);
 
 return $s301Config;

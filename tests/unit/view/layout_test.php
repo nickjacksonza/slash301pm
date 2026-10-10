@@ -27,7 +27,8 @@ return [
         preg_match('/data-signals="([^"]*)"/', $html, $m);
         t_true(isset($m[1]), 'body has data-signals');
         $decoded = json_decode(html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5, 'UTF-8'), true);
-        t_eq(['_csrf' => "t'\"<>&", '_net_error' => 0], $decoded);
+        t_eq(['_csrf' => "t'\"<>&", '_net_error' => 0, '_redirect' => ''], $decoded);
+        t_contains('data-effect="$_redirect &amp;&amp; ($_redirect.startsWith(&apos;/&apos;)', $html, 'body follows Redirect signal patches');
         t_not_contains("t'", $m[1]);
     },
     'datastar is a module script with data-cfasync=false, versioned by hash' => function (): void {

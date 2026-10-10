@@ -1,0 +1,3 @@
+/* Brief print page (app/View/pages/brief_print.php). A file, not an inline
+   <style>: the CSP allows stylesheets from this origin only (style-src-elem 'self'). */
+@page { size: A4; margin: 16mm 14mm; }

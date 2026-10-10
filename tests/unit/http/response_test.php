@@ -37,8 +37,9 @@ return [
         t_contains('Bad &lt;input&gt; &amp; &quot;quotes&quot;', $toast);
         t_not_contains('<input>', $toast);
         $redir = ts_body(Response::events(new Redirect('/slash301pm/login?a=1&b="x"')));
-        t_contains("data: selector body\ndata: mode append\n", $redir);
-        t_contains('window.location.assign("/slash301pm/login?a=1\u0026b=\u0022x\u0022")', $redir);
+        // a signal patch, never a script (the CSP blocks inline scripts; the layout body follows _redirect)
+        t_eq("event: datastar-patch-signals\ndata: signals {\"_redirect\":\"/slash301pm/login?a=1\\u0026b=\\u0022x\\u0022\"}\n\n", $redir);
+        t_not_contains('<script', $redir);
     },
     'sse: headers and status' => function (): void {
         $r = Response::events(Toast::ok('x'))->render(Transport::Sse);
@@ -46,7 +47,7 @@ return [
         t_eq('text/event-stream', $r->header('Content-Type'));
         t_eq('no-cache', $r->header('Cache-Control'));
         t_eq('no', $r->header('X-Accel-Buffering'));
-        t_eq('nosniff', $r->header('X-Content-Type-Options'));
+        t_eq('', $r->header('X-Content-Type-Options'), 'security headers come from Middleware\\SecurityHeaders');
         t_eq(2, count(Response::events(Toast::ok('a'), Toast::ok('b'))->render(Transport::Sse)->chunks));
     },
     'html transport: one patch with selector and mode headers' => function (): void {
@@ -68,14 +69,14 @@ return [
         $both = Response::events(PatchElements::html('<tr id="row-1"></tr>'), Toast::ok('Saved'))->render(Transport::Html);
         t_contains('<tr id="row-1"></tr><div id="toasts"', $both->body());
     },
-    'html transport: signals as JSON, redirect as javascript' => function (): void {
+    'html transport: signals as JSON, redirect as a _redirect signal patch' => function (): void {
         $s = Response::events(new PatchSignals(['a' => ['b' => 1]], true))->render(Transport::Html);
         t_eq('application/json; charset=utf-8', $s->header('Content-Type'));
         t_eq('{"a":{"b":1}}', $s->body());
         t_eq('true', $s->header('Datastar-Only-If-Missing'));
         $j = Response::events(new Redirect('/slash301pm/login'))->render(Transport::Html);
-        t_eq('text/javascript; charset=utf-8', $j->header('Content-Type'));
-        t_eq('window.location.assign("/slash301pm/login")', $j->body());
+        t_eq('application/json; charset=utf-8', $j->header('Content-Type'));
+        t_eq('{"_redirect":"/slash301pm/login"}', $j->body());
     },
     'html transport: mixed lists throw LogicException' => function (): void {
         $mixed = [

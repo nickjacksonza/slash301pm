@@ -155,13 +155,13 @@ final class Response {
                 $ev instanceof PatchElements => $sse->patchElements($ev->html, array_filter(['selector' => $ev->selector, 'mode' => $ev->mode])),
                 $ev instanceof PatchSignals  => $sse->patchSignals(json_encode($ev->signals, JSON_THROW_ON_ERROR)),
                 $ev instanceof Toast         => $sse->patchElements($ev->html(), ['selector' => '#toasts', 'mode' => 'append']),
-                $ev instanceof Redirect      => $sse->executeScript('window.location = ' . js_raw($ev->url)),
+                $ev instanceof Redirect      => $sse->patchSignals($ev->signalsJson()),   // not executeScript: the CSP blocks inline scripts (ADR 0007)
             };
         }
     }
 }
 ```
-`transport=html` (our rule on top of the client behavior in section 3): one `text/html` response can carry only ONE patch: elements sharing one selector and mode (send `Datastar-Selector`/`Datastar-Mode` headers, bodies concatenated), or a signals-only `application/json` body, or a `text/javascript` body for Redirect. Anything mixed (row patch plus toast, two selectors) cannot be represented: `sendHtml()` must throw a `LogicException`, and in html mode a Toast must be an `outer` patch of the `#toasts` container (replace, not append). Always set `http_response_code(200)` for anything the client must process.
+`transport=html` (our rule on top of the client behavior in section 3): one `text/html` response can carry only ONE patch: elements sharing one selector and mode (send `Datastar-Selector`/`Datastar-Mode` headers, bodies concatenated), or a signals-only `application/json` body (a Redirect is one too: `{"_redirect": url}`). Anything mixed (row patch plus toast, two selectors) cannot be represented: `sendHtml()` must throw a `LogicException`, and in html mode a Toast must be an `outer` patch of the `#toasts` container (replace, not append). Always set `http_response_code(200)` for anything the client must process.
 
 ## 6. Project patterns
 
@@ -249,5 +249,5 @@ Use `data-indicator:_loading` on the opening button for a spinner. Native `<dial
 - Rocket Loader / Cloudflare: keep `data-cfasync="false"` on the module script and cache bust with `?v=N`. Verify in spike that the module script is untouched and that Cloudflare does not buffer or rewrite fragments (Email Obfuscation applies to `text/html` bodies).
 - Buffering: our responses are short, so proxy buffering only delays the whole response. Still call `flush()` via the SDK and keep gzip and `output_buffering` from adding output before `sendHeaders()`.
 - Pro-only, do not use: anything not in section 2 and 3. From Datastar's public docs (unverifiable offline): `data-animate`, `data-custom-validity`, `data-match-media`, `data-on-raf`, `data-on-resize`, `data-persist`, `data-query-string`, `data-replace-url`, `data-scroll-into-view`, `data-view-transition`, `@clipboard`, `@fit`, `@intl`, and the Rocket component bundle (`datastar-rocket.js`, in the repo but a separate bundle). `tsconfig` maps `@pro/*` to a source tree that is absent from the free repo. Core replacements: `__viewtransition` modifier and `useViewTransition` patch option, plain JS in `data-on` for localStorage, `executeScript` for `history.replaceState`.
-- CSP: expressions compile with `Function()`. A CSP without `unsafe-eval` needs the `data-nonce` mode (see `reference.md`).
+- CSP: expressions compile with `Function()`. A CSP without `unsafe-eval` needs the `data-nonce` mode (see `reference.md`). This app's CSP (docs/adr/0007-security-headers.md) is `script-src 'self' 'unsafe-eval'`: NO inline scripts, so `executeScript` and `text/javascript` answers are blocked in the browser. `Redirect` is a patch of the `_redirect` signal that the layout body follows with `data-effect`; never add a patched `<script>`, an `on*=` attribute or a `<style>` element (style attributes are allowed).
 - Verify in spike (full list in `reference.md` section J): `responseOverrides` unwired; `text/javascript` leaves indicator stuck; `retry:'never'` and network retries; `data-on-signal-patch` on initial bind; morph with a focused input; PATCH/PUT/DELETE and SSE passing through Apache and Cloudflare; number and date bind coercion; `Connection: keep-alive` behind Cloudflare.

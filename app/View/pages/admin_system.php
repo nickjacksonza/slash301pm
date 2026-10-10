@@ -17,6 +17,7 @@ function page_admin_system(SystemVM $vm): string
       <strong>Demo mode is ON</strong> (data/.demo_mode exists). Beta gate: delete that file on the server by SFTP and replace the seeded passwords.
     </p>
   <?php endif; ?>
+<?= partial_beta_gate($vm->betaGate) ?>
 
   <section class="<?= attr($card) ?>">
     <h2 class="text-base font-semibold">Database schema</h2>
@@ -91,6 +92,38 @@ function page_admin_system(SystemVM $vm): string
     <p class="mt-4 text-sm"><a class="underline" href="<?= attr(url('/system/spike')) ?>">Open the Datastar spike page</a> · <a class="underline" href="<?= attr(url('/healthz')) ?>">/healthz</a></p>
   </section>
 </div>
+<?php
+    return (string) ob_get_clean();
+}
+
+/**
+ * The beta gate banner (docs/beta-gate.md): the unmet items the app can
+ * compute, or a green line when all of them pass. The predeploy check and the
+ * legacy smoke test run outside the app and are listed as reminders.
+ * @param list<\App\Domain\Types\BetaGateItem> $items
+ */
+function partial_beta_gate(array $items): string
+{
+    if ($items === []) {
+        return '';
+    }
+    $unmet = \App\Domain\BetaChecklist::unmet($items);
+    ob_start(); ?>
+<section id="beta-gate" aria-labelledby="beta-gate-title" class="<?= $unmet === []
+    ? 'rounded-xl border border-green-500/50 bg-green-50 p-4 text-sm text-green-900 dark:border-green-500/50 dark:bg-green-950 dark:text-green-50'
+    : 'rounded-xl border border-destructive/60 bg-card p-4 text-sm text-card-foreground' ?>"<?= $unmet === [] ? '' : ' role="alert"' ?>>
+  <h2 id="beta-gate-title" class="text-base font-semibold"><?= $unmet === []
+      ? 'Beta gate: every check the app can make passes'
+      : e('Beta gate: ' . count($unmet) . ' of ' . count($items) . ' checks not met') ?></h2>
+  <?php if ($unmet !== []): ?>
+    <ul class="mt-2 flex list-disc flex-col gap-1 pl-5">
+      <?php foreach ($unmet as $i): ?>
+        <li data-gate-item="<?= attr($i->key) ?>"><strong class="text-destructive"><?= e($i->label) ?></strong><?= $i->ownerAction ? ' <span class="text-muted-foreground">(owner action)</span>' : '' ?><?= $i->detail !== '' ? ': ' . e($i->detail) : '' ?></li>
+      <?php endforeach; ?>
+    </ul>
+  <?php endif; ?>
+  <p class="mt-2 text-xs">Also before the beta (outside the app): <span class="font-mono">php tools/predeploy.php</span> passes for the release, and the legacy smoke test passes on /legacy/. Full list: docs/beta-gate.md.</p>
+</section>
 <?php
     return (string) ob_get_clean();
 }

@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers;
 
+use App\Domain\BetaChecklist;
 use App\Domain\Policy;
+use App\Domain\Role;
 use App\Http\Deps;
 use App\Http\Request;
 use App\Http\Response;
@@ -100,6 +102,12 @@ final class SystemHandlers
             'Transport' => $d->config->transport->value,
             'Environment' => $d->config->env->value,
         ];
-        return new SystemVM($d->migrator->status(), $versions, $d->config->demoMode(), $pinned !== '' && hash_equals($pinned, $actual), $r->csrfToken(), $notice);
+        $status = $d->migrator->status();
+        $isPinned = $pinned !== '' && hash_equals($pinned, $actual);
+        $gate = BetaChecklist::items(
+            $d->config->demoMode(), $d->seedPasswords->check(), count($d->users->listActiveByRole(Role::AM)),
+            $status->failureJson !== null, count($status->pending), count($status->modified), count($status->backups), $isPinned,
+        );
+        return new SystemVM($status, $versions, $d->config->demoMode(), $isPinned, $r->csrfToken(), $notice, $gate);
     }
 }

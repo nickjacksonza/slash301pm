@@ -37,3 +37,7 @@ data/sessions/sess_*
 data/backups/
 data/migrate.lock
 data/migrate-failed.json
+data/logs/*
+!data/logs/.htaccess
+data/seed-password-check.json
+data/seed-password-check.json.tmp

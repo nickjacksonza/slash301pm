@@ -45,7 +45,7 @@ final class BriefAssetStore
                 ['id' => $id, 'b' => $brief->id, 'j' => $brief->jobId, 'tpl' => $in->templateId, 'label' => $in->label, 'qty' => $in->qty, 'ch' => $in->channel,
                     'size' => $in->sizeFormat, 'specs' => $in->specs, 'copy' => $in->copyRequired ? 1 : 0, 'due' => $in->dueDate, 'sort' => $sort, 'at' => $at],
             );
-            $this->briefs->touch($tx, $brief, $baseline, $actorId, $now);
+            $this->briefs->touch($tx, $brief, $baseline, $actorId, $now, 'deliverable_added', $id, ['label' => $in->label, 'qty' => $in->qty]);
         });
         return $id;
     }
@@ -63,7 +63,7 @@ final class BriefAssetStore
             if ($n === 0) {
                 return false;
             }
-            $this->briefs->touch($tx, $brief, $baseline, $actorId, $now);
+            $this->briefs->touch($tx, $brief, $baseline, $actorId, $now, 'deliverable_updated', $lineId, ['label' => $in->label, 'qty' => $in->qty]);
             return true;
         });
     }
@@ -75,7 +75,7 @@ final class BriefAssetStore
             if ($tx->exec('DELETE FROM brief_assets WHERE id = :id AND brief_id = :b', ['id' => $lineId, 'b' => $brief->id]) === 0) {
                 return false;
             }
-            $this->briefs->touch($tx, $brief, $baseline, $actorId, $now);
+            $this->briefs->touch($tx, $brief, $baseline, $actorId, $now, 'deliverable_removed', $lineId);
             return true;
         });
     }
@@ -87,7 +87,7 @@ final class BriefAssetStore
             foreach ($orderedIds as $i => $id) {
                 $tx->exec('UPDATE brief_assets SET sort_order = :s WHERE id = :id AND brief_id = :b', ['s' => $i, 'id' => $id, 'b' => $brief->id]);
             }
-            $this->briefs->touch($tx, $brief, $baseline, $actorId, $now);
+            $this->briefs->touch($tx, $brief, $baseline, $actorId, $now, 'deliverables_reordered', '', ['count' => count($orderedIds)]);
         });
     }
 }

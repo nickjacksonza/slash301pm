@@ -33,6 +33,10 @@ final class BriefStore
         'references' => null, 'brief_pdf_url' => null, 'server_link' => null, 'budget' => null, 'hours_estimate' => 'hours_estimate',
     ];
 
+    /** Activity verb for autosaved brief edits; one row per editing burst (see ActivityStore::appendCoalesced). */
+    public const VERB_EDITED = 'brief_edited';
+    public const COALESCE_SECONDS = 900;
+
     public function __construct(
         private readonly Db $db,
         private readonly ActivityStore $activity,
@@ -82,16 +86,27 @@ final class BriefStore
             if (!$current->isSent() && $jobSets !== []) {
                 $tx->exec('UPDATE jobs SET ' . implode(', ', $jobSets) . ', updated_by = :actor, row_version = row_version + 1 WHERE id = :job', $jobParams);
             }
+            $this->activity->appendCoalesced($tx, new ActivityEntry($current->jobId, $actorId, self::VERB_EDITED, 'brief', $current->id,
+                ['fields' => $patch->set, 'working_copy' => $current->isSent()]), $now, self::COALESCE_SECONDS);
             return true;
         });
     }
 
     /**
      * Mark the brief edited from inside another store's transaction (deliverable
-     * line changes): unsent flag, author, row_version, and the baseline.
+     * line changes): unsent flag, author, row_version, the baseline, and the
+     * activity row ($verb: deliverable_added, deliverable_updated (coalesced like
+     * autosave), deliverable_removed, deliverables_reordered).
+     * @param array<string,mixed> $data
      */
-    public function touch(Db $tx, Brief $current, ?BriefSnapshot $baseline, string $actorId, DateTimeImmutable $now): void
+    public function touch(Db $tx, Brief $current, ?BriefSnapshot $baseline, string $actorId, DateTimeImmutable $now, string $verb, string $lineId, array $data = []): void
     {
+        $entry = new ActivityEntry($current->jobId, $actorId, $verb, $lineId !== '' ? 'brief_asset' : 'brief', $lineId !== '' ? $lineId : $current->id, $data);
+        if ($verb === 'deliverable_updated') {
+            $this->activity->appendCoalesced($tx, $entry, $now, self::COALESCE_SECONDS);
+        } else {
+            $this->activity->append($tx, $entry, $now);
+        }
         $tx->exec(
             'UPDATE briefs SET has_unsent_changes = CASE WHEN sent_at IS NULL THEN 0 ELSE 1 END, updated_by = :actor, updated_at = :at, row_version = row_version + 1 WHERE id = :id',
             ['actor' => $actorId, 'at' => Ids::utc($now), 'id' => $current->id],

@@ -80,6 +80,30 @@ final class Config
         return $this->dataDir . '/sessions';
     }
 
+    /** app-YYYY-MM-DD.log and php-YYYY-MM-DD.log (App\Logs\AppLog), never served. */
+    public function logsDir(): string
+    {
+        return $this->dataDir . '/logs';
+    }
+
+    /**
+     * PHP settings made at bootstrap. Errors are never displayed (live or local:
+     * no stack trace or path can reach a response) and always logged to
+     * data/logs/php-<date>.log, not to the host's default error_log, which on
+     * shared hosting can be a file inside the web root.
+     * @return array<string,string>
+     */
+    public function iniSettings(string $todaySast): array
+    {
+        return [
+            'display_errors' => '0',
+            'display_startup_errors' => '0',
+            'html_errors' => '0',
+            'log_errors' => '1',
+            'error_log' => $this->logsDir() . '/php-' . $todaySast . '.log',
+        ];
+    }
+
     public function backupsDir(): string
     {
         return $this->dataDir . '/backups';

@@ -46,7 +46,7 @@ final class AdminUserHandlers
         if ($d->users->usernameTaken($in->username)) {
             return Response::events(Toast::error('That username is already taken.'));
         }
-        $d->users->create($in->username, password_hash($in->password, PASSWORD_DEFAULT), $in->name, $in->email !== '' ? $in->email : null, Role::from($in->role), '#3b82f6', null);
+        $d->users->create($in->username, password_hash($in->password, PASSWORD_DEFAULT), $in->name, $in->email !== '' ? $in->email : null, Role::from($in->role), '#3b82f6', null, $user->id, $d->clock->now());
         $notice = 'Created ' . $in->name . ' (' . $in->username . '). Give them the password you set; they can change it at Change password.';
         return Response::events(PatchElements::html(partial_admin_users_panel(self::vm($d, $user->id), $notice)));
     }
@@ -63,7 +63,7 @@ final class AdminUserHandlers
             return Response::events(Toast::error('User not found.'));
         }
         $password = self::generatePassword();
-        $d->users->setPassword($target->id, password_hash($password, PASSWORD_DEFAULT));
+        $d->users->setPassword($target->id, password_hash($password, PASSWORD_DEFAULT), $user->id, 'password_reset', $d->clock->now());
         return Response::events(PatchElements::html(partial_admin_user_notice(
             'New password for ' . $target->name . ' (' . $target->username . '): ' . $password . ' . Copy it now; it is not shown again.'
         )));
@@ -93,7 +93,7 @@ final class AdminUserHandlers
         if (!$decision->allowed) {
             return Shell::deny($r, $decision->reason);
         }
-        $d->users->setActive($target->id, $active);
+        $d->users->setActive($target->id, $active, $user->id, $d->clock->now());
         $fresh = $d->users->findById($target->id);
         if ($fresh === null) {
             return Response::events(Toast::error('User not found.'));

@@ -104,7 +104,7 @@ return [
         $id = ts_user($d, 'ann', Role::AM, LF_PW);
         $s = lf_session();
         t_eq(303, lf_post_login($s, 'ann', LF_PW)->status());
-        $d->users->setActive($id, false);
+        $d->users->setActive($id, false, null, $d->clock->now());
         $resp = (ts_app($s))(ts_request('GET', '/today'), $d);
         t_eq(303, $resp->status());
         t_eq('/slash301pm/login', $resp->render(Transport::Sse)->header('Location'));
@@ -125,7 +125,7 @@ return [
         $s = lf_session();
         $resp = (ts_app($s))(ts_ds_request('GET', '/today', $s), $d);
         t_eq(200, $resp->status());
-        t_contains('window.location.assign("/slash301pm/login")', ts_body($resp));
+        t_contains('{"_redirect":"/slash301pm/login"}', ts_body($resp));
     },
     'logout destroys the session' => function (): void {
         $GLOBALS['lf_deps'] = $d = ts_deps();

@@ -62,11 +62,11 @@ function fmt_num(?float $v): string
     return floor($v) === $v ? number_format($v, 0, '.', '') : rtrim(rtrim(number_format($v, 2, '.', ''), '0'), '.');
 }
 
-/** An <a> for http(s) URLs only; anything else is plain escaped text. */
+/** An <a> for http(s) URLs only (Domain\Links); anything else, including share paths and javascript:, is plain escaped text. */
 function brief_link(string $url, string $label = ''): string
 {
     $text = e($label !== '' ? $label : $url);
-    if (preg_match('#^https?://#i', $url) !== 1) {
+    if (!\App\Domain\Links::isLinkable($url)) {
         return $text;
     }
     return '<a href="' . attr($url) . '" target="_blank" rel="noopener noreferrer" class="text-primary underline underline-offset-4 break-all">' . $text . '</a>';

@@ -46,7 +46,7 @@ final class AccountHandlers
                 ? Response::events(Toast::error($error))
                 : Shell::page($r, $d, 'Change password', 'account', page_account_password($r->csrfToken(), '', $error));
         }
-        $d->users->setPassword($user->id, password_hash($in->new, PASSWORD_DEFAULT));
+        $d->users->setPassword($user->id, password_hash($in->new, PASSWORD_DEFAULT), $user->id, 'password_changed', $d->clock->now());
         $notice = 'Password changed. Use the new one next time you sign in (both apps).';
         // One patch: the panel comes back with empty signals and the notice.
         return $r->isDatastar()

@@ -26,7 +26,7 @@ return [
             t_eq('/slash301pm/legacy/', $resp->render(Transport::Sse)->header('Location'));
             $ds = (ts_app($s))(ts_ds_request('GET', '/today', $s), $d);
             t_eq(200, $ds->status());
-            t_contains('window.location.assign("/slash301pm/legacy/")', ts_body($ds));
+            t_contains('{"_redirect":"/slash301pm/legacy/"}', ts_body($ds));
             // password change and sign out stay open to everyone
             t_eq(200, (ts_app($s))(ts_request('GET', '/account/password'), $d)->status());
         }
@@ -164,6 +164,6 @@ return [
             t_eq(200, $r->status, "request $i");
         }
         $anon = new MemorySession(['csrf_token' => 'x']);
-        t_eq('text/javascript; charset=utf-8', (ts_app($anon))(ts_ds_request('GET', '/today', $anon), $d)->render(Transport::Html)->header('Content-Type'));
+        t_eq('application/json; charset=utf-8', (ts_app($anon))(ts_ds_request('GET', '/today', $anon), $d)->render(Transport::Html)->header('Content-Type'));
     },
 ];

@@ -88,7 +88,7 @@ final class SignalInput
         if ($v === '') {
             return true;
         }
-        return strlen($v) <= 2000 && preg_match('#^https?://[^\s<>"\x00-\x1f\x7f]+$#i', $v) === 1;
+        return \App\Domain\Links::isWebUrl($v);
     }
 
     public static function hasControlChars(string $v, bool $allowNewlines): bool

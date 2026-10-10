@@ -26,6 +26,65 @@ final class ActivityStore
         return $id;
     }
 
+    /**
+     * For autosave-driven edits: when the newest activity row of this job is
+     * the same actor, verb and entity, younger than $windowSeconds, that row is
+     * brought up to date (created_at = now, data.fields merged, data.edits
+     * counted, data.first_at kept) instead of adding a row per keystroke burst.
+     * Anything in between (another person, a send) starts a new row. Runs inside
+     * the caller's transaction. Jobless entries are always appended.
+     */
+    public function appendCoalesced(Db $tx, ActivityEntry $e, DateTimeImmutable $now, int $windowSeconds): string
+    {
+        if ($e->jobId === null) {
+            return $this->append($tx, $e, $now);
+        }
+        $last = $tx->one(
+            'SELECT id, actor_id, verb, entity_id, data_json, created_at FROM activity WHERE job_id = :j ORDER BY created_at DESC, rowid DESC LIMIT 1',
+            ['j' => $e->jobId],
+        );
+        $cutoff = Ids::utc($now->modify('-' . $windowSeconds . ' seconds'));
+        $same = $last !== null && (string) $last['verb'] === $e->verb && (string) ($last['actor_id'] ?? '') === (string) $e->actorId
+            && (string) $last['entity_id'] === $e->entityId && (string) $last['created_at'] >= $cutoff;
+        if (!$same) {
+            $data = $e->data + ['edits' => 1, 'first_at' => Ids::utc($now)];
+            return $this->append($tx, new ActivityEntry($e->jobId, $e->actorId, $e->verb, $e->entityType, $e->entityId, $data), $now);
+        }
+        $old = $last['data_json'] === null ? [] : json_decode((string) $last['data_json'], true);
+        $old = is_array($old) ? $old : [];
+        $data = $e->data;
+        $fields = [];
+        foreach ([$old['fields'] ?? [], $e->data['fields'] ?? []] as $list) {
+            foreach (is_array($list) ? $list : [] as $f) {
+                if (is_string($f) && !in_array($f, $fields, true)) {
+                    $fields[] = $f;
+                }
+            }
+        }
+        if ($fields !== []) {
+            $data['fields'] = $fields;
+        }
+        $data['edits'] = (is_int($old['edits'] ?? null) ? $old['edits'] : 1) + 1;
+        $data['first_at'] = is_string($old['first_at'] ?? null) ? $old['first_at'] : (string) $last['created_at'];
+        $tx->exec('UPDATE activity SET data_json = :d, created_at = :at WHERE id = :id', [
+            'd' => json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), 'at' => Ids::utc($now), 'id' => (string) $last['id'],
+        ]);
+        return (string) $last['id'];
+    }
+
+    /** Count of rows (tests and the audit coverage check). */
+    public function count(): int
+    {
+        return (int) $this->db->scalar('SELECT COUNT(*) FROM activity');
+    }
+
+    /** The newest row overall, or null. */
+    public function latest(): ?Activity
+    {
+        $r = $this->db->one("SELECT a.*, COALESCE(u.name, '') AS actor_name FROM activity a LEFT JOIN users u ON u.id = a.actor_id ORDER BY a.created_at DESC, a.rowid DESC LIMIT 1");
+        return $r === null ? null : Activity::fromRow($r);
+    }
+
     /** Newest first. @return list<Activity> */
     public function listForJob(string $jobId, int $limit = 20): array
     {

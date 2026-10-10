@@ -21,7 +21,8 @@ function layout_page(LayoutVM $vm, string $content): string
 <?= layout_head_assets() ?>
 </head>
 <body class="min-h-screen bg-background text-foreground antialiased"
-      data-signals="<?= js(['_csrf' => $vm->csrf, '_net_error' => 0]) ?>"
+      data-signals="<?= js(['_csrf' => $vm->csrf, '_net_error' => 0, '_redirect' => '']) ?>"
+      data-effect="<?= attr(layout_redirect_effect()) ?>"
       data-on:datastar-fetch="evt.detail.type === 'error' &amp;&amp; ($_net_error = evt.detail.argsRaw.status || 1)">
 <div class="flex min-h-screen flex-col md:flex-row">
   <aside class="w-full shrink-0 border-b border-border bg-sidebar text-sidebar-foreground md:w-60 md:border-r md:border-b-0">
@@ -100,6 +101,17 @@ function layout_nav_item(NavItem $item, string $active): string
     return '<a href="' . attr($item->href) . '" class="' . $class . '"' . ($current ? ' aria-current="page"' : '') . '>' . e($item->label) . $badge . '</a>';
 }
 
+/**
+ * Navigation for Datastar answers (App\Http\Redirect patches _redirect). Only
+ * same-origin paths are followed. A signal effect instead of a patched script,
+ * because the CSP blocks inline scripts.
+ */
+function layout_redirect_effect(): string
+{
+    // Cleared after use, so a page restored from the back/forward cache follows the next redirect to the same URL too.
+    return "\$_redirect && (\$_redirect.startsWith('/') && !\$_redirect.startsWith('//') ? window.location.assign(\$_redirect) : null, \$_redirect = '')";
+}
+
 /** Theme first (no flash), then CSS, then Datastar. Shared by the shell and bare pages. */
 function layout_head_assets(): string
 {
@@ -120,7 +132,8 @@ function layout_bare(string $title, string $content, string $bodySignalsJs = '')
 <title><?= e($title) ?> · Slash 301 PM</title>
 <?= layout_head_assets() ?>
 </head>
-<body class="min-h-screen bg-background text-foreground antialiased"<?= $bodySignalsJs !== '' ? ' data-signals="' . $bodySignalsJs . '"' : '' ?>>
+<body class="min-h-screen bg-background text-foreground antialiased"<?= $bodySignalsJs !== '' ? ' data-signals="' . $bodySignalsJs . '"' : '' ?>
+      data-signals:_redirect="''" data-effect="<?= attr(layout_redirect_effect()) ?>">
 <main class="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-6 p-4">
 <?= $content ?>
 </main>

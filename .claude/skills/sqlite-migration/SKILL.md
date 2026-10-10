@@ -20,6 +20,7 @@ description: How to write, lint and rehearse schema migrations for Slash 301 PM'
 5. Triggers that keep legacy and new columns in sync must not loop: guard with `WHEN NEW.x IS NOT OLD.x` and rely on recursive_triggers being off (the default).
 6. Keep each file's work inside one transaction; the Migrator wraps it in BEGIN IMMEDIATE.
 7. `tools/lint-sql.php <file>` must pass (it rejects the features above). The PostToolUse hook runs it on every save.
+8. After adding a migration, run `php tools/gen-checksums.php` to append its sha256 to `migrations/CHECKSUMS.txt`. `tools/predeploy.php` fails if a file and its line differ, which is how an edited shipped migration is caught.
 
 ## What the Migrator does (MigrateGate)
 1. `PRAGMA user_version` current → continue.

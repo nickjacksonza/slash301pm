@@ -1,0 +1,9 @@
+# Never served: app and PHP error logs (App\Logs\AppLog). data/.htaccess denies
+# the whole folder too; this file is the backstop.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+</IfModule>

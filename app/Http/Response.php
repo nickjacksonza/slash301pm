@@ -6,7 +6,6 @@ namespace App\Http;
 use App\Config\Transport;
 use LogicException;
 use starfederation\datastar\events\EventInterface;
-use starfederation\datastar\events\ExecuteScript as SdkExecuteScript;
 use starfederation\datastar\events\PatchElements as SdkPatchElements;
 use starfederation\datastar\events\PatchSignals as SdkPatchSignals;
 use starfederation\datastar\events\RemoveElements as SdkRemoveElements;
@@ -77,8 +76,16 @@ final class Response
 
     public function withHeader(string $name, string $value): self
     {
+        return $this->withHeaders([$name => $value]);
+    }
+
+    /** Add or replace headers (the security headers come from Middleware\SecurityHeaders). @param array<string,string> $set */
+    public function withHeaders(array $set): self
+    {
         $headers = $this->headers;
-        $headers[$name] = $value;
+        foreach ($set as $name => $value) {
+            $headers[$name] = $value;
+        }
         return new self($this->kind, $this->status, $this->body, $this->events, $headers, $this->transport, $this->pauseMs);
     }
 
@@ -107,11 +114,8 @@ final class Response
 
     public function render(Transport $default): Rendered
     {
-        $base = [
-            'X-Content-Type-Options' => 'nosniff',
-            'X-Frame-Options' => 'DENY',
-            'Referrer-Policy' => 'strict-origin-when-cross-origin',
-        ];
+        // Security headers are added by Middleware\SecurityHeaders (withHeaders), not here.
+        $base = [];
         if ($this->kind === 'page') {
             return new Rendered($this->status, $base + ['Content-Type' => 'text/html; charset=utf-8', 'Cache-Control' => 'no-store'] + $this->headers, [$this->body], 0);
         }
@@ -154,7 +158,8 @@ final class Response
         if ($ev instanceof Toast) {
             return new SdkPatchElements(str_replace(["\r\n", "\r"], "\n", $ev->html()), ['selector' => '#toasts', 'mode' => 'append']);
         }
-        return new SdkExecuteScript($ev->script());
+        // Never a script: the CSP blocks inline scripts. The layout's body watches _redirect.
+        return new SdkPatchSignals($ev->signalsJson(), []);
     }
 
     /**
@@ -162,7 +167,7 @@ final class Response
      * - elements sharing one selector and mode (a Toast counts as an outer
      *   patch of the whole #toasts region, matched by id), or
      * - a signals-only JSON body, or
-     * - a Redirect as text/javascript.
+     * - a Redirect, which is a signals-only JSON body ({"_redirect": url}).
      * Anything else cannot be represented and is a programmer error.
      * @param array<string,string> $base
      */
@@ -197,7 +202,7 @@ final class Response
             return new Rendered(200, $headers + $this->headers, [$signals[0]->json()], 0);
         }
         if ($redirects !== []) {
-            return new Rendered(200, $base + ['Content-Type' => 'text/javascript; charset=utf-8', 'Cache-Control' => 'no-cache'] + $this->headers, [$redirects[0]->script()], 0);
+            return new Rendered(200, $base + ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'no-cache'] + $this->headers, [$redirects[0]->signalsJson()], 0);
         }
         $first = $elements[0];
         $html = '';
@@ -231,6 +236,7 @@ final class Response
             ignore_user_abort(false);
         }
         http_response_code($r->status);
+        header_remove('X-Powered-By');
         foreach ($r->headers as $name => $value) {
             header($name . ': ' . $value);
         }

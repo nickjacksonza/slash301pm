@@ -67,7 +67,8 @@ final class AuthHandlers
         }
 
         if (password_needs_rehash($hash, PASSWORD_DEFAULT)) {
-            $d->users->setPassword($user->id, password_hash($password, PASSWORD_DEFAULT));
+            // A hash upgrade at sign-in is a system write: no activity row (the login route is exempt).
+            $d->users->setPassword($user->id, password_hash($password, PASSWORD_DEFAULT), null, 'password_rehashed', $d->clock->now());
         }
         self::startLogin($r->session(), $user, $now);
         $d->loginAttempts->clear($ip);

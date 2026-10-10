@@ -71,9 +71,9 @@ function ts_deps(bool $demo = false, string $driver = 'auto'): Deps
 /** Insert a user straight into the temp DB; returns the id. */
 function ts_user(Deps $d, string $username, Role $role, string $password = 'correct horse battery', bool $active = true): string
 {
-    $id = $d->users->create($username, password_hash($password, PASSWORD_BCRYPT, ['cost' => 4]), ucfirst($username), null, $role, '#3b82f6', null);
+    $id = $d->users->create($username, password_hash($password, PASSWORD_BCRYPT, ['cost' => 4]), ucfirst($username), null, $role, '#3b82f6', null, null, $d->clock->now());
     if (!$active) {
-        $d->users->setActive($id, false);
+        $d->users->setActive($id, false, null, $d->clock->now());
     }
     return $id;
 }

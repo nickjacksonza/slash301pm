@@ -18,6 +18,8 @@ use App\Store\JobQueryStore;
 use App\Store\JobStore;
 use App\Store\LoginAttemptStore;
 use App\Store\Migrator;
+use App\Store\RateLimitStore;
+use App\Store\SeedPasswordAudit;
 use App\Store\SavedViewStore;
 use App\Store\MyDayStore;
 use App\Store\UserStore;
@@ -46,6 +48,9 @@ final class Deps
         public readonly JobQueryStore $jobQuery,
         public readonly JobFieldStore $jobFields,
         public readonly SavedViewStore $savedViews,
+        // Phase 5: hardening
+        public readonly RateLimitStore $rateLimits,
+        public readonly SeedPasswordAudit $seedPasswords,
     ) {}
 
     public static function build(Config $config, Clock $clock, string $driver = 'auto'): self
@@ -57,7 +62,7 @@ final class Deps
         return new self(
             $config,
             $db,
-            new UserStore($db),
+            new UserStore($db, $activity),
             new LoginAttemptStore($db),
             new Migrator($db, $config->migrationsDir(), $config->backupsDir(), $config->migrateLockPath(), $config->migrateFailurePath(), $clock),
             $clock,
@@ -75,6 +80,9 @@ final class Deps
             new JobQueryStore($db),
             new JobFieldStore($db, $activity),
             new SavedViewStore($db),
+            // Phase 5: hardening
+            new RateLimitStore($db),
+            new SeedPasswordAudit($db, $config->dataDir . '/seed-password-check.json'),
         );
     }
 }

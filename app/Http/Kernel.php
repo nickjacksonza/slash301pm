@@ -7,12 +7,14 @@ use App\Http\Middleware\Auth;
 use App\Http\Middleware\BetaGate;
 use App\Http\Middleware\Csrf;
 use App\Http\Middleware\MigrateGate;
+use App\Http\Middleware\RateLimit;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\StartSession;
 use Closure;
 
 /**
- * The middleware chain, outermost first: MigrateGate, StartSession, Auth, Csrf,
- * BetaGate, then the router. Used by index.php and the integration tests.
+ * The middleware chain, outermost first: SecurityHeaders, MigrateGate,
+ * StartSession, Auth, Csrf, RateLimit, BetaGate, then the router. Used by index.php and the integration tests.
  * Go: the handler chain in main.go.
  */
 final class Kernel
@@ -22,9 +24,11 @@ final class Kernel
     {
         $h = Router::fromTable($routes)->handler();
         $h = BetaGate::wrap($h);
+        $h = RateLimit::wrap($h);
         $h = Csrf::wrap($h);
         $h = Auth::wrap($h);
         $h = StartSession::wrap($h, $session);
-        return MigrateGate::wrap($h);
+        $h = MigrateGate::wrap($h);
+        return SecurityHeaders::wrap($h);
     }
 }

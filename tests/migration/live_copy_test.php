@@ -227,7 +227,7 @@ return [
         }
         t_true(in_array('9:saved_views', $applied, true), 'applied: ' . implode(', ', $applied));
         t_true(in_array('10:user_seen', $applied, true), 'applied: ' . implode(', ', $applied));
-        t_eq(10, (int) $db->scalar('PRAGMA user_version'));
+        t_eq(lc_migrator($db, sys_get_temp_dir())->latestVersion(), (int) $db->scalar('PRAGMA user_version'));
         t_eq(0, (int) $db->scalar('SELECT COUNT(*) FROM saved_views'));
         $uid = (string) $db->scalar("SELECT id FROM users WHERE role = 'SEO' LIMIT 1");
         $db->exec("INSERT INTO saved_views (id, owner_id, screen, name, state_json) VALUES ('v1', :u, 'jobs', 'Mine', '{}')", ['u' => $uid]);
@@ -235,5 +235,30 @@ return [
         $db->exec('DELETE FROM users WHERE id = :u', ['u' => $uid]);
         t_eq(0, (int) $db->scalar('SELECT COUNT(*) FROM saved_views'), 'views cascade with their owner');
         t_eq('ok', (string) $db->scalar('PRAGMA integrity_check'));
+    },
+    'live copy: 0011 rate_limits is a new empty table; legacy writes and the limiter both work after it' => function (): void {
+        $m = lc_migrated();
+        if ($m === null) {
+            return;
+        }
+        [$db, , $before] = $m;
+        t_eq(0, (int) $db->scalar('SELECT COUNT(*) FROM rate_limits'));
+        $idx = [];
+        foreach ($db->query("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'rate_limits' ORDER BY name") as $r) {
+            $idx[] = (string) $r['name'];
+        }
+        t_eq(['idx_rate_limits_at', 'idx_rate_limits_key'], $idx);
+        t_true(!isset($before['rate_limits']), 'table did not exist on live before 0011');
+        $store = new App\Store\RateLimitStore($db);
+        $w = $store->hit('writes', 'user:x', 1_000_000, 60, 2);
+        t_eq(0, $w->count);
+        $store->hit('writes', 'user:x', 1_000_001, 60, 2);
+        $third = $store->hit('writes', 'user:x', 1_000_002, 60, 2);
+        t_eq(2, $third->count);
+        t_eq(2, $store->count('writes', 'user:x'), 'refused hit not stored');
+        // legacy add_user / update_job style writes are untouched by the new table
+        $db->exec("UPDATE jobs SET status = 'In Progress' WHERE id = (SELECT id FROM jobs LIMIT 1)");
+        t_eq('ok', (string) $db->scalar('PRAGMA integrity_check'));
+        t_eq(0, count($db->query('PRAGMA foreign_key_check(rate_limits)')));
     },
 ];

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Signals;
 
+use App\Domain\Links;
+
 use App\Domain\Types\BriefPatch;
 use App\Domain\Types\BriefReference;
 use App\Domain\ValidationErrors;
@@ -130,8 +132,8 @@ final class BriefSignals
         }
         if (SignalInput::has($b, 'server_link')) {
             $v = trim(SignalInput::str($b, 'server_link'));
-            if (strlen($v) > 2000 || SignalInput::hasControlChars($v, false)) {
-                $errors = $errors->with('server_link', 'The server folder link is too long.');
+            if ($v !== '' && !Links::isServerLink($v)) {
+                $errors = $errors->with('server_link', 'The server folder must be a web link (https://...), an smb:// or afp:// share, or a path like \\\\server\\share or /Volumes/... (up to 2000 characters).');
             } else {
                 $server = $v;
                 $set[] = 'server_link';

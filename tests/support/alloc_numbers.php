@@ -18,7 +18,7 @@ $db = Db::open($path);
 $activity = new ActivityStore($db);
 $jobs = new JobStore($db, $activity);
 $campaign = (new CampaignStore($db, $activity))->get($campaignId);
-$user = (new UserStore($db))->findById($userId);
+$user = (new UserStore($db, $activity))->findById($userId);
 if ($campaign === null || $user === null) {
     fwrite(STDERR, "missing fixtures\n");
     exit(2);

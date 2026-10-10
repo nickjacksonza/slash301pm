@@ -4,14 +4,22 @@ declare(strict_types=1);
 namespace App\Store;
 
 use App\Domain\Role;
+use App\Domain\Types\ActivityEntry;
 use App\Domain\Types\User;
+use DateTimeImmutable;
 
-/** All SQL for the users table. Columns match api/db.php; legacy writes the same rows. */
+/**
+ * All SQL for the users table. Columns match api/db.php; legacy writes the same rows.
+ * Writes made by a person ($actorId not null) log an activity row in the same
+ * transaction (user_created, password_changed, password_reset, user_activated,
+ * user_deactivated). A null actor is a system write (a hash upgrade at login, test seeds).
+ * The data never holds user ids, so these rows never reach anyone's My day.
+ */
 final class UserStore
 {
     private const COLS = 'id, username, name, email, role, color, brand_id, is_active';
 
-    public function __construct(private readonly Db $db) {}
+    public function __construct(private readonly Db $db, private readonly ActivityStore $activity) {}
 
     public function findById(string $id): ?User
     {
@@ -68,29 +76,42 @@ final class UserStore
     }
 
     /** Generates the id in PHP (no RETURNING on SQLite 3.34). Returns it. */
-    public function create(string $username, string $passwordHash, string $name, ?string $email, Role $role, string $color, ?string $brandId): string
+    public function create(string $username, string $passwordHash, string $name, ?string $email, Role $role, string $color, ?string $brandId, ?string $actorId, DateTimeImmutable $now): string
     {
         $id = bin2hex(random_bytes(16));
-        $this->db->txImmediate(function (Db $db) use ($id, $username, $passwordHash, $name, $email, $role, $color, $brandId): void {
+        $this->db->txImmediate(function (Db $db) use ($id, $username, $passwordHash, $name, $email, $role, $color, $brandId, $actorId, $now): void {
             $db->exec(
                 'INSERT INTO users (id, username, password_hash, name, email, role, color, brand_id) VALUES (:id, :username, :hash, :name, :email, :role, :color, :brand)',
                 ['id' => $id, 'username' => $username, 'hash' => $passwordHash, 'name' => $name, 'email' => $email, 'role' => $role->value, 'color' => $color, 'brand' => $brandId],
             );
+            $this->log($db, $actorId, 'user_created', $id, ['username' => $username, 'role' => $role->value], $now);
         });
         return $id;
     }
 
-    public function setPassword(string $id, string $passwordHash): void
+    /** $verb: password_changed (own), password_reset (by an admin). */
+    public function setPassword(string $id, string $passwordHash, ?string $actorId, string $verb, DateTimeImmutable $now): void
     {
-        $this->db->txImmediate(function (Db $db) use ($id, $passwordHash): void {
+        $this->db->txImmediate(function (Db $db) use ($id, $passwordHash, $actorId, $verb, $now): void {
             $db->exec('UPDATE users SET password_hash = :h WHERE id = :id', ['h' => $passwordHash, 'id' => $id]);
+            $this->log($db, $actorId, $verb, $id, [], $now);
         });
     }
 
-    public function setActive(string $id, bool $active): void
+    public function setActive(string $id, bool $active, ?string $actorId, DateTimeImmutable $now): void
     {
-        $this->db->txImmediate(function (Db $db) use ($id, $active): void {
+        $this->db->txImmediate(function (Db $db) use ($id, $active, $actorId, $now): void {
             $db->exec('UPDATE users SET is_active = :a WHERE id = :id', ['a' => $active ? 1 : 0, 'id' => $id]);
+            $this->log($db, $actorId, $active ? 'user_activated' : 'user_deactivated', $id, [], $now);
         });
+    }
+
+    /** @param array<string,string> $data */
+    private function log(Db $tx, ?string $actorId, string $verb, string $userId, array $data, DateTimeImmutable $now): void
+    {
+        if ($actorId === null) {
+            return;
+        }
+        $this->activity->append($tx, new ActivityEntry(null, $actorId, $verb, 'user', $userId, $data), $now);
     }
 }

@@ -41,7 +41,7 @@ return [
         $wrong = ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/assignments/traffic', ['team_traffic' => ['value' => $p['designer']]]));
         t_contains('Only a Traffic can hold the Traffic slot.', $wrong);
         $sent = ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/brief/send'));
-        t_contains('window.location.assign("/slash301pm/jobs/' . $jobId . '/brief")', $sent);
+        t_contains('{"_redirect":"/slash301pm/jobs/' . $jobId . '/brief"}', $sent);
         t_eq('briefed', $d->jobs->get($jobId)->stage->value);
         t_eq(3, count($d->assets->listByJob($jobId)));
         // after send: edit the working copy, then send an update
@@ -53,7 +53,7 @@ return [
         t_contains('(suggested)', $ud);
         t_contains('Write a short change note', ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/brief/update', ['send' => ['bump' => 'minor', 'note' => '']])));
         $ok = ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/brief/update', ['send' => ['bump' => 'minor', 'note' => 'New date']]));
-        t_contains('window.location.assign', $ok);
+        t_contains('"_redirect":', $ok);
         t_eq('1.1.0', $d->briefs->getByJob($jobId)->version->format());
         foreach (['/jobs/' . $jobId . '/brief/versions', '/jobs/' . $jobId . '/brief/versions/1.1.0', '/jobs/' . $jobId . '/brief/print', '/briefs', '/campaigns'] as $path) {
             t_eq(200, (ts_app($s))(ts_request('GET', $path), $d)->status(), $path);
@@ -61,17 +61,17 @@ return [
         t_eq(404, (ts_app($s))(ts_request('GET', '/jobs/' . $jobId . '/brief/versions/9.9.9'), $d)->status());
         // transitions: wait without a reason refused, with one accepted; resume goes back
         t_contains('Say what the job is waiting for.', ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/transition', ['tr' => ['action' => 'wait', 'waiting_on' => 'client', 'reason' => '']])));
-        t_contains('window.location.assign', ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/transition', ['tr' => ['action' => 'wait', 'waiting_on' => 'client', 'reason' => 'Images']])));
+        t_contains('"_redirect":', ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/transition', ['tr' => ['action' => 'wait', 'waiting_on' => 'client', 'reason' => 'Images']])));
         t_eq('waiting', $d->jobs->get($jobId)->stage->value);
         bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/transition', ['tr' => ['action' => 'resume']]);
         t_eq('briefed', $d->jobs->get($jobId)->stage->value);
         // recall (no asset started) and re-send unchanged as an update
-        t_contains('window.location.assign', ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/transition', ['tr' => ['action' => 'recall']])));
+        t_contains('"_redirect":', ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/transition', ['tr' => ['action' => 'recall']])));
         t_eq('draft', $d->jobs->get($jobId)->stage->value);
         t_eq('Inbox', $d->jobs->get($jobId)->status);
         t_eq(1, count($d->activity->listByVerb($jobId, 'brief_recalled')));
         t_contains('Re-send to Traffic', ts_body((ts_app($s))(ts_request('GET', '/jobs/' . $jobId . '/brief'), $d)));
-        t_contains('window.location.assign', ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/brief/update', ['send' => ['bump' => 'patch', 'note' => 'Re-sent after recall']])));
+        t_contains('"_redirect":', ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $jobId . '/brief/update', ['send' => ['bump' => 'patch', 'note' => 'Re-sent after recall']])));
         t_eq(['briefed', '1.1.1'], [$d->jobs->get($jobId)->stage->value, $d->briefs->getByJob($jobId)->version->format()]);
         // once an asset has started, recall is refused
         $d->db->exec("UPDATE assets SET status = 'In Progress' WHERE job_id = :j AND rowid = (SELECT MIN(rowid) FROM assets WHERE job_id = :j)", ['j' => $jobId]);
@@ -97,7 +97,7 @@ return [
         $s = bh_session($d, $p['designer']);
         $page = (ts_app($s))(ts_request('GET', '/jobs/' . $jobId . '/brief'), $d);
         t_eq(302, $page->status());
-        t_contains('window.location.assign("/slash301pm/legacy/")', ts_body(bh_ds($d, $s, 'PATCH', '/jobs/' . $jobId . '/brief', ['brief' => ['title' => 'x']])));
+        t_contains('{"_redirect":"/slash301pm/legacy/"}', ts_body(bh_ds($d, $s, 'PATCH', '/jobs/' . $jobId . '/brief', ['brief' => ['title' => 'x']])));
         // straight to the handlers (as if the gate opened to Designers): Policy still refuses
         $designer = $d->users->findById($p['designer']);
         $req = ts_ds_request('PATCH', '/jobs/' . $jobId . '/brief', $s, ['brief' => ['title' => 'Designer edit']])->withUser($designer)->withPathValues(['id' => $jobId]);
@@ -133,7 +133,7 @@ return [
         $d->db->exec("INSERT INTO jobs (id, job_number, campaign_id, title, status) VALUES ('legacy1', 'MERC-050', :c, 'Legacy job', 'In Progress')", ['c' => $c['campaign']]);
         $claim = ts_body((ts_app($ben))(ts_request('GET', '/jobs/legacy1/brief'), $d));
         t_contains('Make me AM', $claim);
-        t_contains('window.location.assign', ts_body(bh_ds($d, $ben, 'POST', '/jobs/legacy1/claim-am')));
+        t_contains('"_redirect":', ts_body(bh_ds($d, $ben, 'POST', '/jobs/legacy1/claim-am')));
         t_eq($p['am2'], $d->jobs->get('legacy1')->amUserId);
         t_contains('already has an AM', ts_body(bh_ds($d, $amy, 'POST', '/jobs/legacy1/claim-am')));
         t_contains('id="brief-form"', ts_body((ts_app($ben))(ts_request('GET', '/jobs/legacy1/brief'), $d)), 'Ben can now edit');

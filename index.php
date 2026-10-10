@@ -6,31 +6,37 @@ declare(strict_types=1);
 
 use App\Clock\SystemClock;
 use App\Http\Deps;
+use App\Http\ErrorResponse;
 use App\Http\Kernel;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\PhpSession;
 use App\Http\Request;
-use App\Http\Response;
+use App\Logs\AppLog;
 
 $config = require __DIR__ . '/app/bootstrap.php';
 
+$clock = new SystemClock();
+$log = new AppLog($config->logsDir(), $clock);
+$requestId = AppLog::newRequestId();
 $session = new PhpSession($config);
 $request = Request::fromGlobals($config->basePath);
 try {
-    $deps = Deps::build($config, new SystemClock());
+    $deps = Deps::build($config, $clock);
     $app = Kernel::build(require __DIR__ . '/app/routes.php', $session);
     $response = $app($request, $deps);
 } catch (Throwable $e) {
-    error_log('[slash301pm] ' . get_class($e) . ': ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
-    $detail = $config->isLive() ? 'Something went wrong on our side. Try again in a moment.' : get_class($e) . ': ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine();
-    $response = Response::page(page_error(500, 'Server error', $detail), 500);
+    // Full detail to data/logs only; the user sees the request id (display_errors is off, see Config::iniSettings).
+    $uid = $session->get('user_id');
+    $log->exception($requestId, $e, $request->method(), $request->path(), is_string($uid) ? $uid : null);
+    $response = SecurityHeaders::apply(ErrorResponse::for($request->isDatastar(), $requestId), $config);
 }
 // Release the session lock before writing, so a slow response never blocks other tabs.
 $session->close();
 try {
     $response->send($config->transport);   // renders fully before the first header, so a LogicException leaves nothing half-sent
 } catch (Throwable $e) {
-    error_log('[slash301pm] send: ' . get_class($e) . ': ' . $e->getMessage());
+    $log->exception($requestId, $e, $request->method(), $request->path(), null);
     if (!headers_sent()) {
-        Response::page(page_error(500, 'Server error', $config->isLive() ? 'Something went wrong on our side.' : $e->getMessage()), 500)->send($config->transport);
+        SecurityHeaders::apply(ErrorResponse::for($request->isDatastar(), $requestId), $config)->send($config->transport);
     }
 }

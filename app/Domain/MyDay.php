@@ -157,6 +157,11 @@ final class MyDay
             'job_created' => 'created the job',
             'job_archived' => 'archived the job',
             'job_done' => 'marked the job done',
+            'brief_edited' => 'edited the brief',
+            'deliverable_added' => 'added a deliverable',
+            'deliverable_updated' => 'changed a deliverable',
+            'deliverable_removed' => 'removed a deliverable',
+            'deliverables_reordered' => 'reordered the deliverables',
             default => str_replace('_', ' ', $verb),
         };
     }
