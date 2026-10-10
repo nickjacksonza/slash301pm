@@ -12,13 +12,17 @@ use App\Http\Handlers\BriefHandlers;
 use App\Http\Handlers\BriefLineHandlers;
 use App\Http\Handlers\CampaignHandlers;
 use App\Http\Handlers\JobHandlers;
+use App\Http\Handlers\MyDayHandlers;
 use App\Http\Handlers\SpikeHandlers;
 use App\Http\Handlers\SystemHandlers;
 
 return [
     ['GET /{$}', [SystemHandlers::class, 'home']],
     ['GET /healthz', [SystemHandlers::class, 'healthz']],
-    ['GET /today', [SystemHandlers::class, 'today']],
+    // Phase 4: my day
+    ['GET /today', [MyDayHandlers::class, 'page']],
+    ['GET /today/sections/{section}', [MyDayHandlers::class, 'section']],
+    ['POST /today/seen', [MyDayHandlers::class, 'markSeen']],
 
     ['GET /login', [AuthHandlers::class, 'loginForm']],
     ['POST /login', [AuthHandlers::class, 'login']],

@@ -16,6 +16,7 @@ use App\Store\Db;
 use App\Store\JobStore;
 use App\Store\LoginAttemptStore;
 use App\Store\Migrator;
+use App\Store\MyDayStore;
 use App\Store\UserStore;
 
 /** Everything a handler may use, passed explicitly. Go: type Deps struct. */
@@ -36,6 +37,8 @@ final class Deps
         public readonly AssignmentStore $assignments,
         public readonly AssetStore $assets,
         public readonly ActivityStore $activity,
+        // Phase 4: my day
+        public readonly MyDayStore $myDay,
     ) {}
 
     public static function build(Config $config, Clock $clock, string $driver = 'auto'): self
@@ -59,6 +62,8 @@ final class Deps
             new AssignmentStore($db, $activity),
             $assets,
             $activity,
+            // Phase 4: my day
+            new MyDayStore($db),
         );
     }
 }

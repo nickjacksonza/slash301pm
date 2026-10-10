@@ -49,7 +49,7 @@ return [
         // and the next request is the logged-in AM
         $today = (ts_app($s))(ts_request('GET', '/today'), $d);
         t_eq(200, $today->status());
-        t_contains('Hello Ann', ts_body($today));
+        t_contains(', Ann', ts_body($today));
     },
     'bad password, unknown user and short password all fail the same way' => function (): void {
         $GLOBALS['lf_deps'] = $d = ts_deps();

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use App\Domain\GridField;
 use App\Domain\JobAction;
 use App\Domain\Policy;
 use App\Domain\Role;
@@ -53,6 +54,13 @@ function pmt_cases(): array
         'view_all_jobs' => [$j('in_progress'), static fn (User $u, JobAccess $a) => Policy::canViewJob($u, $a)],
         'view_budget' => [$j('in_progress'), static fn (User $u, JobAccess $a) => Policy::canViewBudget($u, $a)],
         'view_hours' => [$j('in_progress'), static fn (User $u, JobAccess $a) => Policy::canViewHours($u, $a)],
+        // Phase 3: jobs grid/board
+        'edit_job_field:title' => [$j('in_progress'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::Title)],
+        'edit_job_field:campaign_id' => [$j('draft'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::CampaignId)],
+        'edit_job_field:due_date' => [$j('briefed'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::DueDate)],
+        'edit_job_field:hours_estimate' => [$j('in_review'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::HoursEstimate)],
+        'edit_job_field:waiting_on' => [$j('waiting'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::WaitingOn)],
+        'edit_job_field:waiting_reason' => [$j('waiting'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::WaitingReason)],
     ];
 }
 

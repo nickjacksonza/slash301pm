@@ -11,18 +11,12 @@ use App\Store\MigrationLocked;
 use App\View\VM\SystemVM;
 use Throwable;
 
-/** /, /today, /healthz, /admin/system. */
+/** /, /healthz, /admin/system. */
 final class SystemHandlers
 {
     public static function home(Request $r, Deps $d): Response
     {
         return Response::redirect(url('/today'), 302);
-    }
-
-    public static function today(Request $r, Deps $d): Response
-    {
-        $user = $r->user();
-        return Shell::page($r, $d, 'My day', 'today', page_today($user !== null ? $user->name : ''));
     }
 
     /** Public JSON for the owner after each deploy. No secrets. */

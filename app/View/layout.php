@@ -92,7 +92,12 @@ function layout_nav_item(NavItem $item, string $active): string
     $class = $current
         ? 'flex items-center rounded-md bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-accent-foreground'
         : 'flex items-center rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground';
-    return '<a href="' . attr($item->href) . '" class="' . $class . '"' . ($current ? ' aria-current="page"' : '') . '>' . e($item->label) . '</a>';
+    // Phase 4: my day (count badge)
+    $badge = $item->count > 0
+        ? '<span class="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-white" data-nav-count="' . $item->count . '">'
+            . ($item->count > 99 ? '99+' : (string) $item->count) . '<span class="sr-only"> need attention</span></span>'
+        : '';
+    return '<a href="' . attr($item->href) . '" class="' . $class . '"' . ($current ? ' aria-current="page"' : '') . '>' . e($item->label) . $badge . '</a>';
 }
 
 /** Theme first (no flash), then CSS, then Datastar. Shared by the shell and bare pages. */

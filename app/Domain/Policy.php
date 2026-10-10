@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Domain;
 
 use App\Domain\Types\JobAccess;
+use App\Domain\Types\JobViewer;
+use App\Domain\Types\SavedView;
 use App\Domain\Types\User;
 
 /**
@@ -48,6 +50,14 @@ final class Policy
         'view_all_jobs' => 'Y Y Y Y Y Y Y A A A A A A B',
         'view_budget' => 'Y Y AC - AC AC - - - - - - - -',
         'view_hours' => 'Y Y Y Y Y Y A A A A A A A -',
+        // Phase 3: jobs grid/board
+        'edit_job_field:title' => 'Y Y AC - AC AC - - - - - - - -',
+        'edit_job_field:campaign_id' => 'Y Y AC - AC AC - - - - - - - -',
+        'edit_job_field:due_date' => 'Y Y AC - AC AC - - - - - - - -',
+        'edit_job_field:hours_estimate' => 'Y Y AC - AC AC - - - - - - - -',
+        'edit_job_field:budget' => 'Y Y AC - AC AC - - - - - - - -',
+        'edit_job_field:waiting_on' => 'Y Y AC Y AC AC A - - - - - - -',
+        'edit_job_field:waiting_reason' => 'Y Y AC Y AC AC A - - - - - - -',
     ];
 
     public static function canManageUsers(User $actor): Decision
@@ -260,6 +270,54 @@ final class Policy
     public static function canViewHours(User $u, JobAccess $j): Decision
     {
         return self::cell('view_hours', $u, $j, 'Hours are not shown to your role.');
+    }
+
+    // ---- Phase 3: jobs grid/board ------------------------------------------------
+
+    /**
+     * Inline edit of one grid cell. Brief-owned fields: not on a closed job (after
+     * the first send the edit goes to the working copy). Waiting fields: stage
+     * waiting only. AM and Traffic: the assignment rules (canAssign).
+     */
+    public static function canEditJobField(User $u, JobAccess $j, GridField $f): Decision
+    {
+        $slot = $f->slot();
+        if ($slot !== null) {
+            return self::canAssign($u, $j, $slot);
+        }
+        if ($j->stage->isClosed()) {
+            return Decision::deny('The job is ' . strtolower($j->stage->label()) . '; it can no longer change.');
+        }
+        if ($f->isWaitingField() && $j->stage !== Stage::Waiting) {
+            return Decision::deny('Only a waiting job has a waiting reason.');
+        }
+        return self::cell((string) $f->matrixId(), $u, $j, 'You cannot change the ' . strtolower($f->label()) . ' on this job.');
+    }
+
+    /** What the job search may return to this user and which brief values they see. */
+    public static function jobViewer(User $u): JobViewer
+    {
+        return new JobViewer($u->id, self::rule('view_all_jobs', $u->role), self::rule('view_brief_draft', $u->role), $u->brandId);
+    }
+
+    /** Shared saved views: manager and admin roles only. */
+    public static function canShareView(User $u): Decision
+    {
+        return in_array($u->role, [Role::COO, Role::ECD, Role::AM, Role::PM, Role::Producer, Role::Traffic], true)
+            ? Decision::allow()
+            : Decision::deny('Only managers and admins can share views.');
+    }
+
+    /** Rename, re-share, make default or delete: the owner; an admin may also manage a shared view. */
+    public static function canManageView(User $u, SavedView $v): Decision
+    {
+        if ($v->ownerId === $u->id) {
+            return Decision::allow();
+        }
+        if ($v->isShared && self::isAdmin($u)) {
+            return Decision::allow();
+        }
+        return Decision::deny('Only the person who saved this view can change it.');
     }
 
     /** The matrix cell for an action and role (deny when the action has no row). */

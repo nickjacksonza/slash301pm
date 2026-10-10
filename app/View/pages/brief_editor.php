@@ -30,19 +30,21 @@ function page_brief_editor(BriefEditorVM $vm): string
 {
     $base = url('/jobs/' . rawurlencode($vm->jobId) . '/brief');
     ob_start(); ?>
-<div id="brief-page" class="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]"
+<div id="brief-page" class="mx-auto flex w-full max-w-7xl flex-col gap-6"
      data-signals="<?= js(['tr' => ['action' => '', 'waiting_on' => '', 'reason' => '']]) ?>">
-  <div class="flex min-w-0 flex-col gap-6">
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <div class="min-w-0">
-        <p class="text-sm text-muted-foreground"><span class="font-mono"><?= e($vm->jobNumber) ?></span> · <?= e($vm->campaignLabel) ?></p>
-        <?= partial_brief_heading($vm->title) ?>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <?= ui_button(new ButtonProps(variant: 'outline', size: 'sm', href: $base . '/versions'), 'Versions') ?>
-        <?= ui_button(new ButtonProps(variant: 'outline', size: 'sm', href: $base . '/print', target: '_blank'), 'Print') ?>
-      </div>
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <p class="text-sm text-muted-foreground"><span class="font-mono"><?= e($vm->jobNumber) ?></span> · <?= e($vm->campaignLabel) ?></p>
+      <?= partial_brief_heading($vm->title) ?>
     </div>
+    <div class="flex flex-wrap gap-2">
+      <?= ui_button(new ButtonProps(variant: 'outline', size: 'sm', href: $base . '/versions'), 'Versions') ?>
+      <?= ui_button(new ButtonProps(variant: 'outline', size: 'sm', href: $base . '/print', target: '_blank'), 'Print') ?>
+    </div>
+  </div>
+  <?php // The heading sits above the grid so the rail's first card lines up with the first content card. Two columns from xl (the sidebar takes 15rem of the width). ?>
+  <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+  <div class="flex min-w-0 flex-col gap-6">
     <?php if (!$vm->canEdit): ?>
       <?= $vm->doc !== null ? ui_card(new PartProps(class: 'px-6'), partial_brief_doc($vm->doc)) : ui_card(new PartProps(class: 'px-6'), '<p class="text-sm text-muted-foreground">This brief has not been sent yet.</p>') ?>
     <?php else: ?>
@@ -52,6 +54,7 @@ function page_brief_editor(BriefEditorVM $vm): string
     <?php endif; ?>
   </div>
   <?= partial_brief_rail($vm->rail) ?>
+  </div>
 </div>
 <?= partial_brief_dialogs($vm->jobId) ?>
 <?php
@@ -264,7 +267,7 @@ function partial_brief_rail(BriefRailVM $vm): string
     $tr = static fn (string $action, string $confirm): string => e(($confirm !== '' ? 'confirm(' . json_encode($confirm, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_THROW_ON_ERROR) . ') && (' : '(') . "\$tr.action = '" . $action . "', ")
         . act('post', $base . '/transition', 'filterSignals: {include: /^tr\\./}') . ')';
     ob_start(); ?>
-<aside id="brief-rail" class="flex flex-col gap-4 self-start lg:sticky lg:top-4" aria-label="Brief status">
+<aside id="brief-rail" class="flex flex-col gap-4 self-start xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:pb-1" aria-label="Brief status">
   <div class="<?= attr($card) ?>">
     <div class="flex flex-wrap items-center gap-2">
       <?= ui_badge(new BadgeProps(stage: $vm->stage), e($vm->stageLabel)) ?>

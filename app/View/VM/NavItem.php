@@ -10,5 +10,7 @@ final class NavItem
         public readonly string $label,
         public readonly string $href,
         public readonly bool $enabled,
+        // Phase 4: my day (badge next to the label; 0 hides it)
+        public readonly int $count = 0,
     ) {}
 }

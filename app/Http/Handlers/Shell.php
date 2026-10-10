@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers;
 
+use App\Domain\Dates;
 use App\Domain\Policy;
 use App\Http\Deps;
 use App\Http\Request;
@@ -17,8 +18,17 @@ final class Shell
     public static function layout(Request $r, Deps $d, string $title, string $active): LayoutVM
     {
         $user = $r->user();
+        // Phase 4: my day
+        $attention = 0;
+        if ($user !== null) {
+            try {
+                $attention = $d->myDay->attentionCount($user->id, Dates::today($d->clock->now()));
+            } catch (\Throwable $e) {
+                error_log('[slash301pm] nav count: ' . $e->getMessage());
+            }
+        }
         $nav = [
-            new NavItem('today', 'Today', url('/today'), true),
+            new NavItem('today', 'Today', url('/today'), true, $attention),
             new NavItem('briefs', 'Briefs', url('/briefs'), true),
             new NavItem('jobs', 'Jobs', url('/jobs'), false),
             new NavItem('board', 'Board', url('/jobs/board'), false),
