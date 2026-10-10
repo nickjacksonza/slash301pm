@@ -617,6 +617,8 @@ Urgency: **high** = blocks work until the recipient acts (badge plus top of My d
 | N38 | post_archived_or_deleted | Post publication record archived or deleted | AM | A live post is gone or hidden | normal | digest | social |
 | N39 | changed_after_live | Brief updated, live link edited or asset reopened after Live | Social on the job; AM | A live post may need editing | high | immediate | social |
 
+**Internal reviews as built (owner spec 2026-10).** Activity verbs and recipients (`App\Domain\ReviewNotify`): `review_requested` (N14: a maker clicks Request review on a post, or every post of the job is handed in) goes to the reviewer: the CD or ECD the review was reassigned to, else the CD slot holder, else every ECD. `job_review_requested` (the CD asks the ECD, even before every post is done) and `job_cd_approved` (the CD approves the job) go to every ECD. `job_ecd_approved` (N16) goes to the AM (or brief creator) and the CD. `asset_part_rejected` (N17) goes only to the maker of each rejected part (copy to the copy maker, media to the media maker; the other part stays approved). `round_limit_warning` goes to the AM when a post reaches the round after the limit (`app/config.php`, default 3). `job_ready_for_client` and `job_sent_to_client` go to the AM and Traffic. `review_reassigned` goes to the new reviewer. `asset_submitted` and `asset_part_approved` notify nobody. QA is not part of this flow yet (Q13: advisory).
+
 ## 4. Permission matrix
 
 Machine-readable copy: `tests/fixtures/roles/policy-matrix.json` (generated from the same table; the JSON uses the full value names). Each row is one `Policy` function. A cell is necessary but not sufficient: the stage preconditions in the conditions table and the read rules (`view_*`) must also pass, and every actor and `*_by` value comes from the session.
@@ -721,9 +723,13 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `submit_for_review` * | Y | Y | - | - | - | - | A | A | A | - | A | A | A | - |
 | `qa_signoff` | Y | Y | - | - | - | - | - | - | - | A | - | - | - | - |
 | `approve_internal` * | Y | Y | - | - | - | - | A | - | - | - | - | - | - | - |
+| `request_ecd_review` * | Y | Y | - | - | - | - | A | - | - | - | - | - | - | - |
+| `approve_job_ecd` * | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
+| `reassign_review` * | Y | Y | - | - | - | - | A | - | - | - | - | - | - | - |
+| `mark_ready_for_client` * | Y | Y | AC | Y | - | AC | A | - | - | - | - | - | - | - |
 | `give_feedback_internal` | Y | Y | AC | Y | AC | AC | A | - | - | A | - | - | - | - |
 | `route_feedback` | Y | Y | AC | Y | AC | AC | A | - | - | - | - | - | - | - |
-| `send_to_client` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | - |
+| `send_to_client` * | Y | Y | AC | Y | - | AC | A | - | - | - | - | - | - | - |
 | `approve_client` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | B |
 | `give_feedback_client` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | B |
 | `recommend_signoff` * | - | - | - | - | - | - | - | - | - | - | - | - | - | B |
@@ -851,9 +857,19 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `transition:workable->on_hold` | Traffic | Not from draft. |
 | `transition:open->cancelled` | all allowed roles | Reason required; started assets are kept and flagged. |
 | `transition:done->in_progress` | all allowed roles | Reason required. |
-| `submit_for_review` | all allowed roles | Asset is assigned to the actor (CD: CD slot on the job). |
-| `approve_internal` | CD | Holds the CD slot on the job; not their own submitted asset unless no other CD or ECD exists. |
-| `send_to_client` | all allowed roles | Stage approved_internal; a Client contact is assigned. |
+| `submit_for_review` | all allowed roles | Brief sent, job open. Each part is handed in by its maker: copy by the Copywriter slot (or the asset assignee for copy deliverables), media by the Designer slot (or the asset assignee); the CD slot holder, the COO and the ECD may hand in either part. An approved part is frozen until a reviewer rejects it. |
+| `approve_internal` | all allowed roles | Brief sent, job open. A rejection sends the part back to its maker, clears the CD and ECD approvals and the client steps, and moves an in_review or approved_internal job back to in_progress. |
+| `approve_internal` | CD | Holds the CD slot on the job, or the review was reassigned to them; not a part they handed in themselves unless no other CD or ECD exists. |
+| `request_ecd_review` | all allowed roles | Brief sent, job open, not ECD-approved already. Notifies every ECD; an in_progress job moves to in_review. |
+| `request_ecd_review` | CD | CD slot on the job, or the review was reassigned to them. |
+| `approve_job_ecd` | all allowed roles | The CD has approved the job and every post is approved. Any later rejection clears it. Notifies the AM (N16) and the CD. |
+| `approve_job_ecd` | COO | As cover for the ECD. |
+| `reassign_review` | all allowed roles | Job open. A Client contact of the job brand only after the ECD has approved the job (clients review in the client portal, next phase). Notifies the new reviewer. |
+| `reassign_review` | CD | CD slot on the job, or the review was reassigned to them. |
+| `mark_ready_for_client` | all allowed roles | Stage approved_internal; the CD and the ECD have approved the job and every post is approved. Notifies the AM and Traffic. |
+| `mark_ready_for_client` | CD | CD slot on the job, or the review was reassigned to them. |
+| `send_to_client` | all allowed roles | Stage approved_internal; the CD and the ECD have approved the job and every post is approved; marked ready for client review; not sent already. Notifies the AM and Traffic. |
+| `send_to_client` | CD | CD slot on the job, or the review was reassigned to them. |
 | `approve_client` | Client | users.client_signoff = 1. |
 | `approve_client` | AM | On behalf, with contact and evidence note. |
 | `approve_client` | PM | On behalf. |
@@ -890,7 +906,8 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `qa_signoff` | Legacy QA has no action at all. |
 | `approve_internal` | api/permissions.php:118-121: any CD, not the assigned CD. |
 | `route_feedback` | src/components/reviews.js:25 FEEDBACK_ASSIGNABLE_ROLES omits CD, QA, AM, Developer, SEO, Social. |
-| `send_to_client` | No legacy action; the client queue shows any Approved (Internal) or In Review job (src/components/operations.js:178). |
+| `send_to_client` | No legacy action; the client queue shows any Approved (Internal) or In Review job (src/components/operations.js:178). Owner spec 2026-10 lists CD, ECD, AM, COO, Traffic and Producer (PM is not listed). |
+| `approve_job_ecd` | api/permissions.php:118-121 lets any CD or admin approve internally in one step. |
 | `approve_client` | api/permissions.php:123-128: Client of the brand or admin only. |
 | `give_feedback_client` | api/permissions.php:130-136 lets every manager post client feedback with no on-behalf record; is_internal comes from the body (api/api.php:1201). |
 | `recommend_signoff` | No legacy equivalent. |

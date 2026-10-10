@@ -242,7 +242,7 @@ final class BriefView
             'deliverable_cancelled' => 'cancelled ' . (isset($d['asset_ids']) && is_array($d['asset_ids']) ? count($d['asset_ids']) : 0) . ' unstarted assets',
             'started_asset_conflict' => 'kept started assets: ' . $str('message'),
             // Social publishing
-            default => Notifications::socialPhrase($a->verb, $d) ?? str_replace('_', ' ', $a->verb),
+            default => Notifications::socialPhrase($a->verb, $d) ?? \App\Domain\ReviewNotify::phrase($a->verb, $d) ?? str_replace('_', ' ', $a->verb),
         };
     }
 }

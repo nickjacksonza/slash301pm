@@ -2,11 +2,18 @@
 declare(strict_types=1);
 
 use App\Domain\GridField;
+use App\Domain\JobReviewStatus;
+use App\Domain\MediaKind;
+use App\Domain\PartState;
+use App\Domain\ReviewPolicy;
 use App\Domain\JobAction;
 use App\Domain\Policy;
 use App\Domain\Role;
+use App\Domain\Types\AssetReview;
 use App\Domain\Types\Assignment;
 use App\Domain\Types\JobAccess;
+use App\Domain\Types\JobReview;
+use App\Domain\Types\Team;
 use App\Domain\Types\User;
 
 require_once dirname(__DIR__, 2) . '/support/brief_fx.php';
@@ -70,7 +77,31 @@ function pmt_cases(): array
         'manage_brand_logo' => [null, static fn (User $u, ?JobAccess $a) => Policy::canSetBrandLogo($u)],
         'view_overrides_report' => [null, static fn (User $u, ?JobAccess $a) => Policy::canViewOverridesReport($u)],
         'add_demo_role_tasks' => [null, static fn (User $u, ?JobAccess $a) => Policy::canAddDemoRoleTasks($u, true)],
+        // Reviews (owner spec 2026-10): ReviewPolicy with review state that meets each action's conditions
+        'view_internal_feedback' => [$j('in_review'), static fn (User $u, JobAccess $a) => ReviewPolicy::canView($u, $a)],
+        'submit_for_review' => [$j('in_progress'), static fn (User $u, JobAccess $a) => ReviewPolicy::canSubmit($u, $a, pmt_asset($u, $a), new Team($a->assignments))],
+        'approve_internal' => [$j('in_review'), static fn (User $u, JobAccess $a) => ReviewPolicy::canReview($u, $a, JobReview::empty($a->jobId))],
+        'request_ecd_review' => [$j('in_progress'), static fn (User $u, JobAccess $a) => ReviewPolicy::canRequestEcdReview($u, $a, JobReview::empty($a->jobId))],
+        'approve_job_ecd' => [$j('in_review'), static fn (User $u, JobAccess $a) => ReviewPolicy::canApproveAsEcd($u, $a, pmt_jr(true, false, false), JobReviewStatus::AllApproved)],
+        'reassign_review' => [$j('in_review'), static fn (User $u, JobAccess $a) => ReviewPolicy::canReassign($u, $a, JobReview::empty($a->jobId))],
+        'mark_ready_for_client' => [$j('approved_internal'), static fn (User $u, JobAccess $a) => ReviewPolicy::canMarkReady($u, $a, pmt_jr(true, true, false), JobReviewStatus::AllApproved)],
+        'send_to_client' => [$j('approved_internal'), static fn (User $u, JobAccess $a) => ReviewPolicy::canSendToClient($u, $a, pmt_jr(true, true, true), JobReviewStatus::AllApproved)],
     ];
+}
+
+/** An asset of the fixture job, assigned to the actor when the actor is on the job ("asset is assigned to the actor"). */
+function pmt_asset(User $u, JobAccess $a): AssetReview
+{
+    $mine = $a->isAssigned($u->id);
+    return new AssetReview('a1', $a->jobId, 'MERC-004_Static_01', 'image', 'social-static', 'Inbox', $mine ? $u->id : null, $mine ? $u->role : null, '', '', '', 0,
+        null, 0, '', '', MediaKind::Link, '', '', '', PartState::Missing, PartState::Missing, null, null, null, false, 0, null, '', null, '');
+}
+
+function pmt_jr(bool $cd, bool $ecd, bool $ready): JobReview
+{
+    $at = '2026-10-09 10:00:00';
+    return new JobReview('j1', 1, null, null, null, $cd ? 'cd9' : null, '', $cd ? $at : null, $ecd ? 'ecd9' : null, '', $ecd ? $at : null,
+        $ready ? 'am9' : null, $ready ? $at : null, null, null, null, '', null, 1);
 }
 
 /**
@@ -100,28 +131,24 @@ function pmt_not_yet(): array
         'edit_job_field:last_go_live' => 'no grid cell; edited in the brief editor (edit_brief_*)',
         'edit_job_field:budget' => 'no grid cell; edited in the brief editor (edit_brief_*)',
         'edit_job_field:sort_order' => 'no manual job ordering yet',
-        'transition:in_progress->in_review' => 'needs asset submission (reviews phase)',
-        'transition:in_review->in_progress' => 'reviews phase',
-        'transition:in_review->approved_internal' => 'reviews phase',
-        'transition:approved_internal->in_progress' => 'reviews and client portal phases',
+        'transition:in_progress->in_review' => 'implicit: Request review or every post handed in (ReviewRules::stageMoves)',
+        'transition:in_review->in_progress' => 'implicit: a rejection in the review flow (ReviewRules::stageMoves)',
+        'transition:in_review->approved_internal' => 'implicit: the ECD approval of a CD-approved job (ReviewRules::stageMoves)',
+        'transition:approved_internal->in_progress' => 'implicit: a rejection in the review flow; the AM send back comes with the client portal',
         'transition:approved_internal->approved_client' => 'client portal phase',
         'transition:approved_client->in_progress' => 'reopen flow not built',
         'transition:done->in_progress' => 'reopen flow not built',
         'transition:archived->restore' => 'restore flow not built',
         'transition:cancelled->draft' => 'reinstate flow not built',
-        'submit_for_review' => 'reviews phase',
-        'qa_signoff' => 'reviews phase',
-        'approve_internal' => 'reviews phase',
-        'give_feedback_internal' => 'reviews phase',
-        'route_feedback' => 'reviews phase',
-        'send_to_client' => 'client portal phase',
+        'qa_signoff' => 'QA is advisory (Q13) and not part of the review flow yet',
+        'give_feedback_internal' => 'feedback is given through approve_internal (reject with feedback) in the review flow',
+        'route_feedback' => 'rejections are routed to the part maker automatically; manual routing comes with client feedback',
         'approve_client' => 'client portal phase',
         'give_feedback_client' => 'client portal phase',
         'recommend_signoff' => 'client portal phase',
         'comment' => 'comments come later',
         'manage_brand' => 'no brand admin screen',
         'toggle_demo_mode' => 'the owner flips the demo flag by hand',
-        'view_internal_feedback' => 'reviews phase',
         'view_staff_emails' => 'no screen shows staff emails to non-admins',
         'view_capacity' => 'capacity screen comes later',
         'view_wiki' => 'wiki stays in legacy',

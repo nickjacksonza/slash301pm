@@ -25,13 +25,15 @@ final class Config
         public readonly bool $cookieSecure,
         public readonly Transport $transport,
         public readonly array $newUiRoles,
+        /** Reviews: the AM is warned when a post's review round passes this (owner default 3; 0 turns it off). */
+        public readonly int $reviewRoundLimit = 3,
     ) {}
 
     /**
      * @param array<string,mixed> $server $_SERVER
      * @param array<string,string> $env   getenv()
      */
-    public static function fromEnvironment(array $server, array $env, string $sapi, string $rootDir, Transport $defaultTransport): self
+    public static function fromEnvironment(array $server, array $env, string $sapi, string $rootDir, Transport $defaultTransport, int $reviewRoundLimit = 3): self
     {
         $local = self::detectLocal($server, $sapi);
         $dataDir = isset($env['S301_DATA_DIR']) && $env['S301_DATA_DIR'] !== '' ? rtrim($env['S301_DATA_DIR'], '/') : $rootDir . '/data';
@@ -52,6 +54,7 @@ final class Config
             !$local,
             $transport,
             self::defaultNewUiRoles(),
+            max(0, min(99, $reviewRoundLimit)),
         );
     }
 

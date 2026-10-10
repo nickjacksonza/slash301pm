@@ -66,6 +66,15 @@ final class Policy
         'override_asset_status' => 'Y Y - Y - - - - - - - - - -',
         'view_overrides_report' => 'Y - - - - - - - - - - - - -',
         'add_demo_role_tasks' => 'Y - - - - - - - - - - - - -',
+        // Reviews (owner spec 2026-10): ReviewPolicy adds the conditions. CD "A" = CD slot or the review assignee.
+        'view_internal_feedback' => 'Y Y Y Y Y Y Y A A A A A A -',
+        'submit_for_review' => 'Y Y - - - - A A A - A A A -',
+        'approve_internal' => 'Y Y - - - - A - - - - - - -',
+        'request_ecd_review' => 'Y Y - - - - A - - - - - - -',
+        'approve_job_ecd' => 'Y Y - - - - - - - - - - - -',
+        'reassign_review' => 'Y Y - - - - A - - - - - - -',
+        'mark_ready_for_client' => 'Y Y AC Y - AC A - - - - - - -',
+        'send_to_client' => 'Y Y AC Y - AC A - - - - - - -',
     ];
 
     public static function canManageUsers(User $actor): Decision

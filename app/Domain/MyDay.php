@@ -357,7 +357,7 @@ final class MyDay
             'deliverables_reordered' => 'reordered the deliverables',
             Notifications::ASSET_STATUS_OVERRIDDEN => 'overrode an asset status',
             // Social publishing
-            default => Notifications::socialPhrase($verb, []) ?? str_replace('_', ' ', $verb),
+            default => Notifications::socialPhrase($verb, []) ?? ReviewNotify::phrase($verb, []) ?? str_replace('_', ' ', $verb),
         };
     }
 

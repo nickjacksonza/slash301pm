@@ -1397,7 +1397,7 @@
             "id": "submit_for_review",
             "section": "Reviews",
             "phase": "reviews",
-            "description": "Submit an asset or task for internal review.",
+            "description": "Hand in an asset (copy text, media link, hashtags, link) and ask for internal review of it (Request review).",
             "decisions": {
                 "COO": "allow",
                 "ECD": "allow",
@@ -1415,7 +1415,7 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Asset is assigned to the actor (CD: CD slot on the job)."
+                "*": "Brief sent, job open. Each part is handed in by its maker: copy by the Copywriter slot (or the asset assignee for copy deliverables), media by the Designer slot (or the asset assignee); the CD slot holder, the COO and the ECD may hand in either part. An approved part is frozen until a reviewer rejects it."
             }
         },
         {
@@ -1445,7 +1445,7 @@
             "id": "approve_internal",
             "section": "Reviews",
             "phase": "reviews",
-            "description": "Approve a job or asset internally, recording the brief version checked.",
+            "description": "Approve or reject (with or without feedback) the copy and the media of a post, at any open stage, recording the round and the sent brief version checked; and approve the whole job (CD approval) once every post is approved.",
             "decisions": {
                 "COO": "allow",
                 "ECD": "allow",
@@ -1463,9 +1463,118 @@
                 "Client": "deny"
             },
             "conditions": {
-                "CD": "Holds the CD slot on the job; not their own submitted asset unless no other CD or ECD exists."
+                "*": "Brief sent, job open. A rejection sends the part back to its maker, clears the CD and ECD approvals and the client steps, and moves an in_review or approved_internal job back to in_progress.",
+                "CD": "Holds the CD slot on the job, or the review was reassigned to them; not a part they handed in themselves unless no other CD or ECD exists."
             },
             "legacy": "api/permissions.php:118-121: any CD, not the assigned CD."
+        },
+        {
+            "id": "request_ecd_review",
+            "section": "Reviews",
+            "phase": "reviews",
+            "description": "The CD asks the ECD to review the job, even before every post is done.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Brief sent, job open, not ECD-approved already. Notifies every ECD; an in_progress job moves to in_review.",
+                "CD": "CD slot on the job, or the review was reassigned to them."
+            },
+            "legacy": "No legacy equivalent."
+        },
+        {
+            "id": "approve_job_ecd",
+            "section": "Reviews",
+            "phase": "reviews",
+            "description": "The ECD approval of a job the CD has approved. With both approvals the job moves to approved_internal.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "The CD has approved the job and every post is approved. Any later rejection clears it. Notifies the AM (N16) and the CD.",
+                "COO": "As cover for the ECD."
+            },
+            "legacy": "api/permissions.php:118-121 lets any CD or admin approve internally in one step."
+        },
+        {
+            "id": "reassign_review",
+            "section": "Reviews",
+            "phase": "reviews",
+            "description": "Hand the review of a job to another CD or the ECD, or to a Client contact of the job brand.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Job open. A Client contact of the job brand only after the ECD has approved the job (clients review in the client portal, next phase). Notifies the new reviewer.",
+                "CD": "CD slot on the job, or the review was reassigned to them."
+            },
+            "legacy": "No legacy equivalent."
+        },
+        {
+            "id": "mark_ready_for_client",
+            "section": "Reviews",
+            "phase": "reviews",
+            "description": "Set up an internally approved job as ready for client review.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "deny",
+                "Producer": "assigned_or_creator",
+                "CD": "assigned",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage approved_internal; the CD and the ECD have approved the job and every post is approved. Notifies the AM and Traffic.",
+                "CD": "CD slot on the job, or the review was reassigned to them."
+            },
+            "legacy": "No legacy equivalent. Owner spec 2026-10 lists CD, ECD, AM, COO, Traffic and Producer (PM is not listed)."
         },
         {
             "id": "give_feedback_internal",
@@ -1515,16 +1624,16 @@
         {
             "id": "send_to_client",
             "section": "Reviews",
-            "phase": "client_portal",
-            "description": "Send an internally approved job to the client contact, recording the brief version and assets sent.",
+            "phase": "reviews",
+            "description": "Record that the job was sent to the client (by hand, outside the app, until the client portal), after it was marked ready for client review.",
             "decisions": {
                 "COO": "allow",
                 "ECD": "allow",
                 "AM": "assigned_or_creator",
-                "Traffic": "deny",
-                "PM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "deny",
                 "Producer": "assigned_or_creator",
-                "CD": "deny",
+                "CD": "assigned",
                 "Copywriter": "deny",
                 "Designer": "deny",
                 "QA": "deny",
@@ -1534,9 +1643,10 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Stage approved_internal; a Client contact is assigned."
+                "*": "Stage approved_internal; the CD and the ECD have approved the job and every post is approved; marked ready for client review; not sent already. Notifies the AM and Traffic.",
+                "CD": "CD slot on the job, or the review was reassigned to them."
             },
-            "legacy": "No legacy action; the client queue shows any Approved (Internal) or In Review job (src/components/operations.js:178)."
+            "legacy": "No legacy action; the client queue shows any Approved (Internal) or In Review job (src/components/operations.js:178). Owner spec 2026-10 lists CD, ECD, AM, COO, Traffic and Producer (PM is not listed)."
         },
         {
             "id": "approve_client",
