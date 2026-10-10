@@ -61,6 +61,20 @@ enum GridField: string
         return $this->slot() !== null ? null : 'edit_job_field:' . $this->value;
     }
 
+    /** The grid column whose cell holds this field's editor (waiting fields live in the stage cell). */
+    public function column(): JobColumn
+    {
+        return match ($this) {
+            self::Title => JobColumn::Title,
+            self::DueDate => JobColumn::Due,
+            self::HoursEstimate => JobColumn::Hours,
+            self::CampaignId => JobColumn::Campaign,
+            self::WaitingOn, self::WaitingReason => JobColumn::Stage,
+            self::Am => JobColumn::Am,
+            self::Traffic => JobColumn::Traffic,
+        };
+    }
+
     /** The key in brief.* (BriefSignals) for a brief field. */
     public function briefKey(): string
     {

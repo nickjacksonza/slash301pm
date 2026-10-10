@@ -30,8 +30,9 @@ final class Shell
         $nav = [
             new NavItem('today', 'Today', url('/today'), true, $attention),
             new NavItem('briefs', 'Briefs', url('/briefs'), true),
-            new NavItem('jobs', 'Jobs', url('/jobs'), false),
-            new NavItem('board', 'Board', url('/jobs/board'), false),
+            // Phase 3: jobs grid/board
+            new NavItem('jobs', 'Jobs', url('/jobs'), true),
+            new NavItem('board', 'Board', url('/jobs/board'), true),
             new NavItem('campaigns', 'Campaigns', url('/campaigns'), true),
         ];
         $admin = [];

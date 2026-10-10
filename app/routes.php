@@ -11,8 +11,11 @@ use App\Http\Handlers\AuthHandlers;
 use App\Http\Handlers\BriefHandlers;
 use App\Http\Handlers\BriefLineHandlers;
 use App\Http\Handlers\CampaignHandlers;
+use App\Http\Handlers\JobBoardHandlers;
+use App\Http\Handlers\JobGridHandlers;
 use App\Http\Handlers\JobHandlers;
 use App\Http\Handlers\MyDayHandlers;
+use App\Http\Handlers\SavedViewHandlers;
 use App\Http\Handlers\SpikeHandlers;
 use App\Http\Handlers\SystemHandlers;
 
@@ -62,6 +65,21 @@ return [
     ['POST /jobs/{id}/assignments/{role}', [AssignmentHandlers::class, 'set']],
     ['POST /jobs/{id}/claim-am', [JobHandlers::class, 'claimAm']],
     ['POST /jobs/{id}/transition', [JobHandlers::class, 'transition']],
+
+    // Phase 3: jobs grid/board
+    ['GET /jobs', [JobGridHandlers::class, 'page']],
+    ['GET /jobs/rows', [JobGridHandlers::class, 'rows']],
+    ['GET /jobs/{id}/row', [JobGridHandlers::class, 'row']],
+    ['GET /jobs/{id}/cells/{field}/edit', [JobGridHandlers::class, 'editCell']],
+    ['PATCH /jobs/{id}/fields/{field}', [JobGridHandlers::class, 'updateField']],
+    ['GET /jobs/board', [JobBoardHandlers::class, 'page']],
+    ['GET /jobs/board/columns', [JobBoardHandlers::class, 'columns']],
+    ['POST /jobs/{id}/move', [JobBoardHandlers::class, 'move']],
+    ['GET /jobs/{id}/sheet', [JobBoardHandlers::class, 'sheet']],
+    ['GET /views', [SavedViewHandlers::class, 'list']],
+    ['POST /views', [SavedViewHandlers::class, 'create']],
+    ['PATCH /views/{id}', [SavedViewHandlers::class, 'update']],
+    ['DELETE /views/{id}', [SavedViewHandlers::class, 'delete']],
 
     ['GET /system/spike', [SpikeHandlers::class, 'page']],
     ['GET /system/spike/patch/{mode}', [SpikeHandlers::class, 'patch']],

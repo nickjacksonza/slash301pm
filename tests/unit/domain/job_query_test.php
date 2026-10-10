@@ -116,6 +116,17 @@ return [
         }
         t_eq(['2026-12-28', '2027-01-03'], DueWindow::ThisWeek->range('2026-12-28'), 'week crosses the year');
     },
+    'job query: signal form aligns stages and columns to the checkbox order' => function (): void {
+        $q = JobQuery::fromQuery(['stages' => 'draft,waiting', 'cols' => 'title,due'], 'jobs');
+        $sig = $q->toSignalState();
+        t_eq(count(JobQuery::pipeline()), count($sig['stages']));
+        t_eq('draft', $sig['stages'][0]);
+        t_eq('', $sig['stages'][1]);
+        t_eq('waiting', $sig['stages'][3]);
+        t_eq(['job_number', 'title', '', '', '', '', '', 'due', '', '', '', ''], $sig['cols']);
+        t_true($q == JobQuery::fromState($sig, 'jobs'), 'round trip through the aligned form');
+        t_eq($sig['stages'], JobQuery::alignedStages($q->stages));
+    },
     'job query: board stage toggles keep pipeline order' => function (): void {
         $q = JobQuery::defaults('board')->withStages([Stage::Cancelled, Stage::Draft, Stage::Done]);
         t_eq([Stage::Draft, Stage::Done, Stage::Cancelled], $q->stages);

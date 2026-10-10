@@ -56,13 +56,14 @@ final class JobQuery
         );
     }
 
-    /** Stages in the order the board and the stage sort use. @return list<Stage> */
+    /**
+     * Stages in the order the board and the stage sort use: the Stage enum's
+     * order, so Waiting and On hold sit next to In progress (the usual drop target).
+     * @return list<Stage>
+     */
     public static function pipeline(): array
     {
-        return [
-            Stage::Draft, Stage::Briefed, Stage::InProgress, Stage::InReview, Stage::ApprovedInternal, Stage::ApprovedClient,
-            Stage::ReadyToSchedule, Stage::Scheduled, Stage::Live, Stage::Waiting, Stage::OnHold, Stage::Done, Stage::Archived, Stage::Cancelled,
-        ];
+        return Stage::cases();
     }
 
     /** Named stage sets accepted in ?stages= and saved state. @return list<string> */
@@ -190,6 +191,40 @@ final class JobQuery
             'assignee' => $this->assigneeId, 'role' => $this->role !== null ? $this->role->value : '', 'due' => $this->due !== null ? $this->due->value : '',
             'text' => $this->text, 'sort' => $this->sortToken(), 'group' => $this->groupBy->value, 'cols' => $cols,
         ];
+    }
+
+    /**
+     * The q.* signal form for the page: like toState(), but stages and cols are
+     * aligned to the checkbox order (pipeline(), JobColumn::cases()), with ''
+     * for an unticked box. Datastar binds an array signal to same-named
+     * checkboxes by position, so a compact list would tick the wrong boxes.
+     * fromState() ignores the '' entries.
+     * @return array<string,mixed>
+     */
+    public function toSignalState(): array
+    {
+        $st = $this->toState();
+        $stages = [];
+        foreach (self::pipeline() as $s) {
+            $stages[] = $this->hasStage($s) ? $s->value : '';
+        }
+        $cols = [];
+        foreach (JobColumn::cases() as $c) {
+            $cols[] = $this->hasColumn($c) ? $c->value : '';
+        }
+        $st['stages'] = $stages;
+        $st['cols'] = $cols;
+        return $st;
+    }
+
+    /** A stage list as the aligned signal array. @param list<Stage> $stages @return list<string> */
+    public static function alignedStages(array $stages): array
+    {
+        $out = [];
+        foreach (self::pipeline() as $s) {
+            $out[] = in_array($s, $stages, true) ? $s->value : '';
+        }
+        return $out;
     }
 
     public function toJson(): string

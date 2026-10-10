@@ -13,7 +13,16 @@ final class Toast
     public function __construct(
         public readonly ToastKind $kind,
         public readonly string $message,
+        // Phase 3: jobs grid/board (an optional link after the message, e.g. "Open the brief")
+        public readonly string $linkUrl = '',
+        public readonly string $linkLabel = '',
     ) {}
+
+    /** The same toast with a link after the message (an app URL from url()). */
+    public function withLink(string $url, string $label): self
+    {
+        return new self($this->kind, $this->message, $url, $label);
+    }
 
     public static function ok(string $message): self
     {
@@ -37,7 +46,7 @@ final class Toast
 
     public function html(): string
     {
-        return partial_toast($this->kind->value, $this->message);
+        return partial_toast($this->kind->value, $this->message, $this->linkUrl, $this->linkLabel);
     }
 
     /** The #toasts container holding just this toast (html transport). */

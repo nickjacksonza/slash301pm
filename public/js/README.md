@@ -17,3 +17,11 @@ same commit, then rerun the `/system/spike` page on live.
 ## theme.js
 
 Ours. Applies the remembered light/dark theme to `<html>` before first paint.
+
+## jobs.js and grid-keys.js
+
+Ours (Phase 3). `jobs.js` mirrors the job grid and board filters into the
+address bar (history.replaceState from the patched `data-url`), moves a board
+card on screen while its move is posted (`s301Jobs.place`), and closes the
+filter menus. `grid-keys.js` adds arrow, Home, End, Enter and F2 movement
+between grid cells and puts focus back on the cell after an inline edit.

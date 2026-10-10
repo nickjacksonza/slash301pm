@@ -6,56 +6,7 @@ use App\Domain\Stage;
 use App\Store\Db;
 use App\Store\Migrator;
 
-require_once dirname(__DIR__) . '/support/app.php';
-
-/**
- * Rehearsal on the owner's download of the live database (data/live-copy.db,
- * gitignored). Works on a temp COPY; the download itself is only read.
- * Skips (passes with a note) when the file is absent.
- */
-function lc_copy(): ?string
-{
-    $src = dirname(__DIR__, 2) . '/data/live-copy.db';
-    if (!is_file($src)) {
-        fwrite(STDERR, "note: data/live-copy.db not present, live-copy rehearsal skipped\n");
-        return null;
-    }
-    $dir = ts_temp_dir();
-    copy($src, $dir . '/live.db');
-    if (is_file($src . '-wal') && filesize($src . '-wal') > 0) {
-        copy($src . '-wal', $dir . '/live.db-wal');
-    }
-    return $dir;
-}
-
-function lc_migrator(Db $db, string $dir): Migrator
-{
-    return new Migrator($db, dirname(__DIR__, 2) . '/migrations', $dir . '/backups', $dir . '/migrate.lock', $dir . '/migrate-failed.json', new FixedClock(new DateTimeImmutable('2026-10-09 10:00:00')));
-}
-
-/** @return array<string,int> */
-function lc_counts(Db $db): array
-{
-    $out = [];
-    foreach ($db->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> 'schema_migrations' ORDER BY name") as $r) {
-        $out[(string) $r['name']] = (int) $db->scalar('SELECT COUNT(*) FROM "' . str_replace('"', '""', (string) $r['name']) . '"');
-    }
-    return $out;
-}
-
-/** Migrated temp copy, or null when the download is absent. @return array{0:Db,1:string,2:array<string,int>}|null */
-function lc_migrated(): ?array
-{
-    $dir = lc_copy();
-    if ($dir === null) {
-        return null;
-    }
-    $db = Db::open($dir . '/live.db');
-    $before = lc_counts($db);
-    $res = lc_migrator($db, $dir)->run();
-    t_true($res->ok, $res->error);
-    return [$db, $dir, $before];
-}
+require_once dirname(__DIR__) . '/support/live_copy.php';
 
 return [
     'live copy: existing rows unchanged, backup written, second run does nothing, checks clean' => function (): void {
@@ -262,6 +213,27 @@ return [
         $legacy->exec("DELETE FROM jobs WHERE id = 'legacyjob1'");
         t_eq(0, (int) $db->scalar("SELECT COUNT(*) FROM briefs WHERE job_id = 'legacyjob1'"));
         $legacy->close();
+        t_eq('ok', (string) $db->scalar('PRAGMA integrity_check'));
+    },
+    'live copy: 0009 saved_views and 0010 apply in order; a legacy user delete still works' => function (): void {
+        $m = lc_migrated();
+        if ($m === null) {
+            return;
+        }
+        [$db] = $m;
+        $applied = [];
+        foreach ($db->query('SELECT version, name FROM schema_migrations ORDER BY version') as $r) {
+            $applied[] = (int) $r['version'] . ':' . $r['name'];
+        }
+        t_true(in_array('9:saved_views', $applied, true), 'applied: ' . implode(', ', $applied));
+        t_true(in_array('10:user_seen', $applied, true), 'applied: ' . implode(', ', $applied));
+        t_eq(10, (int) $db->scalar('PRAGMA user_version'));
+        t_eq(0, (int) $db->scalar('SELECT COUNT(*) FROM saved_views'));
+        $uid = (string) $db->scalar("SELECT id FROM users WHERE role = 'SEO' LIMIT 1");
+        $db->exec("INSERT INTO saved_views (id, owner_id, screen, name, state_json) VALUES ('v1', :u, 'jobs', 'Mine', '{}')", ['u' => $uid]);
+        // legacy delete_user style: plain DELETE with foreign keys on
+        $db->exec('DELETE FROM users WHERE id = :u', ['u' => $uid]);
+        t_eq(0, (int) $db->scalar('SELECT COUNT(*) FROM saved_views'), 'views cascade with their owner');
         t_eq('ok', (string) $db->scalar('PRAGMA integrity_check'));
     },
 ];

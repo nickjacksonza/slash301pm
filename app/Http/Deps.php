@@ -13,9 +13,12 @@ use App\Store\BriefAssetStore;
 use App\Store\BriefStore;
 use App\Store\CampaignStore;
 use App\Store\Db;
+use App\Store\JobFieldStore;
+use App\Store\JobQueryStore;
 use App\Store\JobStore;
 use App\Store\LoginAttemptStore;
 use App\Store\Migrator;
+use App\Store\SavedViewStore;
 use App\Store\MyDayStore;
 use App\Store\UserStore;
 
@@ -39,6 +42,10 @@ final class Deps
         public readonly ActivityStore $activity,
         // Phase 4: my day
         public readonly MyDayStore $myDay,
+        // Phase 3: jobs grid/board
+        public readonly JobQueryStore $jobQuery,
+        public readonly JobFieldStore $jobFields,
+        public readonly SavedViewStore $savedViews,
     ) {}
 
     public static function build(Config $config, Clock $clock, string $driver = 'auto'): self
@@ -64,6 +71,10 @@ final class Deps
             $activity,
             // Phase 4: my day
             new MyDayStore($db),
+            // Phase 3: jobs grid/board
+            new JobQueryStore($db),
+            new JobFieldStore($db, $activity),
+            new SavedViewStore($db),
         );
     }
 }
