@@ -20,6 +20,7 @@ use App\Domain\Types\TransitionRequest;
  *   briefed -> in_progress, in_progress -> in_review, in_review -> in_progress (send back, reason),
  *   in_review -> approved_internal, approved_internal -> approved_client,
  *   approved_client -> ready_to_schedule -> scheduled -> live (social),
+ *   live -> scheduled -> ready_to_schedule -> approved_client (social step back, reason),
  *   approved_client|live -> done
  */
 final class Transitions
@@ -73,6 +74,18 @@ final class Transitions
                 break;
             case JobAction::GoLive:
                 $to = $from === Stage::Scheduled ? Stage::Live : null;
+                break;
+            // Social publishing: only PublicationStore makes this move (a reopened publication).
+            case JobAction::SocialStepBack:
+                $to = match ($from) {
+                    Stage::ReadyToSchedule => Stage::ApprovedClient,
+                    Stage::Scheduled => Stage::ReadyToSchedule,
+                    Stage::Live => Stage::Scheduled,
+                    default => null,
+                };
+                if ($to !== null && $reason === '') {
+                    $errors = $errors->with('reason', 'Say why it moves back a step.');
+                }
                 break;
             case JobAction::MarkDone:
                 $to = ($from === Stage::ApprovedClient || $from === Stage::Live) ? Stage::Done : null;
@@ -135,6 +148,8 @@ final class Transitions
             JobAction::ReadyToSchedule => $from === Stage::ApprovedClient ? 'transition:approved_client->ready_to_schedule' : null,
             JobAction::Schedule => $from === Stage::ReadyToSchedule ? 'transition:ready_to_schedule->scheduled' : null,
             JobAction::GoLive => $from === Stage::Scheduled ? 'transition:scheduled->live' : null,
+            // Social publishing: no matrix row; driven by publications only, never by Policy::canTransition.
+            JobAction::SocialStepBack => null,
             JobAction::MarkDone => $from === Stage::ApprovedClient ? 'transition:approved_client->done' : ($from === Stage::Live ? 'transition:live->done' : null),
             JobAction::Wait => $from->isWorkable() ? 'transition:workable->waiting' : null,
             JobAction::Hold => $from->isWorkable() ? 'transition:workable->on_hold' : null,

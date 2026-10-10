@@ -21,7 +21,7 @@ final class AssignmentHandlers
     {
         $u = BriefHandlers::user($r);
         $role = null;
-        foreach (Team::briefRoles() as $candidate) {
+        foreach (Team::slotRoles() as $candidate) {
             if (strtolower($candidate->value) === $r->pathValue('role')) {
                 $role = $candidate;
             }
@@ -30,7 +30,7 @@ final class AssignmentHandlers
             return Response::events(Toast::error('Unknown role.'));
         }
         $s = BriefState::load($d, $r->pathValue('id'));
-        if ($s === null) {
+        if ($s === null || !Policy::canViewJob($u, $s->access)->allowed) {
             return Response::events(Toast::error('This job no longer exists.'));
         }
         $dec = Policy::canAssign($u, $s->access, $role);
@@ -50,7 +50,7 @@ final class AssignmentHandlers
         }
         $fresh = BriefHandlers::reconcile($d, $s->job->id);
         $events = [
-            PatchElements::html(partial_brief_team($fresh->job->id, BriefView::team($fresh, $u, $d))),
+            PatchElements::html(partial_brief_team($fresh->job->id, BriefView::team($fresh, $u, $d), $fresh->brief->isSent())),
             PatchElements::html(partial_brief_rail(BriefView::rail($fresh, $u, $d))),
         ];
         if ($toast !== '') {

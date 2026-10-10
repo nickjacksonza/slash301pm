@@ -34,6 +34,7 @@ final class Policy
         'assign_account_roles' => 'Y Y AC - AC AC - - - - - - - -',
         'transition:draft->briefed' => 'Y Y AC - AC AC - - - - - - - -',
         'transition:briefed->draft' => 'Y Y AC - AC AC - - - - - - - -',
+        'transition:briefed->in_progress' => 'Y Y - Y AC AC A A A - A A A -',
         'transition:approved_client->done' => 'Y Y AC Y AC AC - - - - - - - -',
         'transition:approved_client->ready_to_schedule' => 'Y Y - - - - - - - - - - A -',
         'transition:ready_to_schedule->scheduled' => 'Y Y - - - - - - - - - - A -',
@@ -247,8 +248,21 @@ final class Policy
                 return Decision::deny('Drafts belong to the brief owner until they are sent.');
             }
         }
-        return self::cell($id, $u, $j, 'You cannot ' . strtolower($a->label()) . ' on this job.');
+        $d = self::cell($id, $u, $j, 'You cannot ' . strtolower($a->label()) . ' on this job.');
+        if ($d->allowed && $a === JobAction::Start) {
+            // Makers start a job implicitly, by starting their first assigned asset (matrix condition).
+            if (in_array($u->role, self::MAKERS, true)) {
+                return Decision::deny('The job moves to In progress by itself when you start your first asset.');
+            }
+            if (!$j->hasCreativeTeam()) {
+                return Decision::deny('Assign the CD or a creative before starting work.');
+            }
+        }
+        return $d;
     }
+
+    /** Copywriter, Designer, Developer, SEO, Social: one rule set for asset work (docs/roles.md "Makers"). */
+    public const MAKERS = [Role::Copywriter, Role::Designer, Role::Developer, Role::SEO, Role::Social];
 
     // ---- Organisation and visibility -------------------------------------------
 
@@ -257,9 +271,25 @@ final class Policy
         return self::cell('manage_campaign', $u, null, 'Only account managers, PMs, producers, the COO and the ECD manage campaigns.');
     }
 
+    /**
+     * May the user see this job at all (grid, board, sheet, moves)? view_all_jobs,
+     * and a draft only for who may read it (view_brief_draft), or for a manager
+     * who could claim it (no creator). Same rule as JobQueryStore's scope; a
+     * handler answers 404 or "no longer exists" when this denies.
+     */
     public static function canViewJob(User $u, JobAccess $j): Decision
     {
-        return self::cell('view_all_jobs', $u, $j, 'You are not on this job.');
+        $d = self::cell('view_all_jobs', $u, $j, 'You are not on this job.');
+        if (!$d->allowed || $j->stage !== Stage::Draft) {
+            return $d;
+        }
+        if (self::canViewBriefDraft($u, $j)->allowed) {
+            return $d;
+        }
+        if ($j->creatorId === null && self::rule('view_brief_draft', $u->role) !== PolicyRule::Deny) {
+            return $d;
+        }
+        return Decision::deny('Drafts are only visible to the brief owner.');
     }
 
     public static function canViewBudget(User $u, JobAccess $j): Decision
@@ -297,7 +327,41 @@ final class Policy
     /** What the job search may return to this user and which brief values they see. */
     public static function jobViewer(User $u): JobViewer
     {
-        return new JobViewer($u->id, self::rule('view_all_jobs', $u->role), self::rule('view_brief_draft', $u->role), $u->brandId);
+        return new JobViewer($u->id, self::rule('view_all_jobs', $u->role), self::rule('view_brief_draft', $u->role), $u->brandId,
+            self::rule('view_budget', $u->role));
+    }
+
+    /** Which "My day" the user gets: owners (create_brief), Traffic, or assigned work. */
+    public static function myDayMode(User $u): MyDayMode
+    {
+        if (self::rule('create_brief', $u->role) !== PolicyRule::Deny) {
+            return MyDayMode::Owner;
+        }
+        return $u->role === Role::Traffic ? MyDayMode::Traffic : MyDayMode::Assigned;
+    }
+
+    /**
+     * Nav visibility: show only what the role can use (no dead links). Not an
+     * authorization check; every route still runs its own Policy function.
+     * Items: today, briefs, jobs, board, campaigns, social, admin-users,
+     * admin-system, spike. Unknown items are hidden.
+     */
+    public static function canSeeNav(User $u, string $item): bool
+    {
+        if ($u->role === Role::Client) {
+            return false;
+        }
+        return match ($item) {
+            'today', 'jobs', 'board' => true,
+            // Brief creators and owners (Traffic and creatives open sent briefs from their jobs).
+            'briefs' => self::canCreateBrief($u)->allowed,
+            'campaigns' => self::canManageCampaign($u)->allowed,
+            // social_view_queue: COO, ECD, Social; AM, PM, Producer read only on their jobs.
+            'social' => in_array($u->role, [Role::COO, Role::ECD, Role::AM, Role::PM, Role::Producer, Role::Social], true),
+            'admin-users' => self::canManageUsers($u)->allowed,
+            'admin-system', 'spike' => self::canViewSystem($u)->allowed,
+            default => false,
+        };
     }
 
     /** Shared saved views: manager and admin roles only. */

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Http\Handlers;
 
 use App\Domain\Dates;
+use App\Domain\MyDayMode;
 use App\Domain\Policy;
 use App\Http\Deps;
 use App\Http\Request;
@@ -22,12 +23,17 @@ final class Shell
         $attention = 0;
         if ($user !== null) {
             try {
-                $attention = $d->myDay->attentionCount($user->id, Dates::today($d->clock->now()));
+                $mode = Policy::myDayMode($user);
+                $today = Dates::today($d->clock->now());
+                $attention = $mode === MyDayMode::Owner
+                    ? $d->myDay->attentionCount($user->id, $today)
+                    : $d->myDay->assignedAttentionCount($user->id, $today, $mode === MyDayMode::Traffic);
             } catch (\Throwable $e) {
                 error_log('[slash301pm] nav count: ' . $e->getMessage());
             }
         }
-        $nav = [
+        // Role-aware: Policy::canSeeNav() decides which items each role gets (no dead links).
+        $items = [
             new NavItem('today', 'Today', url('/today'), true, $attention),
             new NavItem('briefs', 'Briefs', url('/briefs'), true),
             // Phase 3: jobs grid/board
@@ -35,13 +41,24 @@ final class Shell
             new NavItem('board', 'Board', url('/jobs/board'), true),
             new NavItem('campaigns', 'Campaigns', url('/campaigns'), true),
         ];
+        $adminItems = [
+            new NavItem('admin-users', 'Users', url('/admin/users'), true),
+            new NavItem('admin-system', 'System', url('/admin/system'), true),
+            new NavItem('spike', 'Datastar spike', url('/system/spike'), true),
+        ];
+        $nav = [];
         $admin = [];
-        if ($user !== null && Policy::isAdmin($user)) {
-            $admin = [
-                new NavItem('admin-users', 'Users', url('/admin/users'), true),
-                new NavItem('admin-system', 'System', url('/admin/system'), true),
-                new NavItem('spike', 'Datastar spike', url('/system/spike'), true),
-            ];
+        if ($user !== null) {
+            foreach ($items as $it) {
+                if (Policy::canSeeNav($user, $it->key)) {
+                    $nav[] = $it;
+                }
+            }
+            foreach ($adminItems as $it) {
+                if (Policy::canSeeNav($user, $it->key)) {
+                    $admin[] = $it;
+                }
+            }
         }
         return new LayoutVM(
             $title,

@@ -20,7 +20,12 @@ final class CampaignHandlers
     public static function list(Request $r, Deps $d): Response
     {
         $u = BriefHandlers::user($r);
-        return Shell::page($r, $d, 'Campaigns', 'campaigns', page_campaigns(self::vm($d, Policy::canManageCampaign($u)->allowed, Policy::canCreateBrief($u)->allowed, '')));
+        // Every brand's campaigns: the account roles and admins only (nav: Policy::canSeeNav 'campaigns').
+        $dec = Policy::canManageCampaign($u);
+        if (!$dec->allowed) {
+            return Shell::deny($r, $dec->reason);
+        }
+        return Shell::page($r, $d, 'Campaigns', 'campaigns', page_campaigns(self::vm($d, true, Policy::canCreateBrief($u)->allowed, '')));
     }
 
     public static function create(Request $r, Deps $d): Response

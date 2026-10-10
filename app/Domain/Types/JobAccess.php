@@ -54,6 +54,17 @@ final class JobAccess
         return null;
     }
 
+    /** A CD or a maker holds a slot, or any asset has an assignee ("CD or a creative assigned"). */
+    public function hasCreativeTeam(): bool
+    {
+        foreach ($this->assignments as $a) {
+            if (in_array($a->role, [Role::CD, Role::Copywriter, Role::Designer, Role::Developer, Role::SEO, Role::Social], true)) {
+                return true;
+            }
+        }
+        return $this->assetAssigneeIds !== [];
+    }
+
     public function hasAm(): bool
     {
         return $this->slotHolder(Role::AM) !== null;

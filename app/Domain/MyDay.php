@@ -23,6 +23,10 @@ final class MyDay
     public const WAITING = 'waiting';
     public const CHANGED = 'changed';
     public const STRIP = 'strip';
+    /** Traffic: "Briefs waiting for Traffic". */
+    public const TEAM = 'team';
+    /** Assigned users: "New and updated briefs". */
+    public const BRIEFS = 'briefs';
 
     /** Rows shown per section; the rest is a count and a link. */
     public const SHOW = 8;
@@ -30,10 +34,14 @@ final class MyDay
     /** Rows shown for jobs nobody holds as AM (legacy jobs, often many). */
     public const CLAIM_SHOW = 4;
 
-    /** @return list<string> */
-    public static function sectionKeys(): array
+    /** The sections of each mode, in page order. @return list<string> */
+    public static function sectionKeys(MyDayMode $mode = MyDayMode::Owner): array
     {
-        return [self::STRIP, self::OVERDUE, self::DUE_SOON, self::WAITING, self::CHANGED];
+        return match ($mode) {
+            MyDayMode::Owner => [self::STRIP, self::OVERDUE, self::DUE_SOON, self::WAITING, self::CHANGED],
+            MyDayMode::Traffic => [self::STRIP, self::TEAM, self::OVERDUE, self::DUE_SOON, self::CHANGED],
+            MyDayMode::Assigned => [self::STRIP, self::BRIEFS, self::OVERDUE, self::DUE_SOON, self::CHANGED],
+        };
     }
 
     /** When there is no earlier visit, "changed" looks back this far. */
@@ -104,17 +112,7 @@ final class MyDay
         }
         $waitingAll = array_merge($waiting, $unsentChanges, $drafts);
 
-        $mine = [];
-        foreach ($changes as $c) {
-            $a = $c->activity;
-            if ($a->actorId === $userId || $a->createdAt <= $lastSeen) {
-                continue;
-            }
-            if ($c->jobIsMine || in_array($userId, $c->recipients(), true)) {
-                $mine[] = $c;
-            }
-        }
-        usort($mine, static fn (MyDayChange $x, MyDayChange $y): int => strcmp($y->activity->createdAt, $x->activity->createdAt));
+        $mine = self::changesFor($userId, $changes, $lastSeen, false);
 
         $waitingOnMeCount = count($waiting) + count($unsentChanges) + count($drafts);
         $strip = new MyDayStrip($dueThisWeek, count($overdue), $waitingOnMeCount, $sentThisWeek);
@@ -128,6 +126,121 @@ final class MyDay
             $strip,
             count($attention),
         );
+    }
+
+    /**
+     * My day of Traffic (MyDayMode::Traffic) and of CD, makers and QA
+     * (MyDayMode::Assigned), from the jobs they are assigned to. Overdue and
+     * Due soon as for owners; Traffic also gets "Briefs waiting for Traffic"
+     * (briefed jobs on which they hold the Traffic slot and nobody makes the
+     * work yet, plus briefs sent or updated since the last visit), assigned
+     * users "New and updated briefs". Activity on the working copy is left out:
+     * these users only ever see sent versions.
+     * @param list<MyDayJob> $assigned open, sent jobs the user is assigned to (MyDayStore::assignedOpen)
+     * @param list<MyDayChange> $changes
+     */
+    public static function buildAssigned(string $userId, MyDayMode $mode, array $assigned, array $changes, string $lastSeen, DateTimeImmutable $now): MyDayResult
+    {
+        $today = Dates::today($now);
+        $weekStart = Dates::weekStart($today);
+        $weekEnd = Dates::weekEnd($today);
+        $overdue = [];
+        $dueSoon = [];
+        $news = [];
+        $dueThisWeek = 0;
+        $sentThisWeek = 0;
+        $attention = [];
+        foreach ($assigned as $j) {
+            if (!$j->stage->isOpen() || $j->stage === Stage::Draft) {
+                continue;
+            }
+            $bucket = Dates::bucket($j->dueDate, $now);
+            $due = Dates::normalize($j->dueDate);
+            if ($bucket === DueBucket::Overdue) {
+                $overdue[] = self::item($j, $bucket, $today, '');
+                $attention[$j->jobId] = true;
+            } elseif ($bucket === DueBucket::Today || $bucket === DueBucket::Next3BusinessDays) {
+                $dueSoon[] = self::item($j, $bucket, $today, '');
+            }
+            if ($due !== null && $due >= $today && $due <= $weekEnd) {
+                $dueThisWeek++;
+            }
+            $sentOn = $j->sentAt !== null ? Dates::localDate($j->sentAt) : null;
+            if ($sentOn !== null && $sentOn >= $weekStart && $sentOn <= $weekEnd) {
+                $sentThisWeek++;
+            }
+            $fresh = $j->sentAt !== null && $j->sentAt > $lastSeen;
+            $what = self::briefNews($j);
+            $reason = '';
+            if ($mode === MyDayMode::Traffic) {
+                if (!$j->iAmTraffic) {
+                    continue;
+                }
+                if ($j->needsTeam) {
+                    $reason = 'Needs a team: assign the CD and creatives' . ($fresh ? ' (' . $what . ')' : '') . '.';
+                    $attention[$j->jobId] = true;
+                } elseif ($fresh) {
+                    $reason = $what . '.';
+                }
+            } elseif ($fresh) {
+                $reason = $what . '.';
+            }
+            if ($reason !== '') {
+                $news[] = [(string) $j->sentAt, self::item($j, $bucket, $today, $reason)];
+            }
+        }
+        usort($news, static fn (array $a, array $b): int => strcmp($b[0], $a[0]) ?: strcmp($a[1]->jobNumber, $b[1]->jobNumber));
+        $newsItems = [];
+        foreach ($news as $n) {
+            $newsItems[] = $n[1];
+        }
+        $mine = self::changesFor($userId, $changes, $lastSeen, true);
+        $newsSection = new MyDaySection($mode === MyDayMode::Traffic ? self::TEAM : self::BRIEFS, array_slice($newsItems, 0, self::SHOW), count($newsItems));
+        $empty = new MyDaySection(self::WAITING, [], 0);
+        return new MyDayResult(
+            self::section(self::OVERDUE, $overdue),
+            self::section(self::DUE_SOON, $dueSoon),
+            $empty,
+            new MyDaySection('claimable', [], 0),
+            array_slice($mine, 0, self::SHOW),
+            count($mine),
+            new MyDayStrip($dueThisWeek, count($overdue), count($newsItems), $sentThisWeek),
+            count($attention),
+            $mode,
+            $mode === MyDayMode::Traffic ? $newsSection : null,
+            $mode === MyDayMode::Assigned ? $newsSection : null,
+        );
+    }
+
+    /** "New brief v1.0.0" or "Brief updated to v1.2.0". */
+    public static function briefNews(MyDayJob $j): string
+    {
+        $v = $j->version;
+        return $v->major === 1 && $v->minor === 0 && $v->patch === 0 ? 'New brief ' . $v->label() : 'Brief updated to ' . $v->label();
+    }
+
+    /**
+     * Activity by others after $lastSeen on the user's jobs or addressed to them, newest first.
+     * @param list<MyDayChange> $changes
+     * @return list<MyDayChange>
+     */
+    private static function changesFor(string $userId, array $changes, string $lastSeen, bool $sentOnly): array
+    {
+        $mine = [];
+        foreach ($changes as $c) {
+            $a = $c->activity;
+            if ($a->actorId === $userId || $a->createdAt <= $lastSeen) {
+                continue;
+            }
+            if ($sentOnly && Notifications::isWorkingCopyVerb($a->verb)) {
+                continue;
+            }
+            if ($c->jobIsMine || in_array($userId, $c->recipients(), true)) {
+                $mine[] = $c;
+            }
+        }
+        usort($mine, static fn (MyDayChange $x, MyDayChange $y): int => strcmp($y->activity->createdAt, $x->activity->createdAt));
+        return $mine;
     }
 
     /** UTC stamp to compare activity against: the saved one, else a week before $now. */
@@ -157,6 +270,7 @@ final class MyDay
             'job_created' => 'created the job',
             'job_archived' => 'archived the job',
             'job_done' => 'marked the job done',
+            'job_start' => 'started work',
             'brief_edited' => 'edited the brief',
             'deliverable_added' => 'added a deliverable',
             'deliverable_updated' => 'changed a deliverable',

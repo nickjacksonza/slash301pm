@@ -47,10 +47,11 @@ function page_brief_editor(BriefEditorVM $vm): string
   <div class="flex min-w-0 flex-col gap-6">
     <?php if (!$vm->canEdit): ?>
       <?= $vm->doc !== null ? ui_card(new PartProps(class: 'px-6'), partial_brief_doc($vm->doc)) : ui_card(new PartProps(class: 'px-6'), '<p class="text-sm text-muted-foreground">This brief has not been sent yet.</p>') ?>
+      <?php if ($vm->team !== []): ?><?= partial_brief_team($vm->jobId, $vm->team, $vm->brief->isSent()) ?><?php endif; ?>
     <?php else: ?>
       <?= partial_brief_form($vm, $base) ?>
       <?= partial_brief_deliverables($vm->jobId, $vm->lines, $vm->templateOptions, true) ?>
-      <?= partial_brief_team($vm->jobId, $vm->team) ?>
+      <?= partial_brief_team($vm->jobId, $vm->team, $vm->brief->isSent()) ?>
     <?php endif; ?>
   </div>
   <?= partial_brief_rail($vm->rail) ?>
@@ -230,14 +231,20 @@ function partial_brief_deliverables(string $jobId, array $lines, array $template
     return (string) ob_get_clean();
 }
 
-/** #brief-team: one combobox per role; picking a person saves at once. @param list<TeamSlotVM> $slots */
-function partial_brief_team(string $jobId, array $slots): string
+/**
+ * #brief-team: one combobox per slot the user may set (picking a person saves
+ * at once), the holder's name otherwise. @param list<TeamSlotVM> $slots
+ */
+function partial_brief_team(string $jobId, array $slots, bool $sent = false): string
 {
+    $intro = $sent
+        ? 'Traffic assigns the CD, creatives and QA. Changes save at once and the person is told.'
+        : 'Traffic is required to send. Traffic assigns the CD and creatives; anything you pick here is a suggestion.';
     ob_start(); ?>
 <section id="brief-team" class="bg-card border border-border flex flex-col gap-4 p-6 rounded-xl shadow-sm text-card-foreground" aria-labelledby="sec-team">
   <div>
     <h3 id="sec-team" class="text-base font-semibold">Team</h3>
-    <p class="mt-1 text-sm text-muted-foreground">Traffic is required to send. Traffic assigns the CD and creatives; anything you pick here is a suggestion.</p>
+    <p class="mt-1 text-sm text-muted-foreground"><?= e($intro) ?></p>
   </div>
   <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
   <?php foreach ($slots as $slot): $sig = str_replace('-', '_', $slot->comboId); ?>
@@ -324,6 +331,10 @@ function partial_brief_rail(BriefRailVM $vm): string
           <button type="button" class="<?= attr('inline-flex h-8 w-full items-center justify-center rounded-md border border-border px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground') ?>" data-on:click="<?= $tr('recall', 'Recall the brief to draft? Traffic and the team are told to stop planning.') ?>">Recall to draft</button>
         <?php elseif ($a === JobAction::Resume): ?>
           <button type="button" class="<?= attr('inline-flex h-8 w-full items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90') ?>" data-on:click="<?= $tr('resume', '') ?>">Resume</button>
+        <?php elseif ($a === JobAction::Start): ?>
+          <button type="button" class="<?= attr('inline-flex h-8 w-full items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90') ?>" data-on:click="<?= $tr('start', 'Start work? The job moves to In progress.') ?>">Start work</button>
+        <?php elseif ($a === JobAction::MarkDone): ?>
+          <button type="button" class="<?= attr('inline-flex h-8 w-full items-center justify-center rounded-md border border-border px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground') ?>" data-on:click="<?= $tr('done', 'Mark this job done?') ?>">Mark done</button>
         <?php elseif ($a === JobAction::Archive): ?>
           <button type="button" class="<?= attr('inline-flex h-8 w-full items-center justify-center rounded-md border border-border px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground') ?>" data-on:click="<?= $tr('archive', 'Archive this job?') ?>">Archive</button>
         <?php endif; ?>

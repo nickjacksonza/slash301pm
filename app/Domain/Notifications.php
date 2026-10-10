@@ -24,6 +24,15 @@ final class Notifications
     public const JOB_RESUMED = 'job_resumed';
     public const JOB_ON_HOLD = 'job_on_hold';
     public const JOB_CANCELLED = 'job_cancelled';
+    // Social publishing (N34 to N39; N33 is the Social queue itself, see SocialPolicy)
+    public const PUBLICATION_READY = 'publication_ready';
+    public const PUBLICATION_SCHEDULED = 'publication_scheduled';
+    public const PUBLICATION_LIVE = 'publication_live';
+    public const PUBLICATION_PROMOTED = 'publication_promoted';
+    public const PUBLICATION_ARCHIVED = 'publication_archived';
+    public const PUBLICATION_REOPENED = 'publication_reopened';
+    public const PUBLICATION_LINK_CHANGED = 'publication_link_changed';
+    public const SOCIAL_ASSIGNED = 'social_assigned';
 
     /**
      * @param list<string> $assetAssignees assets.assigned_to on the job
@@ -65,6 +74,64 @@ final class Notifications
             }
         }
         return $out;
+    }
+
+    // Social publishing
+    /**
+     * Recipients of the Social events (docs/roles.md N34 to N39). The AM is the
+     * AM slot holder, or the brief creator when nobody holds it.
+     * - publication_ready (N34): AM, plus the PM and Producer slot holders
+     * - scheduled, live, promoted, archived (N35 to N38): AM
+     * - reopened, link changed after Live (N39): Social on the job and AM
+     * @return list<string>
+     */
+    public static function socialRecipients(string $event, Team $team, ?string $creatorId, string $actorId): array
+    {
+        $am = $team->userFor(Role::AM) ?? $creatorId;
+        $ids = [];
+        if ($am !== null) {
+            $ids[] = $am;
+        }
+        switch ($event) {
+            case self::PUBLICATION_READY:
+                foreach ([Role::PM, Role::Producer] as $r) {
+                    $u = $team->userFor($r);
+                    if ($u !== null) {
+                        $ids[] = $u;
+                    }
+                }
+                break;
+            case self::PUBLICATION_REOPENED:
+            case self::PUBLICATION_LINK_CHANGED:
+                $social = $team->userFor(Role::Social);
+                if ($social !== null) {
+                    $ids[] = $social;
+                }
+                break;
+            case self::PUBLICATION_SCHEDULED:
+            case self::PUBLICATION_LIVE:
+            case self::PUBLICATION_PROMOTED:
+            case self::PUBLICATION_ARCHIVED:
+                break;
+            default:
+                $ids = [];
+        }
+        $out = [];
+        foreach ($ids as $id) {
+            if ($id !== '' && $id !== $actorId && !in_array($id, $out, true) && !self::isClientSlot($team, $id)) {
+                $out[] = $id;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Edits of a draft or of the unsent working copy (BriefStore, BriefAssetStore).
+     * Only people who may read the draft (view_brief_draft) are shown these.
+     */
+    public static function isWorkingCopyVerb(string $verb): bool
+    {
+        return in_array($verb, ['brief_edited', 'deliverable_added', 'deliverable_updated', 'deliverable_removed', 'deliverables_reordered'], true);
     }
 
     /** The activity verb written for a stage move (catalogue names where one exists). */

@@ -24,6 +24,10 @@ final class MyDayJob
         public readonly bool $hasUnsentChanges,
         public readonly ?string $dueDate,
         public readonly bool $iAmAm,
+        /** Assigned users only: the user holds the Traffic slot. */
+        public readonly bool $iAmTraffic = false,
+        /** Briefed with no CD, maker slot or asset assignee yet. */
+        public readonly bool $needsTeam = false,
     ) {}
 
     public static function fromRow(array $r): self
@@ -38,6 +42,8 @@ final class MyDayJob
             (int) ($r['has_unsent_changes'] ?? 0) === 1,
             $r['due_date'] !== null && $r['due_date'] !== '' ? (string) $r['due_date'] : null,
             (int) ($r['i_am_am'] ?? 0) === 1,
+            (int) ($r['i_am_traffic'] ?? 0) === 1,
+            (int) ($r['needs_team'] ?? 0) === 1,
         );
     }
 

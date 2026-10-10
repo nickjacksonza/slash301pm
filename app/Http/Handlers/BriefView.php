@@ -8,6 +8,7 @@ use App\Domain\BriefDiff;
 use App\Domain\BriefRules;
 use App\Domain\BumpLevel;
 use App\Domain\JobAction;
+use App\Domain\Notifications;
 use App\Domain\Policy;
 use App\Domain\Role;
 use App\Domain\Stage;
@@ -43,8 +44,10 @@ final class BriefView
             }
         }
         $label = trim(($s->brandName() !== '' ? $s->brandName() . ' · ' : '') . $s->campaignName(), ' ·');
+        // Readers who may not see the working copy get the last sent title (the heading must not leak unsent edits).
+        $title = $canEdit || $claimMode || Policy::canViewBriefDraft($u, $s->access)->allowed ? $s->brief->title : ($s->lastSent !== null ? $s->lastSent->title : $s->job->title);
         return new BriefEditorVM(
-            $s->job->id, $s->job->jobNumber, $s->brief->title, $label, $canEdit,
+            $s->job->id, $s->job->jobNumber, $title, $label, $canEdit,
             Policy::canViewBudget($u, $s->access)->allowed, Policy::canViewHours($u, $s->access)->allowed,
             $s->brief, self::campaignOptions($d, $s), self::templateOptions(), $s->lines, self::team($s, $u, $d), self::rail($s, $u, $d, $claimMode), $doc,
         );
@@ -55,7 +58,9 @@ final class BriefView
         $a = $s->access;
         $canEdit = !$claimMode && Policy::canEditBrief($u, $a)->allowed;
         $sent = $s->brief->isSent();
-        $diff = $s->diff();
+        // Unsent changes and working-copy activity only for who may read the working copy.
+        $draftReader = $canEdit || $claimMode || Policy::canViewBriefDraft($u, $a)->allowed;
+        $diff = $draftReader ? $s->diff() : null;
         $actions = [];
         if (!$claimMode) {
             foreach (JobAction::phase2() as $act) {
@@ -85,7 +90,7 @@ final class BriefView
             $canEdit && !$sent && Policy::canSendBrief($u, $a)->allowed,
             $canEdit && $sent && Policy::canSendBriefUpdate($u, $a)->allowed,
             $actions, Policy::canClaimAm($u, $a)->allowed, $canEdit,
-            self::activity($d->activity->listForJob($s->job->id, 15)), $s->brief->rowVersion,
+            self::activity($d->activity->listForJob($s->job->id, 15), !$draftReader), $s->brief->rowVersion,
         );
     }
 
@@ -94,17 +99,27 @@ final class BriefView
     {
         $out = [];
         $editable = Policy::canEditBrief($u, $s->access)->allowed || Policy::canAssign($u, $s->access, Role::Traffic)->allowed;
-        foreach (Team::briefRoles() as $role) {
+        $anyEditable = false;
+        foreach (Team::slotRoles() as $role) {
+            $anyEditable = $anyEditable || ($editable && Policy::canAssign($u, $s->access, $role)->allowed);
+        }
+        foreach (Team::slotRoles() as $role) {
             $holder = $s->team->holder($role);
+            // Readers who can set nothing see only the filled slots.
+            if (!$anyEditable && $holder === null) {
+                continue;
+            }
             $options = [new SelectOption('', 'Not assigned')];
             foreach ($d->users->listActiveByRole($role) as $p) {
                 $options[] = new SelectOption($p->id, $p->name);
             }
             $can = $editable && Policy::canAssign($u, $s->access, $role)->allowed;
             $hint = '';
-            if (!$can && in_array($role, [Role::CD, Role::Copywriter, Role::Designer], true) && $s->brief->isSent()) {
+            if (!$anyEditable) {
+                $hint = '';
+            } elseif (!$can && in_array($role, [Role::CD, Role::Copywriter, Role::Designer, Role::QA, Role::Developer, Role::SEO, Role::Social], true) && $s->brief->isSent()) {
                 $hint = 'Traffic assigns this after the brief is sent.';
-            } elseif ($role === Role::Traffic) {
+            } elseif ($role === Role::Traffic && !$s->brief->isSent()) {
                 $hint = 'Required to send.';
             }
             $key = strtolower($role->value);
@@ -183,11 +198,18 @@ final class BriefView
         return $out;
     }
 
-    /** @param list<Activity> $rows @return list<ActivityItemVM> */
-    public static function activity(array $rows): array
+    /**
+     * @param list<Activity> $rows
+     * @param bool $sentOnly leave out draft and working-copy edits (viewers without view_brief_draft)
+     * @return list<ActivityItemVM>
+     */
+    public static function activity(array $rows, bool $sentOnly = false): array
     {
         $out = [];
         foreach ($rows as $a) {
+            if ($sentOnly && Notifications::isWorkingCopyVerb($a->verb)) {
+                continue;
+            }
             $out[] = new ActivityItemVM($a->actorName !== '' ? $a->actorName : 'Someone', self::activityText($a), fmt_when($a->createdAt));
         }
         return $out;
@@ -210,6 +232,8 @@ final class BriefView
             'job_resumed' => 'resumed the job',
             'job_cancelled' => 'cancelled the job' . $reason,
             'job_archived' => 'archived the job',
+            'job_start' => 'started work',
+            'job_done' => 'marked the job done',
             'deliverable_cancelled' => 'cancelled ' . (isset($d['asset_ids']) && is_array($d['asset_ids']) ? count($d['asset_ids']) : 0) . ' unstarted assets',
             'started_asset_conflict' => 'kept started assets: ' . $str('message'),
             default => str_replace('_', ' ', $a->verb),

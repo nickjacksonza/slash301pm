@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use App\Domain\DueBucket;
 use App\Domain\MyDay;
+use App\Domain\MyDayMode;
 use App\Domain\Types\MyDayChange;
 use App\Domain\Types\MyDayItem;
 use App\Domain\Types\MyDaySection;
@@ -20,7 +21,7 @@ use App\View\VM\MyDayVM;
 function page_today(MyDayVM $vm): string
 {
     $refresh = [];
-    foreach (MyDay::sectionKeys() as $key) {
+    foreach (MyDay::sectionKeys($vm->result->mode) as $key) {
         $refresh[] = act_raw('get', url('/today/sections/' . $key));
     }
     ob_start(); ?>
@@ -29,7 +30,7 @@ function page_today(MyDayVM $vm): string
     <h2 class="text-2xl font-semibold leading-tight"><?= e($vm->greeting) ?></h2>
     <p class="text-sm text-muted-foreground"><?= e($vm->dateLabel) ?></p>
   </div>
-  <?php foreach (MyDay::sectionKeys() as $key): ?>
+  <?php foreach (MyDay::sectionKeys($vm->result->mode) as $key): ?>
     <?= partial_today_section($key, $vm) ?>
   <?php endforeach; ?>
 </div>
@@ -43,8 +44,26 @@ function partial_today_section(string $key, MyDayVM $vm): string
     $res = $vm->result;
     $briefs = url('/briefs');
     $create = $vm->canCreate ? ' <a class="underline" href="' . attr($briefs) . '">Create a brief</a>.' : '';
+    if ($res->mode !== MyDayMode::Owner) {
+        $jobs = url('/jobs');
+        $traffic = $res->mode === MyDayMode::Traffic;
+        $none = new MyDaySection($key, [], 0);
+        return match ($key) {
+            MyDay::STRIP => partial_today_strip($res->strip, $res->mode),
+            MyDay::TEAM => partial_today_jobs($res->team ?? $none, 'Briefs waiting for Traffic', 'Briefed jobs on which you are Traffic that nobody makes yet, and briefs sent or updated since you last cleared "Changed by others".',
+                'No brief is waiting for a team.', true, null, $jobs, 'See all in Jobs'),
+            MyDay::BRIEFS => partial_today_jobs($res->briefs ?? $none, 'New and updated briefs', 'Briefs on your jobs sent or updated since you last cleared "Changed by others". Open one to read the sent version.',
+                'No new or updated briefs on your jobs.', true, null, $jobs, 'See all in Jobs'),
+            MyDay::OVERDUE => partial_today_jobs($res->overdue, 'Overdue', ($traffic ? 'Open jobs you are on' : 'Your assigned jobs') . ' past their due date (South African time).',
+                'No overdue jobs. Nice work.', false, null, $jobs, 'See all in Jobs'),
+            MyDay::DUE_SOON => partial_today_jobs($res->dueSoon, 'Due soon', 'Due today or in the next 3 business days.',
+                $traffic ? 'Nothing due in the next 3 business days.' : 'Nothing due in the next 3 business days. When Traffic assigns you to a job it shows up here.', false, null, $jobs, 'See all in Jobs'),
+            MyDay::CHANGED => partial_today_changed($res->changed, $res->changedTotal),
+            default => throw new InvalidArgumentException('Unknown section ' . $key),
+        };
+    }
     return match ($key) {
-        MyDay::STRIP => partial_today_strip($res->strip),
+        MyDay::STRIP => partial_today_strip($res->strip, $res->mode),
         MyDay::OVERDUE => partial_today_jobs($res->overdue, 'Overdue', 'Your open jobs past their due date (South African time).',
             'No overdue jobs. Nice work.'),
         MyDay::DUE_SOON => partial_today_jobs($res->dueSoon, 'Due soon', 'Due today or in the next 3 business days.',
@@ -56,13 +75,18 @@ function partial_today_section(string $key, MyDayVM $vm): string
     };
 }
 
-function partial_today_strip(MyDayStrip $s): string
+function partial_today_strip(MyDayStrip $s, MyDayMode $mode = MyDayMode::Owner): string
 {
+    $third = match ($mode) {
+        MyDayMode::Owner => ['Waiting on me', $s->waitingOnMe, 'Waiting, drafts and unsent changes'],
+        MyDayMode::Traffic => ['Waiting for Traffic', $s->waitingOnMe, 'Briefs that need a team, and new or updated briefs'],
+        MyDayMode::Assigned => ['New or updated briefs', $s->waitingOnMe, 'Briefs sent or updated since you last looked'],
+    };
     $tiles = [
         ['Due by Sunday', $s->dueThisWeek, 'Open jobs due from today to Sunday'],
         ['Overdue', $s->overdue, 'Open jobs past their due date'],
-        ['Waiting on me', $s->waitingOnMe, 'Waiting, drafts and unsent changes'],
-        ['Sent this week', $s->sentThisWeek, 'Briefs sent since Monday'],
+        $third,
+        [$mode === MyDayMode::Owner ? 'Sent this week' : 'Briefed this week', $s->sentThisWeek, $mode === MyDayMode::Owner ? 'Briefs sent since Monday' : 'Briefs sent or updated on your jobs since Monday'],
     ];
     ob_start(); ?>
 <section id="today-section-strip" aria-label="This week" class="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -78,8 +102,10 @@ function partial_today_strip(MyDayStrip $s): string
 }
 
 /** @param string $emptyHtml already-escaped HTML (it may hold the create link) */
-function partial_today_jobs(MyDaySection $sec, string $title, string $intro, string $emptyHtml, bool $showReason = false, ?MyDaySection $claimable = null): string
+function partial_today_jobs(MyDaySection $sec, string $title, string $intro, string $emptyHtml, bool $showReason = false, ?MyDaySection $claimable = null,
+    string $moreUrl = '', string $moreLabel = 'See all in Briefs'): string
 {
+    $moreUrl = $moreUrl !== '' ? $moreUrl : url('/briefs');
     $id = 'today-section-' . $sec->key;
     $heading = 'h-' . $id;
     $more = $sec->total - count($sec->items);
@@ -93,7 +119,7 @@ function partial_today_jobs(MyDaySection $sec, string $title, string $intro, str
         }
         $body .= '</ul>';
         if ($more > 0) {
-            $body .= '<p class="text-sm text-muted-foreground">' . $more . ' more. <a class="underline" href="' . attr(url('/briefs')) . '">See all in Briefs</a>.</p>';
+            $body .= '<p class="text-sm text-muted-foreground">' . $more . ' more. <a class="underline" href="' . attr($moreUrl) . '">' . e($moreLabel) . '</a>.</p>';
         }
     }
     if ($claimable !== null && $claimable->total > 0) {

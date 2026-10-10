@@ -5,6 +5,7 @@ namespace App\Http\Handlers;
 
 use App\Domain\Dates;
 use App\Domain\MyDay;
+use App\Domain\MyDayMode;
 use App\Domain\Policy;
 use App\Domain\Role;
 use App\Domain\Types\MyDayJob;
@@ -15,7 +16,7 @@ use App\Http\Request;
 use App\Http\Response;
 use App\View\VM\MyDayVM;
 
-/** GET /today, GET /today/sections/{section}, POST /today/seen. */
+/** GET /today, GET /today/sections/{section}, POST /today/seen. The sections depend on Policy::myDayMode(). */
 final class MyDayHandlers
 {
     public static function page(Request $r, Deps $d): Response
@@ -28,10 +29,11 @@ final class MyDayHandlers
     public static function section(Request $r, Deps $d): Response
     {
         $key = $r->pathValue('section');
-        if (!in_array($key, MyDay::sectionKeys(), true)) {
+        $u = self::user($r);
+        if (!in_array($key, MyDay::sectionKeys(Policy::myDayMode($u)), true)) {
             return Response::notFound();
         }
-        return Response::events(PatchElements::html(partial_today_section($key, self::vm(self::user($r), $d))));
+        return Response::events(PatchElements::html(partial_today_section($key, self::vm($u, $d))));
     }
 
     /** "Mark all seen": changes before now stop showing. Answers with the emptied section. */
@@ -46,6 +48,13 @@ final class MyDayHandlers
     {
         $now = $d->clock->now();
         $since = MyDay::since($d->myDay->seenAt($u->id), $now);
+        $mode = Policy::myDayMode($u);
+        $first = trim(explode(' ', $u->name)[0]);
+        $greeting = 'Good ' . Dates::partOfDay($now) . ($first !== '' ? ', ' . $first : '');
+        if ($mode !== MyDayMode::Owner) {
+            $result = MyDay::buildAssigned($u->id, $mode, $d->myDay->assignedOpen($u->id), $d->myDay->changesSince($u->id, $since, 100, $mode), $since, $now);
+            return new MyDayVM($greeting, Dates::longDate($now), $result, false);
+        }
         $unowned = [];
         if (in_array($u->role, [Role::AM, Role::PM, Role::Producer], true)) {
             foreach ($d->jobs->listWithoutAm(50) as $it) {
@@ -53,8 +62,7 @@ final class MyDayHandlers
             }
         }
         $result = MyDay::build($u->id, $u->role, $d->myDay->ownedOpen($u->id), $unowned, $d->myDay->changesSince($u->id, $since), $since, $now);
-        $first = trim(explode(' ', $u->name)[0]);
-        return new MyDayVM('Good ' . Dates::partOfDay($now) . ($first !== '' ? ', ' . $first : ''), Dates::longDate($now), $result, Policy::canCreateBrief($u)->allowed);
+        return new MyDayVM($greeting, Dates::longDate($now), $result, Policy::canCreateBrief($u)->allowed);
     }
 
     private static function user(Request $r): User

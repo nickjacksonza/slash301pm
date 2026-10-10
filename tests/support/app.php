@@ -48,7 +48,7 @@ function ts_config(string $dataDir, ?string $dbPath = null, Transport $t = Trans
 {
     return new Config(
         Env::Local, dirname(__DIR__, 2), $dataDir, $dbPath ?? $dataDir . '/test.db', '/slash301pm',
-        'projects.slash301.com', '', false, $t, [Role::AM, Role::COO, Role::ECD],
+        'projects.slash301.com', '', false, $t, Config::defaultNewUiRoles(),
     );
 }
 

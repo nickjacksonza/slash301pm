@@ -72,13 +72,24 @@ final class JobQueryStore
         if ($v->scope === PolicyRule::OwnBrand) {
             $p['vbrand'] = $v->brandId ?? '';
         }
+        // Drafts only for who may read them (Policy::canViewJob): the working copy
+        // viewer, or a manager who could claim a draft nobody created.
+        $draftOk = $v->draftView === PolicyRule::Deny ? $wc : '(' . $wc . ' OR COALESCE(br.created_by, j.created_by) IS NULL)';
+        $scope = '(' . $scope . ") AND (j.stage <> 'draft' OR " . $draftOk . ')';
+        $budget = match ($v->budgetView) {
+            PolicyRule::Allow => 'br.budget',
+            PolicyRule::AssignedOrCreator => 'CASE WHEN (' . $own . ' OR ' . $creator . ') THEN br.budget ELSE NULL END',
+            PolicyRule::Assigned => 'CASE WHEN ' . $own . ' THEN br.budget ELSE NULL END',
+            PolicyRule::Creator => 'CASE WHEN ' . $creator . ' THEN br.budget ELSE NULL END',
+            default => 'NULL',
+        };
         $unstarted = [];
         foreach (array_merge(AssetStatus::UNSTARTED, [AssetStatus::CANCELLED]) as $i => $st) {
             $unstarted[] = ':us' . $i;
             $p['us' . $i] = $st;
         }
         $inner = 'SELECT j.id, j.job_number, j.status, j.stage, j.resume_stage, j.waiting_on, j.waiting_reason, j.row_version, j.updated_at,
-                br.row_version AS brief_rv, br.version_major, br.version_minor, br.version_patch, br.sent_at, br.has_unsent_changes, br.budget,
+                br.row_version AS brief_rv, br.version_major, br.version_minor, br.version_patch, br.sent_at, br.has_unsent_changes, ' . $budget . ' AS budget,
                 COALESCE(br.created_by, j.created_by) AS creator_id,
                 CASE WHEN ' . $wc . ' THEN 1 ELSE 0 END AS wc,
                 CASE WHEN ' . $wc . ' THEN br.title ELSE j.title END AS title,

@@ -32,6 +32,11 @@ final class BriefHandlers
     public static function mine(Request $r, Deps $d): Response
     {
         $u = self::user($r);
+        // "My briefs" is the brief owners' page (Traffic and creatives open sent briefs from their jobs).
+        $dec = Policy::canCreateBrief($u);
+        if (!$dec->allowed) {
+            return Shell::deny($r, $dec->reason);
+        }
         $owned = $d->jobs->listOwnedBy($u->id, $d->clock->now());
         $drafts = [];
         $unsent = [];

@@ -17,5 +17,7 @@ final class JobViewer
         public readonly PolicyRule $scope,
         public readonly PolicyRule $draftView,
         public readonly ?string $brandId,
+        /** view_budget: the store returns NULL budgets where this does not allow them. */
+        public readonly PolicyRule $budgetView = PolicyRule::Deny,
     ) {}
 }

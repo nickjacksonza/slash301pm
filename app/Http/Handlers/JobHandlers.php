@@ -23,7 +23,7 @@ final class JobHandlers
     {
         $u = BriefHandlers::user($r);
         $access = $d->jobs->access($r->pathValue('id'));
-        if ($access === null) {
+        if ($access === null || !Policy::canViewJob($u, $access)->allowed) {
             return Response::events(Toast::error('This job no longer exists.'));
         }
         $dec = Policy::canClaimAm($u, $access);
@@ -41,7 +41,8 @@ final class JobHandlers
         $u = BriefHandlers::user($r);
         $job = $d->jobs->get($r->pathValue('id'));
         $access = $job === null ? null : $d->jobs->access($job->id);
-        if ($job === null || $access === null) {
+        // A job the user may not see answers as if it did not exist (no existence leak).
+        if ($job === null || $access === null || !Policy::canViewJob($u, $access)->allowed) {
             return Response::events(Toast::error('This job no longer exists.'));
         }
         $req = TransitionSignals::fromSignals($r->signals());

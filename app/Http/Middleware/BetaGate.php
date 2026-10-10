@@ -10,7 +10,7 @@ use App\Http\Request;
 use App\Http\Response;
 use Closure;
 
-/** Roles outside Config::newUiRoles (AM, COO, ECD) keep using the legacy app at /legacy/. */
+/** Roles outside Config::newUiRoles (today: Client only) keep using the legacy app at /legacy/. */
 final class BetaGate
 {
     private const EXEMPT = ['/login', '/logout', '/demo-login', '/healthz', '/account/password'];

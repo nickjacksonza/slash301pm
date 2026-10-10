@@ -155,34 +155,46 @@ final class JobStore
         if (!$o->ok() || $o->to === null) {
             throw new \LogicException('applyTransition needs an allowed outcome');
         }
+        return $this->db->txImmediate(fn (Db $tx): bool => $this->applyTransitionTx($tx, $job, $o, $actorId, $now, $verb, $data));
+    }
+
+    /**
+     * applyTransition inside the caller's write transaction (Social publishing:
+     * PublicationStore moves the job's Social stage in the same transaction as
+     * the publication change). Same row_version check and legacy status mirror.
+     * @param array<string,mixed> $data
+     */
+    public function applyTransitionTx(Db $tx, Job $job, TransitionOutcome $o, string $actorId, DateTimeImmutable $now, string $verb, array $data): bool
+    {
+        if (!$o->ok() || $o->to === null) {
+            throw new \LogicException('applyTransition needs an allowed outcome');
+        }
         $to = $o->to;
-        return $this->db->txImmediate(function (Db $tx) use ($job, $o, $to, $actorId, $now, $verb, $data): bool {
-            $paused = $to === Stage::Waiting || $to === Stage::OnHold;
-            $n = $tx->exec(
-                'UPDATE jobs SET stage = :stage, status = :status, stage_changed_at = :at, resume_stage = :resume, waiting_on = :won, waiting_reason = :wr,
-                        updated_by = :actor, row_version = row_version + 1
-                 WHERE id = :id AND row_version = :rv',
-                [
-                    'stage' => $to->value, 'status' => $to->toLegacy($job->status), 'at' => Ids::utc($now),
-                    'resume' => $paused ? ($o->resumeStage !== null ? $o->resumeStage->value : ($job->resumeStage?->value)) : null,
-                    'won' => $to === Stage::Waiting && $o->waitingOn !== null ? $o->waitingOn->value : null,
-                    'wr' => $to === Stage::Waiting ? $o->reason : ($to === Stage::OnHold ? $o->reason : null),
-                    'actor' => $actorId, 'id' => $job->id, 'rv' => $job->rowVersion,
-                ],
-            );
-            if ($n === 0) {
-                return false;
-            }
-            $payload = ['from' => $o->from->value, 'to' => $to->value, 'action' => $o->action->value] + $data;
-            if ($o->reason !== '') {
-                $payload['reason'] = $o->reason;
-            }
-            if ($o->waitingOn !== null) {
-                $payload['waiting_on'] = $o->waitingOn->value;
-            }
-            $this->activity->append($tx, new ActivityEntry($job->id, $actorId, $verb, 'job', $job->id, $payload), $now);
-            return true;
-        });
+        $paused = $to === Stage::Waiting || $to === Stage::OnHold;
+        $n = $tx->exec(
+            'UPDATE jobs SET stage = :stage, status = :status, stage_changed_at = :at, resume_stage = :resume, waiting_on = :won, waiting_reason = :wr,
+                    updated_by = :actor, row_version = row_version + 1
+             WHERE id = :id AND row_version = :rv',
+            [
+                'stage' => $to->value, 'status' => $to->toLegacy($job->status), 'at' => Ids::utc($now),
+                'resume' => $paused ? ($o->resumeStage !== null ? $o->resumeStage->value : ($job->resumeStage?->value)) : null,
+                'won' => $to === Stage::Waiting && $o->waitingOn !== null ? $o->waitingOn->value : null,
+                'wr' => $to === Stage::Waiting ? $o->reason : ($to === Stage::OnHold ? $o->reason : null),
+                'actor' => $actorId, 'id' => $job->id, 'rv' => $job->rowVersion,
+            ],
+        );
+        if ($n === 0) {
+            return false;
+        }
+        $payload = ['from' => $o->from->value, 'to' => $to->value, 'action' => $o->action->value] + $data;
+        if ($o->reason !== '') {
+            $payload['reason'] = $o->reason;
+        }
+        if ($o->waitingOn !== null) {
+            $payload['waiting_on'] = $o->waitingOn->value;
+        }
+        $this->activity->append($tx, new ActivityEntry($job->id, $actorId, $verb, 'job', $job->id, $payload), $now);
+        return true;
     }
 
     /** "Make me AM": take the empty AM slot. False when someone holds it already. */

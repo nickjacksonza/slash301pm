@@ -51,8 +51,20 @@ final class Config
             $local ? '' : $liveHost,
             !$local,
             $transport,
-            [Role::AM, Role::COO, Role::ECD],
+            self::defaultNewUiRoles(),
         );
+    }
+
+    /**
+     * Every agency role uses the new UI (docs/roles.md waves 1 to 6). Clients stay
+     * on /legacy/ until the client portal exists. @return list<Role>
+     */
+    public static function defaultNewUiRoles(): array
+    {
+        return [
+            Role::COO, Role::ECD, Role::AM, Role::PM, Role::Producer, Role::Traffic, Role::CD,
+            Role::Copywriter, Role::Designer, Role::QA, Role::Developer, Role::SEO, Role::Social,
+        ];
     }
 
     /**

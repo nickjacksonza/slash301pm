@@ -64,7 +64,17 @@ final class Team
         return $out;
     }
 
-    /** The slots the brief editor shows, in order. Traffic is required to send. @return list<Role> */
+    /**
+     * Every slot the team section offers (POST /jobs/{id}/assignments/{role}), in
+     * order: the account team, Traffic, the CD, makers and QA. Wider than
+     * briefRoles(), which stays the sent snapshot's team. @return list<Role>
+     */
+    public static function slotRoles(): array
+    {
+        return [Role::AM, Role::PM, Role::Producer, Role::Traffic, Role::CD, Role::Copywriter, Role::Designer, Role::QA, Role::Developer, Role::SEO, Role::Social];
+    }
+
+    /** The slots the sent snapshot records, in order. Traffic is required to send. @return list<Role> */
     public static function briefRoles(): array
     {
         return [Role::AM, Role::Traffic, Role::CD, Role::Copywriter, Role::Designer];

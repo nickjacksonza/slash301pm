@@ -21,6 +21,8 @@ enum JobAction: string
     case ReadyToSchedule = 'ready_to_schedule';
     case Schedule = 'schedule';
     case GoLive = 'go_live';
+    // Social publishing: a reopened publication takes the job's Social stage back one step.
+    case SocialStepBack = 'social_step_back';
     case MarkDone = 'done';
     case Wait = 'wait';
     case Hold = 'hold';
@@ -41,6 +43,7 @@ enum JobAction: string
             self::ReadyToSchedule => 'Ready to schedule',
             self::Schedule => 'Mark scheduled',
             self::GoLive => 'Mark live',
+            self::SocialStepBack => 'Move back a step',
             self::MarkDone => 'Mark done',
             self::Wait => 'Put on waiting',
             self::Hold => 'Put on hold',
@@ -50,9 +53,13 @@ enum JobAction: string
         };
     }
 
-    /** The actions POST /jobs/{id}/transition accepts in Phase 2. @return list<self> */
+    /**
+     * The actions POST /jobs/{id}/transition accepts (the brief rail's buttons):
+     * Phase 2's, plus Start work and Mark done for the roles that run delivery.
+     * @return list<self>
+     */
     public static function phase2(): array
     {
-        return [self::Recall, self::Wait, self::Hold, self::Resume, self::Cancel, self::Archive];
+        return [self::Start, self::Recall, self::Wait, self::Hold, self::Resume, self::MarkDone, self::Cancel, self::Archive];
     }
 }
