@@ -24,11 +24,12 @@ Sources read: `docs/PLAN.md`, `docs/audit.md`, `docs/adr/0002`, `docs/adr/0003`,
 | creator | `briefs.created_by` (or `jobs.created_by` for legacy jobs) is the actor |
 | assigned_or_creator | Either of the above. This is the plan's "who counts as the AM" rule, applied to AM, PM and Producer |
 | own_brand | The job's campaign `brand_id` equals the Client's `users.brand_id` |
-| active stages | briefed, in_progress, in_review, approved_internal, approved_client |
+| active stages | briefed, in_progress, in_review, approved_internal, approved_client, ready_to_schedule, scheduled, live |
 | workable stages | draft plus the active stages |
 | open stages | workable plus waiting and on_hold |
 | closed stages | done, archived, cancelled |
-| Makers | Copywriter, Designer, Developer, SEO, Social. They share one rule set; they differ only in asset types and home-screen filters |
+| Social stages | ready_to_schedule, scheduled, live. They sit between approved_client and done and all mirror to the legacy status Approved (External). Assets can carry them one by one |
+| Makers | Copywriter, Designer, Developer, SEO, Social. They share one rule set for asset work; they differ only in asset types and home-screen filters. Social additionally publishes (section 2.13) |
 | Account roles | AM, PM, Producer. They share one rule set on jobs they own (see Q6) |
 | Admins | COO and ECD, as in `api/permissions.php:8` and `app/Domain/Policy.php` |
 | Client-safe projection | What a Client may receive: title, campaign, client due date, go-live dates, deliverables (label, qty, channel, size, specs), mandatories, references, assets sent to them, their own brand's feedback. Never budget, hours, internal feedback, waiting reasons, team emails, version diffs, drafts |
@@ -50,7 +51,7 @@ Sources read: `docs/PLAN.md`, `docs/audit.md`, `docs/adr/0002`, `docs/adr/0003`,
 | Designer | Maker | Produces design and media for assigned deliverables and submits it | `/queue` (my assets) | 5 |
 | Developer | Maker | Builds web deliverables (landing pages, emails, banners) | `/queue` | 6 |
 | SEO | Maker | SEO audits, metadata and copy optimisation deliverables | `/queue` | 6 |
-| Social | Maker | Social deliverables, scheduling and go-live links | `/queue` | 6 |
+| Social | Maker and publisher | After client approval: final check, Ready to Schedule, Scheduled, Live with links, Promoted flags | `/social` (queue of approved items) | 4b |
 
 **Why this order** (the plan's "Later" list is reviews, client portal, creative queue, then Traffic and the rest; this changes it in two places):
 
@@ -61,7 +62,8 @@ Sources read: `docs/PLAN.md`, `docs/audit.md`, `docs/adr/0002`, `docs/adr/0003`,
 | 3 | CD (plus ECD review features), QA | Since the Phase 0 hotfix (audit H2, H7) legacy approvals do not persist on the server at all, so internal review is the most broken flow. CDs can review in the new app while makers still complete tasks in legacy, because the stage mirror turns their legacy status writes into stages. |
 | 4 | Client (both personas) | Client approval in legacy is also not persisted (audit H7). Clients need the client-safe projection, which is easier to guarantee in a new, narrow `/portal` than by patching legacy. |
 | 5 | Copywriter, Designer | They can keep working in legacy longest: task completion there still works and is mirrored. Moving them gives them the sent brief version and specs instead of legacy columns. |
-| 6 | Developer, SEO, Social | One user each on live and zero job assignments. Same Maker rules; switch on when the first job uses them. |
+| 4b | Social | Right after reviews (wave 3) and the client portal (wave 4) land. Social only touches a brief once the client has approved it, so there is nothing for Social to do until approvals persist on the server (audit H7). It needs the Social stages and `asset_publications`, so it is its own step rather than a copy of the Maker rules. Before 4b, Social stays in legacy, where the Scheduled and Live statuses are rejected anyway. |
+| 6 | Developer, SEO | One user each on live and zero job assignments. Same Maker rules; switch on when the first job uses them. |
 
 BetaGate reads `Config::newUiRoles`, so each wave is a config change plus the screens listed.
 
@@ -443,7 +445,7 @@ Same as Copywriter, with media deliverables (sizes, formats, file links) and the
 
 **My day needs**: Waiting for QA, Failed and resubmitted, Brief changed on my jobs.
 
-### 2.11 Developer, 2.12 SEO, 2.13 Social (Makers)
+### 2.11 Developer, 2.12 SEO (Makers)
 
 Same as Copywriter. Differences are only asset types and home filters:
 
@@ -451,9 +453,65 @@ Same as Copywriter. Differences are only asset types and home filters:
 |---|---|---|
 | Developer | Landing pages, HTML emails, banners | staging_url |
 | SEO | Audits, metadata, keyword sets, copy optimisation | report_url |
-| Social | Posts, stories, scheduling | scheduled_at, live_url (instead of the legacy "Scheduled" and "Live" statuses the database rejects, `src/constants.js:21`) |
 
-Not in the beta (Q7).
+Not in the beta (Q7). Social is a Maker too but has its own section because it publishes.
+
+### 2.13 Social (Publisher)
+
+Social is an important role, but only after a brief and its assets are approved by the client. Before that Social has no write access and the brief is not in the Social queue.
+
+**Responsibilities**: do the final check that everything needed to schedule each post is there (copy, image, link, hashtags, test result); set the brief, or individual assets in it, to Ready to Schedule (this notifies the AM), then Scheduled, then Live (adding the live link of each post by hand); tick Promoted per platform when a post was boosted as paid media; later, archive or delete posts.
+
+**Daily workflow**
+1. Open `/social`: Approved, to check; Ready to schedule; Scheduled today; Live without a link.
+2. Open an approved item: the sent brief version, the approved asset, and the checklist per platform (copy, image, link, hashtags, test result).
+3. Tick the checklist. If something is missing, comment and mention the AM or the maker; the item stays where it is. Social does not edit the creative.
+4. All items complete: set Ready to Schedule (brief or selected assets). The AM is notified.
+5. After scheduling in the platform tool: set the scheduled date per platform and move to Scheduled.
+6. When a post goes out: paste the live link per platform and move to Live. Tick Promoted where it was boosted.
+7. Watch for changes after Live (see notifications).
+
+**Reads** (recommendation: the queue shows all approved social-channel deliverables, writes need the Social slot on the job)
+
+| Entity | Scope |
+|---|---|
+| Social queue | Every asset on a social channel (deliverable channel in the platform list, Q21) whose job is approved_client or later |
+| Jobs, sent briefs, deliverables | assigned jobs in full; queue items show the client-safe summary plus copy, image, link, hashtags |
+| Assets | approved ones in the queue; own assigned assets in full |
+| Publication records | all in the queue |
+| Internal feedback | assigned |
+| Hours | assigned |
+| Capacity | own row |
+| Wiki | all |
+
+**Creates**: asset_publications rows (one per asset and platform), checklist entries, comments (later).
+
+**Edits**
+
+| Entity | Fields | Scope |
+|---|---|---|
+| Publication record | checklist (copy, image, link, hashtags, test result), scheduled_at, live_url, promoted, promoted note, status | Social slot on the job, or assets assigned to them |
+| Asset or brief status | ready_to_schedule, scheduled, live (later archived) | same |
+| Jobs, briefs, budget, assignments | none | |
+
+**Stage transitions**
+
+| From | To | Precondition |
+|---|---|---|
+| approved_client | ready_to_schedule | Checklist complete for every asset in scope. Notifies the AM |
+| ready_to_schedule | scheduled | scheduled_at set per platform |
+| scheduled | live | Live link entered per platform |
+| any of the three | back one step | Not allowed in the first release; ask the AM to reopen (Q22) |
+
+Brief-level stage moves when every social asset in scope reaches that status, or Social sets the brief directly. Assets can move one by one.
+
+**Approvals given**: none. Social checks completeness; it does not approve creative.
+
+**Never sees**: budget, brief drafts and working copies before client approval, client emails, jobs that are not approved, admin pages.
+
+**Notifications**: N33 client_approved_ready_for_social (high), N30 mention, N02 brief_updated, N39 changes after Live, N28 job_reopened, N26 job_cancelled.
+
+**My day needs** (`/social`): Approved items to check (the queue), Scheduled today, Live without a link, Changed after Live.
 
 ### 2.14 Client
 
@@ -524,8 +582,8 @@ Urgency: **high** = blocks work until the recipient acts (badge plus top of My d
 | N09 | started_asset_conflict | A brief update would reduce a line that has started assets | The sender (inline warning), Traffic | Started assets are never cancelled; someone decides | normal | none | beta |
 | N10 | asset_due_soon | Daily 07:00 SAST: asset due within 1 business day, not submitted | Asset assignee | Plan the day | normal | digest | later |
 | N11 | asset_overdue | Daily 07:00 SAST: asset past due, not submitted | Asset assignee, Traffic, CD on the job | Recover the date | high | digest | later |
-| N12 | job_due_soon | Job due today or within 3 business days, not approved_client or closed | AM (or creator), Traffic | Chase approvals | normal (My day section, no push) | digest | beta |
-| N13 | job_overdue | Job past due, not approved_client or closed | AM (or creator), Traffic; COO in digest | Escalate | high | digest | beta |
+| N12 | job_due_soon | Job due today or within 3 business days, not yet approved_client (or later) | AM (or creator), Traffic | Chase approvals | normal (My day section, no push) | digest | beta |
+| N13 | job_overdue | Job past due, not yet approved_client (or later) | AM (or creator), Traffic; COO in digest | Escalate | high | digest | beta |
 | N14 | submitted_for_internal_review | Job enters in_review, or an asset is submitted | CD on the job (ECD if none), QA on the job | Review is waiting | high | immediate | reviews |
 | N15 | qa_result | qa_signoff recorded as fail | CD on the job, asset assignee | Fix before approval | normal | digest | reviews |
 | N16 | internal_approved | in_review to approved_internal | AM (or creator) high; Traffic and makers low | AM sends to the client | high (AM) | immediate (AM) | reviews |
@@ -545,6 +603,13 @@ Urgency: **high** = blocks work until the recipient acts (badge plus top of My d
 | N30 | mention | @name in a comment | The mentioned user | Direct question | normal | immediate | later |
 | N31 | comment_on_my_job | Comment on a job you are assigned to | Assignees (opt out per job) | Awareness | low | digest | later |
 | N32 | account_access | User created, password reset forced | The user | They cannot log in yet, so in-app is useless | high | email only | later |
+| N33 | client_approved_ready_for_social | approve_client (or on behalf) on a brief with social assets, or an individual social asset approved | Social on the job; Social queue (all Social users) | Final check and scheduling can start | high | immediate | social |
+| N34 | ready_to_schedule | Brief or assets set to Ready to Schedule | AM (or creator); PM or Producer owner | Know it is ready and can tell the client | normal | digest | social |
+| N35 | scheduled | Brief or assets set to Scheduled | AM | Know the dates | normal | digest | social |
+| N36 | live | Brief or assets set to Live, with the live links | AM; Client contacts later (links only) | Share the links, close out | normal | immediate (AM) | social |
+| N37 | promoted_flag_changed | Promoted ticked or unticked on a platform | AM | Paid media records and reporting | low | digest | social |
+| N38 | post_archived_or_deleted | Post publication record archived or deleted | AM | A live post is gone or hidden | normal | digest | social |
+| N39 | changed_after_live | Brief updated, live link edited or asset reopened after Live | Social on the job; AM | A live post may need editing | high | immediate | social |
 
 ## 4. Permission matrix
 
@@ -625,6 +690,10 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `transition:approved_internal->approved_client` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | B |
 | `transition:approved_client->in_progress` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | - |
 | `transition:approved_client->done` | Y | Y | AC | Y | AC | AC | - | - | - | - | - | - | - | - |
+| `transition:approved_client->ready_to_schedule` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `transition:ready_to_schedule->scheduled` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `transition:scheduled->live` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `transition:live->done` * | Y | Y | AC | Y | AC | AC | - | - | - | - | - | - | - | - |
 | `transition:workable->waiting` * | Y | Y | AC | Y | AC | AC | A | - | - | - | - | - | - | - |
 | `transition:waiting->resume` * | Y | Y | AC | Y | AC | AC | A | - | - | - | - | - | - | - |
 | `transition:workable->on_hold` * | Y | Y | AC | Y | AC | AC | - | - | - | - | - | - | - | - |
@@ -668,6 +737,21 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `view_capacity` | Y | Y | Y | Y | Y | Y | Y | A | A | A | A | A | A | - |
 | `view_wiki` * | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | B |
 | `edit_wiki` | Y | Y | Y | Y | Y | Y | - | - | - | - | - | - | - | - |
+
+#### Social publishing
+
+Applies from stage approved_client. Asset-level moves use the same actions on a single asset, so there are no separate asset rows. Social "A" here means the Social slot on the job or an asset assigned to them.
+
+| Action | COO | ECD | AM | Trf | PM | Prd | CD | Cpy | Dsg | QA | Dev | SEO | Soc | Cli |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `social_view_queue` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | Y | - |
+| `social_edit_checklist` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `social_set_ready_to_schedule` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `social_set_scheduled` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `social_set_live` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `social_edit_live_link` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `social_set_promoted` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `social_archive_post` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
 
 #### Conditions (marked * above)
 
@@ -723,6 +807,19 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `transition:approved_internal->approved_client` | COO | On behalf, as AM. |
 | `transition:approved_internal->approved_client` | ECD | On behalf, as AM. |
 | `transition:approved_client->in_progress` | all allowed roles | Reason required; client approval fields are cleared. |
+| `transition:approved_client->ready_to_schedule` | all allowed roles | Checklist complete for every social asset in scope; notifies the AM. |
+| `transition:ready_to_schedule->scheduled` | all allowed roles | scheduled_at set per platform in scope. |
+| `transition:scheduled->live` | all allowed roles | Live link entered per platform in scope. The AM cannot do this (Q23). |
+| `transition:live->done` | all allowed roles | Stage live. Jobs without social assets still use approved_client to done. |
+| `social_view_queue` | Social | Lists every approved social-channel deliverable; never budget. Writes still need the Social slot. |
+| `social_view_queue` | AM, PM, Producer | Read only, own jobs. |
+| `social_edit_checklist` | all allowed roles | Stage approved_client or later; Social needs the Social slot or an assigned asset. |
+| `social_set_ready_to_schedule` | all allowed roles | As the transition: checklist complete. |
+| `social_set_scheduled` | all allowed roles | Stage ready_to_schedule; scheduled_at required. |
+| `social_set_live` | all allowed roles | Stage scheduled; live link required. |
+| `social_edit_live_link` | all allowed roles | Stage scheduled or later; edits after Live are logged and notify the AM. |
+| `social_set_promoted` | all allowed roles | Stage scheduled or later; checkbox plus optional note. |
+| `social_archive_post` | all allowed roles | Archive with a reason; hard delete is not offered to Social. |
 | `transition:workable->waiting` | all allowed roles | waiting_on and waiting_reason required. |
 | `transition:workable->waiting` | Traffic | Not from draft (cannot see drafts). |
 | `transition:workable->waiting` | CD | Not from draft. |
@@ -765,6 +862,7 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `transition:in_review->approved_internal` | api/permissions.php:118-121 lets any CD approve any job; src/data.js:752-763 auto-approves when a CD or ECD completes the last task. |
 | `transition:approved_internal->approved_client` | api/permissions.php:123-128: any own-brand Client or admin; no sign-off distinction; managers refused. |
 | `transition:approved_client->done` | No legacy path to Done (PLAN-v7.4 Q2). |
+| `social_*` and the three Social transitions | No legacy equivalent: the database rejects the Scheduled and Live statuses (`src/constants.js:21`); all three mirror to Approved (External). |
 | `transition:open->cancelled` | Legacy has no cancel action (PLAN-v7.4 gap 3). |
 | `qa_signoff` | Legacy QA has no action at all. |
 | `approve_internal` | api/permissions.php:118-121: any CD, not the assigned CD. |
@@ -827,7 +925,7 @@ Each has the default this document (and `policy-matrix.json`) already uses. Chan
 | Q4 | Who can cancel a job? | AM, PM or Producer who owns it (assigned_or_creator), COO, ECD; reason required. Traffic cannot | Cancelling is a commercial decision; Traffic can put on hold instead |
 | Q5 | Does the ECD create briefs and jobs? | Allowed (admin cover), not on the ECD's home screen | Admin tier on the server already; avoids a dead end when the AM is away |
 | Q6 | Does Producer differ from PM? | Same Policy rules; separate label and home filter (Producer slot) | Live has 1 Producer with 0 assignments; nothing yet needs different rules |
-| Q7 | Are Developer, SEO, Social needed in the beta? | No. Same Maker rules as Copywriter and Designer; switch on in wave 6 | 1 user each, 0 assignments on live |
+| Q7 | Are Developer, SEO, Social needed in the beta? | Developer and SEO: no, same Maker rules, wave 6. Social: no, wave 4b after reviews and the client portal (see Q20 to Q24) | 1 user each, 0 assignments on live |
 | Q8 | Who sees budget? | COO, ECD, and AM, PM, Producer on jobs they own. Traffic, CD and makers see hours only. Clients see neither | Money is account data; hours are needed for planning |
 | Q9 | Can the CD assign or swap creatives, or edit creative_direction? | No. Traffic assigns (owner decision); the CD asks Traffic, and asks the AM for brief changes | Single owner for resourcing and for the brief; each change is versioned |
 | Q10 | How do existing live jobs get an AM? | Backfill the one live AM user into the AM slot and `am_user_id` on every open job; owner confirms before 0002 runs | Otherwise the AM's beta starts with zero jobs (G2) |
@@ -840,6 +938,11 @@ Each has the default this document (and `policy-matrix.json`) already uses. Chan
 | Q17 | Does the ECD manage users? | Yes, as the approved plan says; legacy is COO only | Differs from legacy (G5); worth a one-line confirmation |
 | Q18 | Does the brief-owned field edit in the grid (for example due date) go live at once after send? | No. It goes to the working copy and shows "Unsent changes, Send update" | Owner decision: edits after send are versioned and the team is notified |
 | Q19 | Are client-visible notifications email-first? | Yes, when email lands; in-app only until then | Clients rarely sit in the app |
+| Q20 | Which platforms does the Social list offer? | Facebook, Instagram, LinkedIn, X, TikTok, YouTube, Google Business. Owner can add more (a config list, not a CHECK) | One publication record per asset and platform |
+| Q21 | Is Social assigned per job through job_assignments (role Social)? | Yes. Plus a "social queue" of all approved social-channel deliverables that any Social user can read; writes need the Social slot | The slot gives ownership and notifications; the queue stops approved posts being missed when nobody is assigned |
+| Q22 | Can Social move a post back, and what happens after Live? | No backward moves for Social. Anyone allowed to reopen (AM, PM, Producer, COO, ECD) uses approved_client to in_progress with a reason; Social and the AM are told (N39) | Keeps the record honest; a live post cannot be silently undone |
+| Q23 | Can the AM also mark Live? | No. Social, COO and ECD only. The AM sees the status and the links | The one who publishes confirms it; avoids a Live status with no link |
+| Q24 | Is Promoted a checkbox only or does it carry spend? | Checkbox per platform plus an optional note. No spend amount | Spend belongs with budget, which Social never sees |
 
 ## 6. Test workflows
 
@@ -982,9 +1085,13 @@ Campaign "Grand Opening London" (Meridian) exists. "MERC job" below means a Meri
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| SOC-1 | Wave 6 not enabled | social_sol logs in | Redirected to `/legacy/` |
-| SOC-2 | Wave 6 enabled; assigned a social post asset | She submits it | Allowed |
-| SOC-3 (negative) | Her job | She opens "Move to..." | No "Scheduled" or "Live" options exist; only the transitions section 4 allows her (none) are offered |
+| SOC-1 | Wave 4b not enabled | social_sol logs in | Redirected to `/legacy/` |
+| SOC-2 | Wave 4b enabled; a job with 3 social assets, Social slot social_sol, stage approved_client | She opens `/social`, ticks copy, image, link, hashtags and test result for all three, and clicks Ready to Schedule | Stage ready_to_schedule (legacy status Approved (External)); am_amy gets N34; activity log actor social_sol |
+| SOC-3 | That job in ready_to_schedule | She sets a scheduled date for Instagram and Facebook and moves to Scheduled, later pastes both live links and moves to Live, and ticks Promoted on Instagram | Stages scheduled then live; live_url stored per platform; promoted true on Instagram only; am_amy gets N35, N36 and N37; the job's Done is then up to am_amy |
+| SOC-4 | Same job, asset 2 only is approved by the client | She sets asset 2 to Ready to Schedule | Allowed for asset 2; assets 1 and 3 and the brief stage are unchanged; the brief moves only when all social assets reach that status |
+| SOC-5 (negative) | A job in approved_internal (client has not approved) | social_sol POSTs ready_to_schedule and opens the job URL | Both refused; the job is not in her queue; nothing changes |
+| SOC-6 (negative) | A job in scheduled with live link empty | am_amy POSTs Live; social_sol tries Live without a link | AM refused (403, Policy reason shown); Social refused until a live link is entered |
+| SOC-7 (negative) | A job with budget 25000 set | social_sol loads `/social`, the job page and every fragment | Budget does not appear in any HTML or SSE response; a checklist with an item unticked also blocks Ready to Schedule |
 
 ### Client
 

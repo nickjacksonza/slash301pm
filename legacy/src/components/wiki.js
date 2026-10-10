@@ -319,7 +319,8 @@ const WikiPageView = ({
   onEdit,
   onDelete,
   onNavigate,
-  onLinkItem
+  onLinkItem,
+  loading
 }) => {
   if (!page) {
     return /*#__PURE__*/React.createElement("div", {
@@ -369,7 +370,7 @@ const WikiPageView = ({
   }, tag))), /*#__PURE__*/React.createElement("div", {
     className: "page-content",
     dangerouslySetInnerHTML: {
-      __html: typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(page.content) : page.content
+      __html: loading || typeof page.content !== 'string' ? '<p>Loading page content\u2026</p>' : typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(page.content) : page.content
     }
   }), (linkedJobs.length > 0 || linkedProjects.length > 0) && /*#__PURE__*/React.createElement("div", {
     className: "page-links"
@@ -401,7 +402,8 @@ const WikiPageModal = ({
   page,
   pages,
   data,
-  dispatch
+  dispatch,
+  loading
 }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -412,7 +414,7 @@ const WikiPageModal = ({
   useEffect(() => {
     if (page) {
       setTitle(page.title);
-      setContent(page.content);
+      setContent(typeof page.content === 'string' ? page.content : '');
       setType(page.type);
       setTemplateId(page.templateId || '');
       setParentId(page.parentId || '');
@@ -438,6 +440,7 @@ const WikiPageModal = ({
   };
   const handleSubmit = () => {
     if (!title) return alert('Title is required');
+    if (page && (loading || typeof page.content !== 'string')) return alert('The page content is still loading. Please wait a moment.');
     const pageData = {
       id: page?.id || generateId(),
       title,
@@ -554,8 +557,9 @@ const WikiPageModal = ({
     onClick: onClose
   }, "Cancel"), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-primary",
-    onClick: handleSubmit
-  }, page ? 'Save Changes' : 'Create Page'))));
+    onClick: handleSubmit,
+    disabled: !!page && (loading || typeof page.content !== 'string')
+  }, page ? (loading ? 'Loading\u2026' : 'Save Changes') : 'Create Page'))));
 };
 
 // Wiki Link Modal
@@ -653,8 +657,34 @@ const WikiTab = ({
   const [editingPage, setEditingPage] = useState(null);
   const [wikiSearchQuery, setWikiSearchQuery] = useState('');
   const wikiPages = data.wikiPages || [];
+  const [pageLoading, setPageLoading] = useState(false);
+  const loadSeq = useRef(0);
+  // Content is not in the list payload: fetch the full page when it is opened
   const handleSelectPage = page => {
+    const seq = ++loadSeq.current;
+    if (!page) {
+      setSelectedPage(null);
+      setPageLoading(false);
+      return;
+    }
     setSelectedPage(page);
+    if (typeof page.content === 'string' && page.contentLoaded) {
+      setPageLoading(false);
+      return;
+    }
+    setPageLoading(true);
+    api.getWikiPage(page.id).then(res => {
+      if (seq !== loadSeq.current) return;
+      const w = res.wikiPage || {};
+      const full = { ...page, content: typeof w.content === 'string' ? w.content : '', contentLoaded: true };
+      setSelectedPage(full);
+      setPageLoading(false);
+    }).catch(err => {
+      if (seq !== loadSeq.current) return;
+      setPageLoading(false);
+      if (typeof page.content === 'string') return; // offline copy already has the text
+      alert('Could not load the page: ' + (err.message || 'unknown error'));
+    });
   };
   const handleNewPage = () => {
     setEditingPage(null);
@@ -671,16 +701,19 @@ const WikiTab = ({
       type: 'DELETE_WIKI_PAGE',
       payload: selectedPage.id
     });
+    loadSeq.current++;
     setSelectedPage(null);
   };
   const handleModalClose = savedPage => {
     setEditModalOpen(false);
     if (savedPage && savedPage.id) {
-      setSelectedPage(savedPage);
+      loadSeq.current++;
+      setPageLoading(false);
+      setSelectedPage({ ...savedPage, contentLoaded: true });
     }
   };
   const handleNavigate = page => {
-    setSelectedPage(page);
+    handleSelectPage(page);
   };
   return /*#__PURE__*/React.createElement("div", {
     className: "wiki-container"
@@ -701,14 +734,16 @@ const WikiTab = ({
     onEdit: handleEditPage,
     onDelete: handleDeletePage,
     onNavigate: handleNavigate,
-    onLinkItem: () => setLinkModalOpen(true)
+    onLinkItem: () => setLinkModalOpen(true),
+    loading: pageLoading
   })), /*#__PURE__*/React.createElement(WikiPageModal, {
     isOpen: editModalOpen,
     onClose: handleModalClose,
-    page: editingPage,
+    page: editingPage && selectedPage && editingPage.id === selectedPage.id ? selectedPage : editingPage,
     pages: wikiPages,
     data: data,
-    dispatch: dispatch
+    dispatch: dispatch,
+    loading: pageLoading
   }), /*#__PURE__*/React.createElement(WikiLinkModal, {
     isOpen: linkModalOpen,
     onClose: () => setLinkModalOpen(false),

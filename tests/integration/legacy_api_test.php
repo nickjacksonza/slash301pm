@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 const S301_TEST_PASSWORD = 'Test-Password-123';
 
-/** @return array{port:int, db:SQLite3, path:string} */
+/** @return array{port:int, db:SQLite3, path:string, data_dir:string} */
 function s301_env(): array
 {
     static $env = null;
@@ -35,29 +35,33 @@ function s301_env(): array
     $port = (int) substr(strrchr((string) stream_socket_get_name($sock, false), ':'), 1);
     fclose($sock);
 
+    // Isolated data dir (sessions, demo flag) so the test never touches data/
+    $dataDir = sys_get_temp_dir() . '/s301_legacy_data_' . bin2hex(random_bytes(6));
+    mkdir($dataDir, 0700, true);
+
     $started = time();
     $proc = proc_open(
         [PHP_BINARY, '-S', "127.0.0.1:$port", '-t', $root],
         [0 => ['file', '/dev/null', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']],
         $pipes,
         $root,
-        array_merge(getenv(), ['S301_DB' => $path])
+        array_merge(getenv(), ['S301_DB' => $path, 'S301_DATA_DIR' => $dataDir])
     );
     if (!is_resource($proc)) {
         throw new TestFailure('could not start php -S');
     }
-    register_shutdown_function(static function () use ($proc, $path, $root, $started): void {
+    register_shutdown_function(static function () use ($proc, $path, $dataDir): void {
         proc_terminate($proc);
         proc_close($proc);
         foreach (['', '-wal', '-shm'] as $suffix) {
             @unlink($path . $suffix);
         }
-        // Remove the session files this run created in data/sessions
-        foreach (glob($root . '/data/sessions/sess_*') ?: [] as $f) {
-            if (filemtime($f) >= $started) {
-                @unlink($f);
-            }
+        // Remove the isolated data dir (sessions, demo flag)
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dataDir, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($it as $f) {
+            $f->isDir() ? @rmdir($f->getPathname()) : @unlink($f->getPathname());
         }
+        @rmdir($dataDir);
     });
 
     $ready = false;
@@ -114,7 +118,7 @@ function s301_env(): array
     $db->exec("INSERT INTO wiki_page_links (wiki_page_id, entity_type, entity_id) VALUES
         ('tw_a', 'job', 'tj_a'), ('tw_b', 'job', 'tj_b')");
 
-    return $env = ['port' => $port, 'db' => $db, 'path' => $path];
+    return $env = ['port' => $port, 'db' => $db, 'path' => $path, 'data_dir' => $dataDir];
 }
 
 /** Put the mutable fixture rows back to a known state. */
@@ -346,19 +350,22 @@ return [
     },
 
     'demo_login with POST works in demo mode and issues a new session id' => function (): void {
-        s301_env();
-        if (!is_file(dirname(__DIR__, 2) . '/data/.demo_mode')) {
-            return; // demo mode is off (after the beta gate); nothing to test
+        // Demo mode is a flag file in the isolated test data dir (never data/)
+        $flag = s301_env()['data_dir'] . '/.demo_mode';
+        file_put_contents($flag, '1');
+        try {
+            $s = s301_session();
+            s301_call($s, 'GET', 'check_session'); // starts a session, sets a cookie
+            $before = $s['cookie'];
+            t_true($before !== '', 'session cookie issued by check_session');
+            $r = s301_call($s, 'POST', 'demo_login', [], ['user_id' => 'tu_ecd']);
+            t_eq(200, $r['status'], $r['raw']);
+            t_true($s['cookie'] !== $before, 'session id must change on demo_login');
+            $r = s301_call($s, 'GET', 'get_jobs');
+            t_eq(200, $r['status'], 'demo user can read after demo_login: ' . $r['raw']);
+        } finally {
+            @unlink($flag);
         }
-        $s = s301_session();
-        s301_call($s, 'GET', 'check_session'); // starts a session, sets a cookie
-        $before = $s['cookie'];
-        t_true($before !== '', 'session cookie issued by check_session');
-        $r = s301_call($s, 'POST', 'demo_login', [], ['user_id' => 'tu_ecd']);
-        t_eq(200, $r['status'], $r['raw']);
-        t_true($s['cookie'] !== $before, 'session id must change on demo_login');
-        $r = s301_call($s, 'GET', 'get_jobs');
-        t_eq(200, $r['status'], 'demo user can read after demo_login: ' . $r['raw']);
     },
 
     'update_wiki_page refuses to blank existing content (409)' => function (): void {
@@ -474,5 +481,91 @@ return [
         $d = s301_login('tu_designer');
         t_eq(200, s301_call($d, 'GET', 'get_job', ['id' => 'tj_a'])['status']);
         t_eq(403, s301_call($d, 'GET', 'get_job', ['id' => 'tj_b'])['status']);
+    },
+
+    'demo_login: POST JSON from the legacy client shape works, GET is refused, cookie path is /slash301pm/' => function (): void {
+        $env = s301_env();
+        $flag = $env['data_dir'] . '/.demo_mode';
+        file_put_contents($flag, '1');
+        try {
+            $sess = s301_session();
+            // Old shape (GET with user_id in the query) must be refused
+            $r = s301_call($sess, 'GET', 'demo_login', ['user_id' => 'tu_ecd']);
+            t_eq(405, $r['status'], $r['raw']);
+            // New legacy client shape: POST JSON {user_id}
+            $r = s301_call($sess, 'POST', 'demo_login', [], ['user_id' => 'tu_ecd']);
+            t_eq(200, $r['status'], $r['raw']);
+            t_eq('tu_ecd', $r['json']['user']['id'] ?? null);
+            t_contains('path=/slash301pm/', implode("\n", $sess['set_cookies']), 'session cookie path');
+            // The session now acts as that user (no password, no CSRF in demo mode)
+            $me = s301_call($sess, 'GET', 'get_jobs');
+            t_eq(200, $me['status'], $me['raw']);
+        } finally {
+            @unlink($flag);
+        }
+    },
+
+    'add_job: numbers come from job_counters and never collide' => function (): void {
+        $env = s301_env();
+        $db = $env['db'];
+        $db->exec('CREATE TABLE IF NOT EXISTS job_counters (prefix TEXT PRIMARY KEY, next INTEGER NOT NULL)');
+        $db->exec("DELETE FROM job_counters WHERE prefix = 'TSA'");
+        $e = s301_login('tu_ecd');
+        $maxBefore = (int) s301_val("SELECT MAX(CAST(SUBSTR(job_number, 5) AS INTEGER)) FROM jobs WHERE job_number LIKE 'TSA-%'");
+        $nums = [];
+        for ($i = 0; $i < 2; $i++) {
+            $r = s301_call($e, 'POST', 'add_job', [], ['title' => 'Counter job ' . $i, 'campaign_id' => 'tc_a']);
+            t_eq(201, $r['status'], $r['raw']);
+            $nums[] = (string) $r['json']['job']['job_number'];
+        }
+        // Seeded from the existing max for the prefix, then +1 each time
+        t_eq([sprintf('TSA-%03d', $maxBefore + 1), sprintf('TSA-%03d', $maxBefore + 2)], $nums);
+        t_eq($maxBefore + 3, (int) s301_val("SELECT next FROM job_counters WHERE prefix = 'TSA'"));
+        t_true($nums[0] !== $nums[1], 'no collision');
+        $db->exec("DELETE FROM jobs WHERE title LIKE 'Counter job %'");
+    },
+
+    'Client: new internal-only job columns never reach a Client' => function (): void {
+        $env = s301_env();
+        $db = $env['db'];
+        $cols = ['stage' => "'doing'", 'stage_changed_at' => "'2026-01-01'", 'waiting_on' => "'SECRETWAIT'", 'waiting_reason' => "'SECRETREASON'",
+            'resume_stage' => "'doing'", 'row_version' => '7', 'am_user_id' => "'tu_am'", 'updated_by' => "'tu_ecd'"];
+        $have = [];
+        $res = $db->query('PRAGMA table_info(jobs)');
+        while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
+            $have[$row['name']] = true;
+        }
+        foreach ($cols as $name => $_) {
+            if (!isset($have[$name])) {
+                $db->exec("ALTER TABLE jobs ADD COLUMN $name " . ($name === 'row_version' ? 'INTEGER' : 'TEXT'));
+            }
+        }
+        $sets = [];
+        foreach ($cols as $name => $val) {
+            $sets[] = "$name = $val";
+        }
+        $db->exec('UPDATE jobs SET ' . implode(', ', $sets) . " WHERE id = 'tj_a'");
+        $c = s301_login('tu_client_a');
+        foreach ([s301_call($c, 'GET', 'get_job', ['id' => 'tj_a']), s301_call($c, 'GET', 'get_jobs')] as $r) {
+            t_eq(200, $r['status'], $r['raw']);
+            t_not_contains('SECRETWAIT', $r['raw']);
+            t_not_contains('SECRETREASON', $r['raw']);
+            $job = $r['json']['job'] ?? null;
+            if ($job === null) {
+                foreach ($r['json']['jobs'] as $j) {
+                    if ($j['id'] === 'tj_a') {
+                        $job = $j;
+                    }
+                }
+            }
+            t_true(is_array($job), 'job present');
+            foreach (array_keys($cols) as $name) {
+                t_true(!array_key_exists($name, $job), "client must not see $name");
+            }
+        }
+        // Staff still see them
+        $e = s301_login('tu_ecd');
+        $r = s301_call($e, 'GET', 'get_job', ['id' => 'tj_a']);
+        t_eq('SECRETWAIT', $r['json']['job']['waiting_on'] ?? null);
     },
 ];

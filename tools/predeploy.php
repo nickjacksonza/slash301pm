@@ -9,7 +9,8 @@ declare(strict_types=1);
  *   <to-ref>    what you are about to upload (default HEAD)
  *
  * Prints the files to upload and delete, grouped in the owner's deploy order
- * (.htaccess, then backend, then frontend), and fails if anything that must
+ * (sub-folder .htaccess, backend, frontend, root .htaccess last, then deletes),
+ * and fails if anything that must
  * never reach the server would be uploaded. It only reads git; it never
  * connects to the server.
  */
@@ -56,10 +57,16 @@ const FORBIDDEN = [
     '#(^|/)\.env(\.|$)#' => 'environment secrets',
 ];
 
+// Safe order: sub-folder .htaccess files first (so app/, vendor/ and friends are never
+// exposed), the ROOT .htaccess last (it routes to index.php, app/, vendor/ and legacy/,
+// which must already be on the server), deletes after all uploads.
 function deployGroup(string $path): string
 {
+    if ($path === '.htaccess') {
+        return '4 root .htaccess';
+    }
     if (str_ends_with($path, '.htaccess')) {
-        return '1 .htaccess';
+        return '1 sub-folder .htaccess';
     }
     if (preg_match('#^(api|app|vendor|migrations|data)/#', $path) || $path === 'index.php') {
         return '2 backend';
@@ -86,7 +93,7 @@ foreach ($changes as $line) {
     }
     if ($status === 'D') {
         if ($isDeploy) {
-            $delete[deployGroup($path)][] = $path;
+            $delete['5 deletes'][] = $path;
         }
         continue;
     }
@@ -126,7 +133,7 @@ foreach ($upload as $files) {
 ksort($upload);
 ksort($delete);
 echo "SFTP manifest: $from -> $to (target public_html/projects/slash301pm/)\n\n";
-foreach (['1 .htaccess', '2 backend', '3 frontend'] as $group) {
+foreach (['1 sub-folder .htaccess', '2 backend', '3 frontend', '4 root .htaccess', '5 deletes'] as $group) {
     $up = $upload[$group] ?? [];
     $del = $delete[$group] ?? [];
     if ($up === [] && $del === []) {
@@ -144,9 +151,10 @@ foreach (['1 .htaccess', '2 backend', '3 frontend'] as $group) {
 if ($upload === [] && $delete === []) {
     echo "Nothing to upload or delete.\n\n";
 }
+echo "After upload, open /slash301pm/healthz once; it runs pending migrations and writes a backup in data/backups/.\n";
 echo "Always check on the server: no unzipper.php, no *.zip or other archives in the web root, no api/seed.php.\n";
-if (isset($upload['3 frontend']) && in_array('index.html', $upload['3 frontend'], true)) {
-    echo "Reminder: bump ?v=N on the CSS/JS includes in index.html for Cloudflare cache busting.\n";
+if (isset($upload['3 frontend']) && in_array('legacy/index.html', $upload['3 frontend'], true)) {
+    echo "Reminder: bump ?v=N on the CSS/JS includes in legacy/index.html for Cloudflare cache busting.\n";
 }
 if ($skipped !== []) {
     echo "\nNot for the server (repo only): " . count($skipped) . " file(s).\n";

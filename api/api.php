@@ -42,6 +42,9 @@ const APPROVAL_ONLY_STATUSES = ['Approved (Internal)', 'Approved (External)'];
 const CLIENT_HIDDEN_JOB_FIELDS = [
     'internal_feedback', 'internal_feedback_by', 'internal_feedback_at',
     'hours_estimate', 'client_feedback_assigned_to', 'client_feedback_assigned_role',
+    // New-app internal columns (added by the rebuild migrations)
+    'stage', 'stage_changed_at', 'waiting_on', 'waiting_reason', 'resume_stage',
+    'row_version', 'am_user_id', 'updated_by',
 ];
 const CLIENT_HIDDEN_TASK_FIELDS = ['internal_feedback', 'feedback_by', 'feedback_at'];
 
@@ -724,20 +727,42 @@ switch ($action) {
             jsonError('Campaign not found');
         }
 
-        // Generate job number: PREFIX-NNN
-        $countStmt = $db->prepare('
-            SELECT COUNT(*) as cnt FROM jobs j
-            JOIN campaigns c ON j.campaign_id = c.id
-            WHERE c.brand_id = :brand_id
-        ');
-        $countStmt->bindValue(':brand_id', $campaign['brand_id'], SQLITE3_TEXT);
-        $countResult = $countStmt->execute();
-        $count = $countResult->fetchArray(SQLITE3_ASSOC)['cnt'];
-        $jobNumber = $campaign['prefix'] . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
-
         $jobId = generateId();
 
-        $db->exec('BEGIN TRANSACTION');
+        // BEGIN IMMEDIATE so two concurrent adds cannot read the same counter
+        $db->exec('BEGIN IMMEDIATE');
+
+        // Generate job number: PREFIX-NNN. Prefer the job_counters table (new app);
+        // fall back to counting jobs for the brand if it does not exist yet.
+        $prefix = (string) $campaign['prefix'];
+        $hasCounters = (bool) $db->querySingle("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'job_counters'");
+        if ($hasCounters) {
+            $seed = $db->prepare("
+                INSERT OR IGNORE INTO job_counters (prefix, next)
+                SELECT :prefix, COALESCE(MAX(CAST(SUBSTR(job_number, LENGTH(:prefix) + 2) AS INTEGER)), 0) + 1
+                FROM jobs WHERE job_number LIKE :like
+            ");
+            $seed->bindValue(':prefix', $prefix, SQLITE3_TEXT);
+            $seed->bindValue(':like', $prefix . '-%', SQLITE3_TEXT);
+            $seed->execute();
+            $cnt = $db->prepare('SELECT next FROM job_counters WHERE prefix = :prefix');
+            $cnt->bindValue(':prefix', $prefix, SQLITE3_TEXT);
+            $number = (int) $cnt->execute()->fetchArray(SQLITE3_ASSOC)['next'];
+            $upd = $db->prepare('UPDATE job_counters SET next = next + 1 WHERE prefix = :prefix');
+            $upd->bindValue(':prefix', $prefix, SQLITE3_TEXT);
+            $upd->execute();
+            $jobNumber = $prefix . '-' . str_pad((string) $number, 3, '0', STR_PAD_LEFT);
+        } else {
+            $countStmt = $db->prepare('
+                SELECT COUNT(*) as cnt FROM jobs j
+                JOIN campaigns c ON j.campaign_id = c.id
+                WHERE c.brand_id = :brand_id
+            ');
+            $countStmt->bindValue(':brand_id', $campaign['brand_id'], SQLITE3_TEXT);
+            $count = $countStmt->execute()->fetchArray(SQLITE3_ASSOC)['cnt'];
+            $jobNumber = $prefix . '-' . str_pad((string) ($count + 1), 3, '0', STR_PAD_LEFT);
+        }
+
 
         $stmt = $db->prepare('
             INSERT INTO jobs (id, job_number, campaign_id, title, description, status, creative_direction, brief_date, delivery_date, hours_estimate, sort_order, created_by)

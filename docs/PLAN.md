@@ -157,6 +157,9 @@ Creatives always see the latest **sent** version, and reviews later record which
 | in_review | In Review |
 | approved_internal | Approved (Internal) |
 | approved_client | Approved (External) |
+| ready_to_schedule | Approved (External) |
+| scheduled | Approved (External) |
+| live | Approved (External) |
 | done | Done |
 | archived | Archived |
 | cancelled | Cancelled |
@@ -364,7 +367,7 @@ Each phase is a branch and a PR into `main`. You deploy by SFTP, and every PR de
   3. Your AM user created.
   4. `/admin/system` green.
 
-**Later, in order:** internal reviews and approvals (each recording the brief version checked) → client sign-off portal → creative "my queue" → Traffic, capacity and the other roles, plus email notifications → Wiki, with sanitized content → retire legacy area by area (then rebuild `jobs` without the old status CHECK) → Go port (routes → `routes.go`, Store → `database/sql` with modernc sqlite, View → templ with DatastarUI, Response → datastar-go).
+**Later, in order:** internal reviews and approvals (each recording the brief version checked) → client sign-off portal → **Social publishing** (migration `asset_publications` with asset_id, platform, scheduled_at, live_url, promoted, promoted_at, status and a checklist json for copy, image, link, hashtags and test result; the Social queue screen `/social`; per-asset checklist; Ready to schedule, Scheduled and Live at brief or asset level, with live links and a per-platform Promoted flag; AM notifications; the stages sit between approved_client and done, in the order approved_client, ready_to_schedule, scheduled, live, done) → creative "my queue" → Traffic, capacity and the other roles (Developer, SEO), plus email notifications → Wiki, with sanitized content → retire legacy area by area (then rebuild `jobs` without the old status CHECK) → Go port (routes → `routes.go`, Store → `database/sql` with modernc sqlite, View → templ with DatastarUI, Response → datastar-go).
 
 ## Main risks
 | Risk | Mitigation |

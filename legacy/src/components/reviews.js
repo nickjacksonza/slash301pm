@@ -150,16 +150,11 @@ const JobReviewTab = ({
       alert('Cannot approve: No client reviewer is assigned to this job. Please assign a client in the job details before approving.');
       return;
     }
-    dispatch({
-      type: 'UPDATE_JOB',
-      payload: {
-        ...job,
-        status: 'Approved (Internal)',
-        internalApprovedBy: currentUser?.id,
-        internalApprovedAt: new Date().toISOString()
-      }
+    api.approveInternal(job.id).then(() => api.refreshInto(dispatch)).then(() => {
+      setApprovedJobs(prev => new Set([...prev, job.id]));
+    }).catch(err => {
+      alert('Approval failed: ' + (err.message || 'unknown error'));
     });
-    setApprovedJobs(prev => new Set([...prev, job.id]));
   };
 
   // Handle rejection without feedback
@@ -178,51 +173,31 @@ const JobReviewTab = ({
 
   // Handle rejection with feedback - assigns feedback to tasks and creates todo
   const handleRejectWithFeedback = job => {
-    const jobTasks = getJobTasks(job.id);
-    const copyTask = jobTasks.find(t => t.templateId === 'copy');
-    const mediaTask = jobTasks.find(t => t.templateId === 'media');
-
-    // Update Copy task with feedback and mark incomplete
-    if (copyTask) {
-      dispatch({
-        type: 'UPDATE_TASK',
-        payload: {
-          ...copyTask,
-          completed: false,
-          internalFeedback: feedbackText,
-          feedbackBy: currentUser?.id,
-          feedbackAt: new Date().toISOString()
+    const feedback = feedbackText;
+    api.rejectWithFeedback(job.id, feedback, true).then(() => api.refreshInto(dispatch)).then(fresh => {
+      // Attach the feedback to the Copy and Media tasks so the team sees it on the task
+      const freshTasks = (fresh.tasks || []).filter(t => t.jobId === job.id);
+      ['copy', 'media'].forEach(templateId => {
+        const task = freshTasks.find(t => t.templateId === templateId);
+        if (task) {
+          dispatch({
+            type: 'UPDATE_TASK',
+            payload: {
+              ...task,
+              completed: false,
+              internalFeedback: feedback,
+              feedbackBy: currentUser?.id,
+              feedbackAt: new Date().toISOString()
+            }
+          });
         }
       });
-    }
-
-    // Update Media task with feedback and mark incomplete
-    if (mediaTask) {
-      dispatch({
-        type: 'UPDATE_TASK',
-        payload: {
-          ...mediaTask,
-          completed: false,
-          internalFeedback: feedbackText,
-          feedbackBy: currentUser?.id,
-          feedbackAt: new Date().toISOString()
-        }
-      });
-    }
-
-    // Update job with feedback record
-    dispatch({
-      type: 'UPDATE_JOB',
-      payload: {
-        ...job,
-        internalFeedback: feedbackText,
-        internalFeedbackBy: currentUser?.id,
-        internalFeedbackAt: new Date().toISOString()
-      }
+      setRejectedJobs(prev => new Set([...prev, job.id]));
+      setFeedbackJobId(null);
+      setFeedbackText('');
+    }).catch(err => {
+      alert('Rejection failed: ' + (err.message || 'unknown error'));
     });
-    setRejectedJobs(prev => new Set([...prev, job.id]));
-    setFeedbackJobId(null);
-    setFeedbackText('');
   };
 
   // Reset campaign filter when client changes

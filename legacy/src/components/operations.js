@@ -198,14 +198,11 @@ const ClientReviewTab = ({
 
   // Handle approval
   const handleApprove = job => {
-    dispatch({
-      type: 'UPDATE_JOB',
-      payload: {
-        ...job,
-        status: 'Approved (External)'
-      }
+    api.approveClient(job.id).then(() => api.refreshInto(dispatch)).then(() => {
+      setApprovedJobs(prev => new Set([...prev, job.id]));
+    }).catch(err => {
+      alert('Approval failed: ' + (err.message || 'unknown error'));
     });
-    setApprovedJobs(prev => new Set([...prev, job.id]));
   };
 
   // Handle rejection
@@ -236,31 +233,21 @@ const ClientReviewTab = ({
     const assignedCD = job.assignments?.CD;
     const fallbackCD = data.people.find(p => p.role === 'CD')?.id;
     const feedbackAssignee = assignedCD || fallbackCD;
-    dispatch({
-      type: 'UPDATE_JOB',
-      payload: {
-        ...job,
-        status: 'In Progress',
-        clientFeedback: feedbackText,
-        clientFeedbackDate: new Date().toISOString(),
-        clientFeedbackBy: currentUser?.id,
-        clientFeedbackAssignedTo: feedbackAssignee,
-        clientFeedbackStatus: 'pending' // pending, actioned, reassigned
+    api.rejectWithFeedback(job.id, feedbackText, false).then(() => api.refreshInto(dispatch)).then(fresh => {
+      // The server stores the feedback and resets the job and tasks; the CD assignment is legacy-only
+      const freshJob = (fresh.jobs || []).find(j => j.id === job.id);
+      if (freshJob && feedbackAssignee) {
+        dispatch({
+          type: 'UPDATE_JOB',
+          payload: { ...freshJob, clientFeedbackAssignedTo: feedbackAssignee }
+        });
       }
+      setRejectedJobs(prev => new Set([...prev, job.id]));
+      setFeedbackJobId(null);
+      setFeedbackText('');
+    }).catch(err => {
+      alert('Rejection failed: ' + (err.message || 'unknown error'));
     });
-    // WF-07 fix: Reset Copy/Media tasks to In Progress so they reappear as unchecked
-    const jobTasks = getJobTasks(job.id);
-    const copyTask = jobTasks.find(t => t.templateId === 'copy');
-    const mediaTask = jobTasks.find(t => t.templateId === 'media');
-    if (copyTask && copyTask.status === 'Done') {
-      dispatch({ type: 'UPDATE_TASK', payload: { ...copyTask, status: 'In Progress' } });
-    }
-    if (mediaTask && mediaTask.status === 'Done') {
-      dispatch({ type: 'UPDATE_TASK', payload: { ...mediaTask, status: 'In Progress' } });
-    }
-    setRejectedJobs(prev => new Set([...prev, job.id]));
-    setFeedbackJobId(null);
-    setFeedbackText('');
   };
 
   // Check access

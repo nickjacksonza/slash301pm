@@ -30,7 +30,10 @@
             "in_progress",
             "in_review",
             "approved_internal",
-            "approved_client"
+            "approved_client",
+            "ready_to_schedule",
+            "scheduled",
+            "live"
         ],
         "workable": [
             "draft",
@@ -38,7 +41,10 @@
             "in_progress",
             "in_review",
             "approved_internal",
-            "approved_client"
+            "approved_client",
+            "ready_to_schedule",
+            "scheduled",
+            "live"
         ],
         "open": [
             "draft",
@@ -47,6 +53,9 @@
             "in_review",
             "approved_internal",
             "approved_client",
+            "ready_to_schedule",
+            "scheduled",
+            "live",
             "waiting",
             "on_hold"
         ],
@@ -964,6 +973,110 @@
             "legacy": "No legacy path to Done (PLAN-v7.4 Q2)."
         },
         {
+            "id": "transition:approved_client->ready_to_schedule",
+            "section": "Transitions",
+            "phase": "later",
+            "description": "Social final check done: move to Ready to Schedule.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Checklist complete for every social asset in scope (all assets, or the selected assets). Notifies the AM and the PM or Producer owner. Brief-level move happens when every social asset in scope reaches that status, or Social sets the brief directly. Legacy mirror: Approved (External)."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "transition:ready_to_schedule->scheduled",
+            "section": "Transitions",
+            "phase": "later",
+            "description": "Post is scheduled on the platforms.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "scheduled_at set for each platform in scope. Brief-level move happens when every social asset in scope reaches that status, or Social sets the brief directly. Legacy mirror: Approved (External)."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "transition:scheduled->live",
+            "section": "Transitions",
+            "phase": "later",
+            "description": "Post is live.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Live link entered for each platform in scope. AM, PM, Producer and Traffic cannot do this. Brief-level move happens when every social asset in scope reaches that status, or Social sets the brief directly. Legacy mirror: Approved (External)."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "transition:live->done",
+            "section": "Transitions",
+            "phase": "later",
+            "description": "Mark as done once the posts are live.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "allow",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage live. Jobs with no social assets still use transition:approved_client->done."
+            },
+            "legacy": "No legacy path to Done (PLAN-v7.4 Q2)."
+        },
+        {
             "id": "transition:workable->waiting",
             "section": "Transitions",
             "phase": "beta",
@@ -1759,6 +1872,217 @@
                 "Client": "deny"
             },
             "legacy": "src/components/wiki.js shows the editor to everyone; api/permissions.php:114-116 refuses non-managers."
+        },
+        {
+            "id": "social_view_queue",
+            "section": "Social publishing",
+            "phase": "later",
+            "description": "See the Social queue: approved social-channel briefs and assets, with checklist state, scheduled dates, live links and promoted flags.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "assigned_or_creator",
+                "Traffic": "deny",
+                "PM": "assigned_or_creator",
+                "Producer": "assigned_or_creator",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "allow",
+                "Client": "deny"
+            },
+            "conditions": {
+                "Social": "Lists every approved social-channel deliverable (stage approved_client or later). Writes still need the Social slot on the job. Never shows budget.",
+                "AM": "Read only, own jobs.",
+                "PM": "Read only, own jobs.",
+                "Producer": "Read only, own jobs."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "social_edit_checklist",
+            "section": "Social publishing",
+            "phase": "later",
+            "description": "Edit the pre-schedule checklist per asset and platform: copy, image, link, hashtags, test result.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage approved_client or later (client approval recorded). Social acts only on jobs where they hold the Social slot, or on assets assigned to them."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "social_set_ready_to_schedule",
+            "section": "Social publishing",
+            "phase": "later",
+            "description": "Mark a brief, or individual assets, Ready to Schedule after the final check. Notifies the AM.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage approved_client or later (client approval recorded). Social acts only on jobs where they hold the Social slot, or on assets assigned to them. Every checklist item must be complete for each platform."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "social_set_scheduled",
+            "section": "Social publishing",
+            "phase": "later",
+            "description": "Mark a brief, or individual assets, Scheduled, with a scheduled date per platform.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage ready_to_schedule (asset level: asset is Ready to Schedule). scheduled_at is required."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "social_set_live",
+            "section": "Social publishing",
+            "phase": "later",
+            "description": "Mark a brief, or individual assets, Live.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage scheduled (asset level: asset is Scheduled). A live link is required for each platform. The AM cannot set Live (Q23)."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "social_edit_live_link",
+            "section": "Social publishing",
+            "phase": "later",
+            "description": "Add or change the live link of a post, by hand, per platform.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage scheduled or later. A change after Live is logged and notifies the AM."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "social_set_promoted",
+            "section": "Social publishing",
+            "phase": "later",
+            "description": "Tick or untick Promoted (paid media) per platform on a post, with an optional note.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Stage scheduled or later. Checkbox plus optional note, no spend amount (Q24). Every change is logged and notifies the AM."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
+        },
+        {
+            "id": "social_archive_post",
+            "section": "Social publishing",
+            "phase": "later",
+            "description": "Archive (later: delete) a post publication record.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "assigned",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "Archive only, with a reason. Hard delete is not offered to Social. Notifies the AM."
+            },
+            "legacy": "No legacy equivalent: legacy rejects the Scheduled and Live statuses (src/constants.js:21)."
         }
     ],
     "notes": "Source of truth for Domain/Policy table tests; mirrors docs/roles.md section 4. A decision is necessary but not sufficient: the stage preconditions in \"conditions\" (key \"*\" applies to every role) and the read rule (view_* actions) must also pass. Actor and every *_by field come from the session. \"phase\" says when the action is first needed: beta (AM-first beta), reviews, client_portal, later. Condition texts that start with \"On behalf\" mean the activity log records actor and the named client contact. Client sign-off uses a proposed users.client_signoff column (additive), not a new role value, because users.role has a CHECK (api/db.php:70)."

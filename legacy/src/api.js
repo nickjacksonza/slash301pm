@@ -123,9 +123,16 @@ const api = {
   async demoLogin(userId) {
     const url = new URL(API_BASE, window.location.href);
     url.searchParams.set('action', 'demo_login');
-    url.searchParams.set('user_id', userId);
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (this._csrfToken) {
+      headers['X-CSRF-Token'] = this._csrfToken;
+    }
 
     const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ user_id: userId }),
       credentials: 'include',
     });
     const data = await response.json();
@@ -191,23 +198,33 @@ const api = {
   // ========================================================================
 
   /** Approve job internally */
-  approveInternal(jobId, approvedBy) {
-    return this.post('approve_internal', { job_id: jobId, approved_by: approvedBy });
+  approveInternal(jobId) {
+    return this.post('approve_internal', { job_id: jobId });
   },
 
   /** Approve job by client */
-  approveClient(jobId, approvedBy) {
-    return this.post('approve_client', { job_id: jobId, approved_by: approvedBy });
+  approveClient(jobId) {
+    return this.post('approve_client', { job_id: jobId });
   },
 
   /** Reject job with feedback */
-  rejectWithFeedback(jobId, feedback, feedbackBy, isInternal = false) {
+  rejectWithFeedback(jobId, feedback, isInternal = false) {
     return this.post('reject_with_feedback', {
       job_id: jobId,
       feedback,
-      feedback_by: feedbackBy,
       is_internal: isInternal,
     });
+  },
+
+  /**
+   * Reload everything from the server and replace local state.
+   * Used after workflow calls (approve / reject) so the UI shows what the server stored.
+   * SET_DATA is not synced back to the API by the reducer.
+   */
+  async refreshInto(dispatch) {
+    const apiData = await this.loadAllData();
+    dispatch({ type: 'SET_DATA', payload: apiData });
+    return apiData;
   },
 
   /** Batch multiple operations in one transaction */
@@ -334,7 +351,8 @@ const api = {
       id: w.id,
       title: w.title,
       slug: w.slug,
-      content: w.content || '',
+      // Content is not in the list payload; the wiki loads it with getWikiPage(id)
+      content: typeof w.content === 'string' ? w.content : undefined,
       templateId: w.template_id,
       parentId: w.parent_id,
       type: w.type,
@@ -454,11 +472,10 @@ const api = {
 
         case 'UPDATE_WIKI_PAGE': {
           const page = payload;
-          await this.updateWikiPage({
+          const wikiBody = {
             id: page.id,
             title: page.title,
             slug: page.slug,
-            content: page.content,
             template_id: page.templateId,
             parent_id: page.parentId,
             type: page.type,
@@ -466,7 +483,17 @@ const api = {
             sort_order: page.order,
             linkedJobs: page.linkedJobs,
             linkedProjects: page.linkedProjects,
-          });
+          };
+          // Only send content when this client really holds it (loaded or edited)
+          if (typeof page.content === 'string') wikiBody.content = page.content;
+          try {
+            await this.updateWikiPage(wikiBody);
+          } catch (err) {
+            if (/overwrite existing wiki content/i.test(err.message || '')) {
+              alert('Save blocked: the page content was empty, so the stored content was kept. Reopen the page and try again.');
+            }
+            throw err;
+          }
           break;
         }
 

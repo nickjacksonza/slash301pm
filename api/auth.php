@@ -26,7 +26,10 @@ if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
 }
 
 // Custom session save path for shared hosting security
-$sessionDir = dirname(__DIR__) . '/data/sessions';
+$s301DataDir = getenv('S301_DATA_DIR');
+$s301DataDir = ($s301DataDir !== false && $s301DataDir !== '') ? rtrim($s301DataDir, '/') : dirname(__DIR__) . '/data';
+$GLOBALS['s301DataDir'] = $s301DataDir;
+$sessionDir = $s301DataDir . '/sessions';
 if (!is_dir($sessionDir)) {
     mkdir($sessionDir, 0700, true);
 }
@@ -43,7 +46,7 @@ ini_set('session.save_path', $sessionDir);
 session_start([
     'name'                   => 'SLASH301PM_SID',
     'cookie_lifetime'        => 0,              // Session cookie (browser close)
-    'cookie_path'            => $s301IsLocalDev ? '/' : '/slash301pm/',
+    'cookie_path'            => '/slash301pm/',
     'cookie_domain'          => $s301IsLocalDev ? '' : 'projects.slash301.com',  // '' = host-only
     'cookie_secure'          => !$s301IsLocalDev, // HTTPS only (except local dev)
     'cookie_httponly'        => true,           // No JavaScript access
@@ -368,7 +371,7 @@ function isDemoMode(): bool {
     $db = getDb();
     // Check if a settings row exists (simple key-value in a lightweight way)
     // We'll use a file-based flag for simplicity
-    $flagFile = dirname(__DIR__) . '/data/.demo_mode';
+    $flagFile = $GLOBALS['s301DataDir'] . '/.demo_mode';
     return file_exists($flagFile);
 }
 
@@ -376,7 +379,7 @@ function isDemoMode(): bool {
  * Toggle demo mode on/off.
  */
 function setDemoMode(bool $enabled): void {
-    $flagFile = dirname(__DIR__) . '/data/.demo_mode';
+    $flagFile = $GLOBALS['s301DataDir'] . '/.demo_mode';
     if ($enabled) {
         file_put_contents($flagFile, '1');
     } else {
