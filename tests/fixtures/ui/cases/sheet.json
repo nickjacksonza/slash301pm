@@ -1,0 +1,16 @@
+[
+  {"name": "sheet", "c": "sheet", "args": {"id": "filters", "side": "right", "modal": true}, "children": [
+    {"c": "sheet.content", "args": {"sheetID": "filters"}, "children": [
+      {"c": "sheet.header", "children": [{"c": "sheet.title", "children": ["Filters"]}, {"c": "sheet.description", "children": ["Narrow the list."]}]},
+      "Body",
+      {"c": "sheet.footer", "children": ["Foot"]}
+    ]}
+  ]},
+  {"name": "sheet.left", "c": "sheet", "args": {"id": "nav", "side": "left"}, "children": ["Nav"]},
+  {"name": "sheet.top.open", "c": "sheet", "args": {"id": "tp", "side": "top", "defaultOpen": true, "modal": true}, "children": ["Top"]},
+  {"name": "sheet.bottom", "c": "sheet", "args": {"id": "bt", "side": "bottom", "class": "extra", "attributes": {"data-x": "y"}}, "children": ["B"]},
+  {"name": "sheet.trigger", "c": "sheet.trigger", "args": {"sheetID": "filters", "class": "underline"}, "children": ["Open"]},
+  {"name": "sheet.trigger.aschild", "c": "sheet.trigger", "args": {"sheetID": "filters", "asChild": true}, "children": ["Open"]},
+  {"name": "sheet.close", "c": "sheet.close", "args": {"sheetID": "filters", "returnValue": "ok", "class": "x"}, "children": ["Close"]},
+  {"name": "sheet.close.aschild", "c": "sheet.close", "args": {"sheetID": "filters", "asChild": true}, "children": ["Close"]}
+]

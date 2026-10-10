@@ -1,0 +1,19 @@
+<!-- hand written from shadcn/ui new-york-v4 table.tsx (no Go reference exists); default density -->
+<div data-slot="table-container" class="relative w-full overflow-x-auto">
+  <table data-slot="table" data-density="default" class="w-full caption-bottom text-sm [&_td]:p-2 [&_th]:h-10 [&_th]:px-2">
+    <caption data-slot="table-caption" class="mt-4 text-sm text-muted-foreground">Jobs</caption>
+    <thead data-slot="table-header" class="[&_tr]:border-b">
+      <tr data-slot="table-row" class="border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted">
+        <th data-slot="table-head" class="text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">Title</th>
+      </tr>
+    </thead>
+    <tbody data-slot="table-body" class="[&_tr:last-child]:border-0">
+      <tr data-slot="table-row" data-state="selected" class="border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted">
+        <td data-slot="table-cell" class="align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">Row</td>
+      </tr>
+    </tbody>
+    <tfoot data-slot="table-footer" class="border-t bg-muted/50 font-medium [&>tr]:last:border-b-0">
+      <tr data-slot="table-row" class="border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted"><td data-slot="table-cell" class="align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">1</td></tr>
+    </tfoot>
+  </table>
+</div>

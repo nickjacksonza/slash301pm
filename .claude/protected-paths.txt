@@ -1,0 +1,3 @@
+# Paths Claude must not modify (one regex per line, relative to the repo root).
+# Read by .claude/hooks/guard-bash.sh and guard-paths.sh. Add client folders here.
+# data/.demo_mode, api/seed.php and kairosflow are protected in the hooks themselves.

@@ -1,0 +1,22 @@
+<div aria-atomic="false" aria-live="polite" class="bottom-0 fixed flex flex-col gap-2 p-4 pointer-events-none right-0 z-[100]" id="toasts">
+  <div data-show="$saved.open" data-signals="{&quot;saved&quot;:{&quot;open&quot;:false}}" style="display: none;">
+    <div aria-atomic="true" aria-live="assertive" class="bg-green-50 border border-green-500/50 dark:bg-green-950 dark:border-green-500/50 dark:text-green-50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-right-full data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-right-full duration-300 flex group items-center justify-between overflow-hidden p-6 pointer-events-auto pr-8 relative rounded-md shadow-lg space-x-4 text-green-900 transition-all w-full" data-state="$saved.open ? 'open' : 'closed'" id="saved" role="alert">
+      <div class="flex-1 gap-1 grid">
+        <div class="font-semibold text-sm">
+          Saved
+        </div>
+        <div class="opacity-90 text-sm">
+          Your changes were saved.
+        </div>
+      </div>
+      <button aria-label="Close" class="absolute focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 hover:text-foreground opacity-0 p-1 right-2 rounded-md text-foreground/50 top-2 transition-opacity" data-on:click="$saved.open = false" type="button">
+        <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6 6 18">
+          </path>
+          <path d="m6 6 12 12">
+          </path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>

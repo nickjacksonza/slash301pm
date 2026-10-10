@@ -1,0 +1,46 @@
+/* Ported from DatastarUI static/css/index.css lines 56-149 (anchor positioning + [popover] transitions).
+ * Deviation: the obsolete @position-fallback blocks are dropped and replaced by position-try-fallbacks.
+ * Source: github.com/coreycole/datastarui @ feb9af0c58ade31f8fefc1443b7e7e15ad413242 (MIT) */
+@layer base {
+  /* Note: Base styles (scrollbars, body, form inputs) are now in theme.css */
+
+
+  .anchor-positioned {
+    position: absolute;
+    position-try-fallbacks: flip-block, flip-inline;
+  }
+
+
+  /* Data-class example styles */
+  .anchor-trigger.positioning {
+    box-shadow: 0 0 0 2px rgb(59 130 246 / 0.5);
+  }
+
+  .anchor-positioned.positioning {
+    border: 2px solid rgb(59 130 246);
+    background: rgb(59 130 246 / 0.05);
+  }
+
+  /* Native Popover API animations */
+  [popover] {
+    opacity: 0;
+    transform: scale(0.95);
+    transition:
+      opacity 200ms ease-out,
+      transform 200ms ease-out,
+      overlay 200ms allow-discrete,
+      display 200ms allow-discrete;
+  }
+
+  [popover]:popover-open {
+    opacity: 1;
+    transform: scale(1);
+
+    @starting-style {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+  }
+
+  /* Note: Form input styling is now in theme.css */
+}

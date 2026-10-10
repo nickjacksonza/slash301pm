@@ -1,0 +1,20 @@
+<div data-show="$t1.open" data-signals="{&quot;t1&quot;:{&quot;open&quot;:false}}" style="display: none;">
+  <div aria-atomic="true" aria-live="assertive" class="bg-background border data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-right-full data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-right-full duration-300 flex group items-center justify-between overflow-hidden p-6 pointer-events-auto pr-8 relative rounded-md shadow-lg space-x-4 text-foreground transition-all w-full" data-state="$t1.open ? 'open' : 'closed'" id="t1" role="alert">
+    <div class="flex-1 gap-1 grid">
+      <div class="font-semibold text-sm">
+        Heads up
+      </div>
+      <div class="opacity-90 text-sm">
+        Something happened.
+      </div>
+    </div>
+    <button aria-label="Close" class="absolute focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 hover:text-foreground opacity-0 p-1 right-2 rounded-md text-foreground/50 top-2 transition-opacity" data-on:click="$t1.open = false" type="button">
+      <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6 6 18">
+        </path>
+        <path d="m6 6 12 12">
+        </path>
+      </svg>
+    </button>
+  </div>
+</div>

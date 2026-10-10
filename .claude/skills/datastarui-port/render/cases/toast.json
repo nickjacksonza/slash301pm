@@ -1,0 +1,8 @@
+[
+  {"name": "toast.container", "c": "toast.container", "args": {"id": "toasts", "position": "bottom-right"}, "children": [
+    {"c": "toast.item", "args": {"id": "saved", "title": "Saved", "description": "Your changes were saved.", "variant": "success"}}
+  ]},
+  {"name": "toast.container.default", "c": "toast.container", "args": {"id": "toasts"}},
+  {"name": "toast.item", "c": "toast.item", "matrix": {"variant": ["default", "success", "destructive", "info"]}, "args": {"id": "t1", "title": "Heads up", "description": "Something happened."}},
+  {"name": "toast.trigger", "c": "toast.trigger", "args": {"toastID": "saved", "duration": 2000}, "children": ["Show"]}
+]

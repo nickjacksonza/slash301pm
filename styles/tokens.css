@@ -1,0 +1,180 @@
+/* Slash 301 PM brand tokens. Warm neutrals with a muted sage accent (legacy #7c9a8e = 156 13% 54%).
+ * Values are bare HSL triplets, mapped to utilities by the @theme block in theme.css.
+ * Sage #7c9a8e is too light for white text (about 3:1), so --primary is a deeper sage and #7c9a8e is kept for --ring.
+ * Every foreground/background pair is checked to WCAG AA (4.5:1); see tools/build-css.sh notes in the report. */
+@layer base {
+  :root {
+    --background: 40 25% 97%;
+    --foreground: 30 10% 12%;
+    --card: 40 30% 99%;
+    --card-foreground: 30 10% 12%;
+    --popover: 40 30% 99%;
+    --popover-foreground: 30 10% 12%;
+    --primary: 156 26% 28%;
+    --primary-foreground: 40 25% 98%;
+    --secondary: 38 18% 93%;
+    --secondary-foreground: 30 10% 16%;
+    --muted: 38 18% 93%;
+    --muted-foreground: 30 7% 36%;
+    --accent: 150 16% 90%;
+    --accent-foreground: 156 30% 16%;
+    --destructive: 0 72% 40%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 36 14% 85%;
+    --input: 36 14% 82%;
+    --ring: 156 13% 54%;
+    --radius: 0.5rem;
+    --sidebar-background: 40 22% 95%;
+    --sidebar-foreground: 30 8% 26%;
+    --sidebar-primary: 156 26% 28%;
+    --sidebar-primary-foreground: 40 25% 98%;
+    --sidebar-accent: 150 14% 88%;
+    --sidebar-accent-foreground: 156 30% 16%;
+    --sidebar-border: 36 14% 85%;
+    --sidebar-ring: 156 13% 54%;
+
+    /* Stage chips: soft background + dark text */
+    --stage-draft: 36 10% 90%;
+    --stage-draft-foreground: 30 8% 28%;
+    --stage-briefed: 210 32% 90%;
+    --stage-briefed-foreground: 212 45% 22%;
+    --stage-in_progress: 156 28% 85%;
+    --stage-in_progress-foreground: 156 45% 17%;
+    --stage-waiting: 42 85% 86%;
+    --stage-waiting-foreground: 32 80% 18%;
+    --stage-on_hold: 24 75% 88%;
+    --stage-on_hold-foreground: 18 70% 24%;
+    --stage-in_review: 262 55% 92%;
+    --stage-in_review-foreground: 262 45% 28%;
+    --stage-approved_internal: 182 38% 85%;
+    --stage-approved_internal-foreground: 182 55% 15%;
+    --stage-approved_client: 130 36% 84%;
+    --stage-approved_client-foreground: 130 55% 15%;
+    --stage-ready_to_schedule: 196 48% 88%;
+    --stage-ready_to_schedule-foreground: 198 60% 20%;
+    --stage-scheduled: 228 52% 91%;
+    --stage-scheduled-foreground: 230 45% 28%;
+    --stage-live: 330 58% 91%;
+    --stage-live-foreground: 330 55% 26%;
+    --stage-done: 148 38% 78%;
+    --stage-done-foreground: 148 60% 12%;
+    --stage-archived: 30 6% 86%;
+    --stage-archived-foreground: 30 6% 32%;
+    --stage-cancelled: 0 42% 92%;
+    --stage-cancelled-foreground: 0 55% 28%;
+    /* Due dates */
+    --due-overdue: 0 78% 92%;
+    --due-overdue-foreground: 0 70% 28%;
+    --due-soon: 38 95% 84%;
+    --due-soon-foreground: 28 90% 20%;
+  }
+
+  .dark {
+    --background: 30 8% 9%;
+    --foreground: 40 15% 94%;
+    --card: 30 8% 11%;
+    --card-foreground: 40 15% 94%;
+    --popover: 30 8% 12%;
+    --popover-foreground: 40 15% 94%;
+    --primary: 150 24% 64%;
+    --primary-foreground: 30 10% 8%;
+    --secondary: 30 6% 17%;
+    --secondary-foreground: 40 15% 94%;
+    --muted: 30 6% 17%;
+    --muted-foreground: 35 8% 68%;
+    --accent: 150 10% 21%;
+    --accent-foreground: 40 15% 94%;
+    --destructive: 0 62% 44%;
+    --destructive-text: 0 90% 72%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 6% 20%;
+    --input: 30 6% 24%;
+    --ring: 156 16% 48%;
+    --sidebar-background: 30 8% 11%;
+    --sidebar-foreground: 40 12% 86%;
+    --sidebar-primary: 150 24% 64%;
+    --sidebar-primary-foreground: 30 10% 8%;
+    --sidebar-accent: 150 10% 21%;
+    --sidebar-accent-foreground: 40 15% 94%;
+    --sidebar-border: 30 6% 20%;
+    --sidebar-ring: 156 16% 48%;
+
+    --stage-draft: 30 6% 22%;
+    --stage-draft-foreground: 36 12% 88%;
+    --stage-briefed: 212 30% 22%;
+    --stage-briefed-foreground: 210 50% 88%;
+    --stage-in_progress: 156 26% 21%;
+    --stage-in_progress-foreground: 156 40% 85%;
+    --stage-waiting: 38 55% 21%;
+    --stage-waiting-foreground: 42 85% 85%;
+    --stage-on_hold: 22 50% 22%;
+    --stage-on_hold-foreground: 24 80% 88%;
+    --stage-in_review: 262 28% 25%;
+    --stage-in_review-foreground: 262 60% 90%;
+    --stage-approved_internal: 182 32% 19%;
+    --stage-approved_internal-foreground: 182 45% 84%;
+    --stage-approved_client: 130 28% 20%;
+    --stage-approved_client-foreground: 130 40% 85%;
+    --stage-ready_to_schedule: 198 34% 20%;
+    --stage-ready_to_schedule-foreground: 196 60% 86%;
+    --stage-scheduled: 230 28% 24%;
+    --stage-scheduled-foreground: 228 70% 90%;
+    --stage-live: 330 30% 23%;
+    --stage-live-foreground: 330 70% 90%;
+    --stage-done: 148 32% 24%;
+    --stage-done-foreground: 148 50% 88%;
+    --stage-archived: 30 5% 18%;
+    --stage-archived-foreground: 30 8% 72%;
+    --stage-cancelled: 0 30% 23%;
+    --stage-cancelled-foreground: 0 60% 90%;
+    --due-overdue: 0 50% 25%;
+    --due-overdue-foreground: 0 80% 92%;
+    --due-soon: 36 60% 22%;
+    --due-soon-foreground: 40 90% 86%;
+  }
+}
+
+/* Status tokens as utilities: bg-stage-draft text-stage-draft-foreground, bg-due-overdue text-due-overdue-foreground, ... */
+@theme inline {
+  --color-stage-draft: hsl(var(--stage-draft));
+  --color-stage-draft-foreground: hsl(var(--stage-draft-foreground));
+  --color-stage-briefed: hsl(var(--stage-briefed));
+  --color-stage-briefed-foreground: hsl(var(--stage-briefed-foreground));
+  --color-stage-in_progress: hsl(var(--stage-in_progress));
+  --color-stage-in_progress-foreground: hsl(var(--stage-in_progress-foreground));
+  --color-stage-waiting: hsl(var(--stage-waiting));
+  --color-stage-waiting-foreground: hsl(var(--stage-waiting-foreground));
+  --color-stage-on_hold: hsl(var(--stage-on_hold));
+  --color-stage-on_hold-foreground: hsl(var(--stage-on_hold-foreground));
+  --color-stage-in_review: hsl(var(--stage-in_review));
+  --color-stage-in_review-foreground: hsl(var(--stage-in_review-foreground));
+  --color-stage-approved_internal: hsl(var(--stage-approved_internal));
+  --color-stage-approved_internal-foreground: hsl(var(--stage-approved_internal-foreground));
+  --color-stage-approved_client: hsl(var(--stage-approved_client));
+  --color-stage-approved_client-foreground: hsl(var(--stage-approved_client-foreground));
+  --color-stage-ready_to_schedule: hsl(var(--stage-ready_to_schedule));
+  --color-stage-ready_to_schedule-foreground: hsl(var(--stage-ready_to_schedule-foreground));
+  --color-stage-scheduled: hsl(var(--stage-scheduled));
+  --color-stage-scheduled-foreground: hsl(var(--stage-scheduled-foreground));
+  --color-stage-live: hsl(var(--stage-live));
+  --color-stage-live-foreground: hsl(var(--stage-live-foreground));
+  --color-stage-done: hsl(var(--stage-done));
+  --color-stage-done-foreground: hsl(var(--stage-done-foreground));
+  --color-stage-archived: hsl(var(--stage-archived));
+  --color-stage-archived-foreground: hsl(var(--stage-archived-foreground));
+  --color-stage-cancelled: hsl(var(--stage-cancelled));
+  --color-stage-cancelled-foreground: hsl(var(--stage-cancelled-foreground));
+  --color-due-overdue: hsl(var(--due-overdue));
+  --color-due-overdue-foreground: hsl(var(--due-overdue-foreground));
+  --color-due-soon: hsl(var(--due-soon));
+  --color-due-soon-foreground: hsl(var(--due-soon-foreground));
+}
+
+/* Dark mode: white text needs a mid red fill, but red TEXT on the dark page needs a lighter red.
+ * No single value passes AA both ways, so text-destructive gets its own lighter token in dark mode. */
+.dark .text-destructive {
+  color: hsl(var(--destructive-text));
+}
+.dark [data-slot="dropdown-menu-item"][data-variant="destructive"] {
+  color: hsl(var(--destructive-text));
+}

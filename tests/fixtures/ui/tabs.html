@@ -1,0 +1,16 @@
+<div class="flex flex-col gap-2" data-signals="{&quot;views&quot;:{&quot;active&quot;:&quot;list&quot;}}" data-slot="tabs">
+  <div class="bg-muted h-9 inline-flex items-center justify-center p-[3px] rounded-lg text-muted-foreground w-fit" role="tablist">
+    <button class="[&amp;_svg:not([class*='size-'])]:size-4 [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 border border-transparent dark:text-muted-foreground disabled:opacity-50 disabled:pointer-events-none flex-1 focus-visible:border-ring focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 font-medium gap-1.5 h-[calc(100%-1px)] inline-flex items-center justify-center px-2 py-1 rounded-md text-foreground text-sm transition-[color,box-shadow] whitespace-nowrap" data-attr:aria-selected="$views.active === 'list' ? 'true' : 'false'" data-attr:data-state="$views.active === 'list' ? 'active' : 'inactive'" data-attr:tabindex="$views.active === 'list' ? '0' : '-1'" data-class="{'bg-background': $views.active === 'list', 'shadow-sm': $views.active === 'list', 'text-foreground': $views.active === 'list'}" data-on:click="$views.active = 'list'" data-slot="tabs-trigger" data-value="list" role="tab" type="button">
+      List
+    </button>
+    <button class="[&amp;_svg:not([class*='size-'])]:size-4 [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 border border-transparent dark:text-muted-foreground disabled:opacity-50 disabled:pointer-events-none flex-1 focus-visible:border-ring focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 font-medium gap-1.5 h-[calc(100%-1px)] inline-flex items-center justify-center px-2 py-1 rounded-md text-foreground text-sm transition-[color,box-shadow] whitespace-nowrap" data-attr:aria-selected="$views.active === 'board' ? 'true' : 'false'" data-attr:data-state="$views.active === 'board' ? 'active' : 'inactive'" data-attr:tabindex="$views.active === 'board' ? '0' : '-1'" data-class="{'bg-background': $views.active === 'board', 'shadow-sm': $views.active === 'board', 'text-foreground': $views.active === 'board'}" data-on:click="$views.active = 'board'" data-slot="tabs-trigger" data-value="board" disabled role="tab" type="button">
+      Board
+    </button>
+  </div>
+  <div class="flex-1 outline-none" data-attr:aria-hidden="$views.active === 'list' ? 'false' : 'true'" data-show="$views.active === 'list'" data-slot="tabs-content" data-value="list" role="tabpanel" tabindex="0">
+    List view
+  </div>
+  <div class="flex-1 outline-none" data-attr:aria-hidden="$views.active === 'board' ? 'false' : 'true'" data-show="$views.active === 'board'" data-slot="tabs-content" data-value="board" role="tabpanel" tabindex="0">
+    Board view
+  </div>
+</div>

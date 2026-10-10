@@ -1,0 +1,16 @@
+/* Slash 301 PM Tailwind v4 input. Build with: bash tools/build-css.sh  ->  public/css/app.css
+ * No default source detection: only the paths below are scanned, so class names must be full literals in PHP/JS. */
+@import "tailwindcss" source(none);
+
+@source "../app/**/*.php";
+@source "../public/js/*.js";
+/* The gallery generator carries a few preview-only classes (static open-state boxes). */
+@source "../tools/ui-gallery.php";
+
+/* Tailwind v4 ignores tailwind.config darkMode; this makes dark: follow the .dark class on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@import "./theme.css";
+@import "./tokens.css";
+@import "./animate.css";
+@import "./popover.css";

@@ -1,0 +1,9 @@
+[
+  {"name": "button", "c": "button", "matrix": {"variant": ["default", "destructive", "outline", "secondary", "ghost", "link"], "size": ["default", "sm", "lg", "icon"]}, "children": ["Save"]},
+  {"name": "button.disabled", "c": "button", "args": {"disabled": true}, "children": ["Save"]},
+  {"name": "button.submit", "c": "button", "args": {"type": "submit", "class": "w-full", "attributes": {"data-on:click": "@post('/api/save')"}}, "children": ["Save"]},
+  {"name": "button.aschild", "c": "button", "args": {"asChild": true}, "children": ["Wrapped"]},
+  {"name": "button.aschild.disabled", "c": "button", "args": {"asChild": true, "disabled": true}, "children": ["Wrapped"]},
+  {"name": "button.anchor", "c": "button.link", "args": {"href": "/projects", "variant": "outline", "target": "_blank", "rel": "noopener"}, "children": ["Projects"]},
+  {"name": "button.anchor.plain", "c": "button.link", "args": {"href": "/projects"}, "children": ["Projects"]}
+]

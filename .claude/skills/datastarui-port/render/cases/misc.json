@@ -1,0 +1,25 @@
+[
+  {"name": "card", "c": "card", "children": [
+    {"c": "card.header", "children": [
+      {"c": "card.title", "children": ["Project"]},
+      {"c": "card.description", "children": ["Details"]}
+    ]},
+    {"c": "card.content", "children": ["Body"]},
+    {"c": "card.footer", "children": ["Footer"]}
+  ]},
+  {"name": "tabs", "c": "tabs", "args": {"id": "views", "defaultValue": "list"}, "children": [
+    {"c": "tabs.list", "children": [
+      {"c": "tabs.trigger", "args": {"id": "views", "value": "list"}, "children": ["List"]},
+      {"c": "tabs.trigger", "args": {"id": "views", "value": "board"}, "children": ["Board"]}
+    ]},
+    {"c": "tabs.content", "args": {"id": "views", "value": "list"}, "children": ["List view"]},
+    {"c": "tabs.content", "args": {"id": "views", "value": "board"}, "children": ["Board view"]}
+  ]},
+  {"name": "sheet", "c": "sheet", "args": {"id": "filters", "side": "right", "modal": true}, "children": [
+    {"c": "sheet.content", "args": {"sheetID": "filters"}, "children": [
+      {"c": "sheet.header", "children": [{"c": "sheet.title", "children": ["Filters"]}]}
+    ]}
+  ]},
+  {"name": "themetoggle", "c": "themetoggle"},
+  {"name": "select", "c": "select", "args": {"id": "role", "placeholder": "Pick a role", "options": [{"value": "admin", "label": "Admin"}, {"value": "member", "label": "Member"}]}}
+]

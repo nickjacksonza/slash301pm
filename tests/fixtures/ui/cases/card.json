@@ -1,0 +1,23 @@
+[
+  {"name": "card", "c": "card", "children": [
+    {"c": "card.header", "children": [
+      {"c": "card.title", "children": ["Project"]},
+      {"c": "card.description", "children": ["Details"]},
+      {"c": "card.action", "children": ["Act"]}
+    ]},
+    {"c": "card.content", "children": ["Body"]},
+    {"c": "card.footer", "children": ["Footer"]}
+  ]},
+  {"name": "card.extra", "c": "card", "args": {"class": "max-w-sm", "attributes": {"id": "c1", "data-x": "y"}}, "children": ["Hi"]},
+  {"name": "avatar", "c": "avatar", "args": {"backgroundColor": "#3b6b5a"}, "children": ["NJ"]},
+  {"name": "avatar.plain", "c": "avatar", "args": {"class": "size-10"}, "children": ["NJ"]},
+  {"name": "tabs", "c": "tabs", "args": {"id": "views", "defaultValue": "list"}, "children": [
+    {"c": "tabs.list", "children": [
+      {"c": "tabs.trigger", "args": {"id": "views", "value": "list"}, "children": ["List"]},
+      {"c": "tabs.trigger", "args": {"id": "views", "value": "board", "disabled": true}, "children": ["Board"]}
+    ]},
+    {"c": "tabs.content", "args": {"id": "views", "value": "list"}, "children": ["List view"]},
+    {"c": "tabs.content", "args": {"id": "views", "value": "board"}, "children": ["Board view"]}
+  ]},
+  {"name": "tabs.value", "c": "tabs", "args": {"id": "t-two", "defaultValue": "a", "value": "b", "class": "w-full"}}
+]

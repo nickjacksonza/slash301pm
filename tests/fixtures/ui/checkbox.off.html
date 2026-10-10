@@ -1,0 +1,9 @@
+<div data-signals="{&quot;task_done&quot;:{&quot;checked&quot;:false,&quot;disabled&quot;:true}}">
+  <button class="aria-invalid:border-destructive aria-invalid:ring-destructive/20 border border-input dark:aria-invalid:ring-destructive/40 dark:bg-input/30 dark:data-[state=checked]:bg-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary data-[state=checked]:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 mt-1 outline-none peer rounded-[4px] shadow-xs shrink-0 size-4 transition-shadow" data-attr:aria-checked="$task_done.checked ? 'true' : 'false'" data-attr:aria-disabled="$task_done.disabled" data-attr:data-state="$task_done.checked ? 'checked' : 'unchecked'" data-attr:disabled="$task_done.disabled" data-class="{'cursor-not-allowed opacity-50': $task_done.disabled}" data-on:click="!$task_done.disabled ? $task_done.checked = !$task_done.checked : null" id="task-done" role="checkbox" type="button">
+    <svg class="h-4 w-4" data-attr:style="$task_done.checked ? 'opacity: 1' : 'opacity: 0'" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 6 9 17l-5-5">
+      </path>
+    </svg>
+  </button>
+  <input class="sr-only" data-attr:checked="$task_done.checked" data-attr:disabled="$task_done.disabled" data-attr:value="$task_done.checked ? 'true' : 'false'" name="done" tabindex="-1" type="checkbox" />
+</div>

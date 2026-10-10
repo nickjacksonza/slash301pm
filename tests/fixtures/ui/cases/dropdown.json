@@ -1,0 +1,21 @@
+[
+  {"name": "dropdown", "c": "dropdown", "args": {"id": "row-menu"}, "children": [
+    {"c": "dropdown.trigger", "args": {"id": "row-menu"}, "children": ["Actions"]},
+    {"c": "dropdown.content", "args": {"id": "row-menu"}, "children": [
+      {"c": "dropdown.label", "children": ["My row"]},
+      {"c": "dropdown.separator"},
+      {"c": "dropdown.item", "args": {"id": "row-menu", "onClick": "@get('/edit')"}, "children": ["Edit", {"c": "dropdown.shortcut", "children": ["E"]}]},
+      {"c": "dropdown.item", "args": {"id": "row-menu", "variant": "destructive"}, "children": ["Delete"]},
+      {"c": "dropdown.item", "args": {"id": "row-menu", "disabled": true, "inset": true}, "children": ["Locked"]},
+      {"c": "dropdown.linkitem", "args": {"id": "row-menu", "href": "/x", "target": "_blank", "rel": "noopener"}, "children": ["Open"]}
+    ]}
+  ]},
+  {"name": "dropdown.open", "c": "dropdown", "args": {"id": "m2", "defaultOpen": true, "class": "x"}},
+  {"name": "dropdown.trigger.disabled", "c": "dropdown.trigger", "args": {"id": "m2", "disabled": true, "class": "y"}, "children": ["A"]},
+  {"name": "dropdown.trigger.aschild", "c": "dropdown.trigger", "args": {"id": "m2", "asChild": true, "disabled": true}, "children": ["A"]},
+  {"name": "dropdown.content.endtop", "c": "dropdown.content", "args": {"id": "m2", "side": "top", "align": "end", "sideOffset": 2}, "children": ["x"]},
+  {"name": "dropdown.content.right", "c": "dropdown.content", "args": {"id": "m2", "side": "right", "align": "center"}, "children": ["x"]},
+  {"name": "dropdown.content.left", "c": "dropdown.content", "args": {"id": "m2", "side": "left", "align": "end"}, "children": ["x"]},
+  {"name": "dropdown.content.bottomcenter", "c": "dropdown.content", "args": {"id": "m2", "side": "bottom", "align": "center"}, "children": ["x"]},
+  {"name": "dropdown.group", "c": "dropdown.group", "children": ["g"]}
+]

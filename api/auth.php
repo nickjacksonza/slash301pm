@@ -8,17 +8,28 @@
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
-// HTTPS enforcement
+// Local development (php -S on localhost / 127.0.0.1) skips the HTTPS redirect and
+// uses a host-only, non-secure cookie. The Host header alone is not trusted: the
+// connection must also come from the loopback address, so a forged Host header
+// on the live server (where REMOTE_ADDR is never loopback) changes nothing.
+$s301Host = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+$s301IsLocalDev = in_array($s301Host, ['localhost', '127.0.0.1', '[::1]'], true)
+    && in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
+
+// HTTPS enforcement (fixed host, never the Host header)
 if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
-    // Allow non-HTTPS in CLI mode for testing
-    if (php_sapi_name() !== 'cli') {
-        header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301);
+    // Allow non-HTTPS in CLI mode for testing, under php -S, and for local dev
+    if (!in_array(php_sapi_name(), ['cli', 'cli-server'], true) && !$s301IsLocalDev) {
+        header('Location: https://projects.slash301.com' . $_SERVER['REQUEST_URI'], true, 301);
         exit;
     }
 }
 
 // Custom session save path for shared hosting security
-$sessionDir = dirname(__DIR__) . '/data/sessions';
+$s301DataDir = getenv('S301_DATA_DIR');
+$s301DataDir = ($s301DataDir !== false && $s301DataDir !== '') ? rtrim($s301DataDir, '/') : dirname(__DIR__) . '/data';
+$GLOBALS['s301DataDir'] = $s301DataDir;
+$sessionDir = $s301DataDir . '/sessions';
 if (!is_dir($sessionDir)) {
     mkdir($sessionDir, 0700, true);
 }
@@ -36,8 +47,8 @@ session_start([
     'name'                   => 'SLASH301PM_SID',
     'cookie_lifetime'        => 0,              // Session cookie (browser close)
     'cookie_path'            => '/slash301pm/',
-    'cookie_domain'          => 'projects.slash301.com',
-    'cookie_secure'          => true,           // HTTPS only
+    'cookie_domain'          => $s301IsLocalDev ? '' : 'projects.slash301.com',  // '' = host-only
+    'cookie_secure'          => !$s301IsLocalDev, // HTTPS only (except local dev)
     'cookie_httponly'        => true,           // No JavaScript access
     'cookie_samesite'        => 'Lax',          // CSRF mitigation layer
     'use_strict_mode'        => true,           // Reject uninitialized IDs
@@ -52,6 +63,11 @@ header('X-Frame-Options: DENY');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 
 require_once __DIR__ . '/db.php';
+
+// A real bcrypt hash (cost 12, same as the live user hashes) of a throwaway string.
+// handleLogin() verifies against it when the username is unknown, so unknown and
+// known usernames take the same time.
+const DUMMY_PASSWORD_HASH = '$2y$12$MoMuqcrClPRL3B.gkzAdKe7.tV.9EdZHafEtcB2BZ6PGT55UKBTsm';
 
 // ============================================================================
 // SESSION HELPERS
@@ -291,7 +307,7 @@ function handleLogin(string $username, string $password): array {
     $user = $result->fetchArray(SQLITE3_ASSOC);
 
     // Timing-safe: always call password_verify even if user not found
-    $hash = $user ? $user['password_hash'] : '$2y$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012';
+    $hash = $user ? $user['password_hash'] : DUMMY_PASSWORD_HASH;
     $valid = password_verify($password, $hash);
 
     if (!$user || !$valid) {
@@ -355,7 +371,7 @@ function isDemoMode(): bool {
     $db = getDb();
     // Check if a settings row exists (simple key-value in a lightweight way)
     // We'll use a file-based flag for simplicity
-    $flagFile = dirname(__DIR__) . '/data/.demo_mode';
+    $flagFile = $GLOBALS['s301DataDir'] . '/.demo_mode';
     return file_exists($flagFile);
 }
 
@@ -363,7 +379,7 @@ function isDemoMode(): bool {
  * Toggle demo mode on/off.
  */
 function setDemoMode(bool $enabled): void {
-    $flagFile = dirname(__DIR__) . '/data/.demo_mode';
+    $flagFile = $GLOBALS['s301DataDir'] . '/.demo_mode';
     if ($enabled) {
         file_put_contents($flagFile, '1');
     } else {

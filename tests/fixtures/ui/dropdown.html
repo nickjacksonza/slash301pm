@@ -1,0 +1,27 @@
+<div class="relative" data-on:click__outside="$row_menu.open ? ($row_menu.open = false) : void 0" data-signals="{&quot;row_menu&quot;:{&quot;open&quot;:false}}" data-slot="dropdown-menu">
+  <button class data-on:click="(function(){const c=document.getElementById(&quot;row-menu-content&quot;);if(c){const r=el.getBoundingClientRect();c.style.setProperty('--dui-dropdown-trigger-top',r.top+'px');c.style.setProperty('--dui-dropdown-trigger-right',r.right+'px');c.style.setProperty('--dui-dropdown-trigger-bottom',r.bottom+'px');c.style.setProperty('--dui-dropdown-trigger-left',r.left+'px');c.style.setProperty('--dui-dropdown-trigger-center-x',(r.left+r.width/2)+'px');c.style.setProperty('--dui-dropdown-trigger-center-y',(r.top+r.height/2)+'px');}})(); $row_menu.open = !$row_menu.open" data-slot="dropdown-menu-trigger" type="button">
+    Actions
+  </button>
+  <div class="bg-popover border data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 fixed min-w-[8rem] overflow-visible p-1 rounded-md shadow-md text-popover-foreground z-50" data-align data-on:keydown__window="evt.key === 'Escape' &amp;&amp; $row_menu.open ? ($row_menu.open = false) : void 0" data-show="$row_menu.open" data-side data-slot="dropdown-menu-content" id="row-menu-content" role="menu" style="display: none; top: calc(var(--dui-dropdown-trigger-bottom, 0px) + 1.00rem); left: var(--dui-dropdown-trigger-left, 0px);">
+    <div class="font-medium px-2 py-1.5 text-sm" data-slot="dropdown-menu-label" role="presentation">
+      My row
+    </div>
+    <div class="-mx-1 bg-border h-px my-1" data-slot="dropdown-menu-separator" role="separator">
+    </div>
+    <div class="[&amp;_svg:not([class*='size-'])]:size-4 [&amp;_svg:not([class*='text-'])]:text-muted-foreground [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 cursor-default data-[disabled]:opacity-50 data-[disabled]:pointer-events-none flex focus:bg-accent focus:text-accent-foreground gap-2 items-center outline-hidden px-2 py-1.5 relative rounded-sm select-none text-sm" data-on:click="$row_menu.open = false; @get('/edit')" data-slot="dropdown-menu-item" data-variant role="menuitem" tabindex="0">
+      Edit
+      <span class="ml-auto text-muted-foreground text-xs tracking-widest" data-slot="dropdown-menu-shortcut">
+        E
+      </span>
+    </div>
+    <div class="[&amp;_svg:not([class*='size-'])]:size-4 [&amp;_svg:not([class*='text-'])]:text-muted-foreground [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 cursor-default dark:data-[variant=destructive]:focus:bg-destructive/20 data-[disabled]:opacity-50 data-[disabled]:pointer-events-none data-[variant=destructive]:*:[svg]:!text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:text-destructive flex focus:bg-accent focus:text-accent-foreground gap-2 items-center outline-hidden px-2 py-1.5 relative rounded-sm select-none text-sm" data-on:click="$row_menu.open = false" data-slot="dropdown-menu-item" data-variant="destructive" role="menuitem" tabindex="0">
+      Delete
+    </div>
+    <div aria-disabled="true" class="[&amp;_svg:not([class*='size-'])]:size-4 [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 cursor-default data-[disabled]:opacity-50 data-[disabled]:pointer-events-none data-[inset]:pl-8 flex focus:bg-accent focus:text-accent-foreground gap-2 items-center outline-hidden px-2 py-1.5 relative rounded-sm select-none text-sm" data-disabled data-inset data-on:click="$row_menu.open = false" data-slot="dropdown-menu-item" data-variant role="menuitem" tabindex="0">
+      Locked
+    </div>
+    <a class="[&amp;_svg:not([class*='size-'])]:size-4 [&amp;_svg:not([class*='text-'])]:text-muted-foreground [&amp;_svg]:pointer-events-none [&amp;_svg]:shrink-0 cursor-default data-[disabled]:opacity-50 data-[disabled]:pointer-events-none flex focus:bg-accent focus:text-accent-foreground gap-2 items-center outline-hidden px-2 py-1.5 relative rounded-sm select-none text-sm" data-on:click="$row_menu.open = false" data-slot="dropdown-menu-item" data-variant href="/x" rel="noopener" role="menuitem" target="_blank">
+      Open
+    </a>
+  </div>
+</div>

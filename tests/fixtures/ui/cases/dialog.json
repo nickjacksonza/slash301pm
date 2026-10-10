@@ -1,0 +1,18 @@
+[
+  {"name": "dialog", "c": "dialog", "args": {"id": "confirm-delete"}, "children": [
+    {"c": "dialog.header", "children": [
+      {"c": "dialog.title", "children": ["Delete project"]},
+      {"c": "dialog.description", "children": ["This cannot be undone."]}
+    ]},
+    {"c": "dialog.content", "children": ["Are you sure?"]},
+    {"c": "dialog.footer", "children": [
+      {"c": "dialog.close", "args": {"dialogID": "confirm-delete", "variant": "outline"}, "children": ["Cancel"]},
+      {"c": "dialog.close", "args": {"dialogID": "confirm-delete", "variant": "destructive", "returnValue": "confirmed"}, "children": ["Delete"]}
+    ]}
+  ]},
+  {"name": "dialog.open", "c": "dialog", "args": {"id": "welcome", "defaultOpen": true}, "children": ["Hello"]},
+  {"name": "dialog.trigger", "c": "dialog.trigger", "args": {"dialogID": "confirm-delete", "class": "underline"}, "children": ["Open"]},
+  {"name": "dialog.trigger.aschild", "c": "dialog.trigger", "args": {"dialogID": "confirm-delete", "asChild": true}, "children": ["Open"]},
+  {"name": "dialog.close", "c": "dialog.close", "matrix": {"variant": ["default", "destructive", "outline", "secondary", "ghost", "link"]}, "args": {"dialogID": "d1"}, "children": ["Close"]},
+  {"name": "dialog.extra", "c": "dialog", "args": {"id": "d2", "class": "max-w-xl", "attributes": {"data-x": "y"}}, "children": ["Hi"]}
+]
