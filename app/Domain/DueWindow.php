@@ -21,7 +21,7 @@ enum DueWindow: string
         return match ($this) {
             self::Overdue => 'Overdue',
             self::Today => 'Due today',
-            self::ThisWeek => 'Due this week',
+            self::ThisWeek => 'Due by Sunday',
             self::Next14 => 'Next 14 days',
             self::NoDate => 'No due date',
         };

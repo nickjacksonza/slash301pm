@@ -27,7 +27,7 @@ final class SavedViews
         return [
             $mk('mine', 'My jobs', ['stages' => $stages, 'owner' => 'mine', 'sort' => 'due,job_number']),
             $mk('unowned', 'Unowned', ['stages' => $stages, 'owner' => 'unowned', 'sort' => 'job_number']),
-            $mk('due_week', 'Due this week', ['stages' => $stages, 'due' => 'this_week', 'sort' => 'due,job_number']),
+            $mk('due_week', 'Due by Sunday', ['stages' => $stages, 'due' => 'this_week', 'sort' => 'due,job_number']),
             $mk('all_open', 'All open', ['stages' => $stages, 'sort' => 'due,job_number']),
         ];
     }

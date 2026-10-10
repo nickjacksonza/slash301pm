@@ -59,7 +59,7 @@ function partial_today_section(string $key, MyDayVM $vm): string
 function partial_today_strip(MyDayStrip $s): string
 {
     $tiles = [
-        ['Due this week', $s->dueThisWeek, 'Open jobs due from today to Sunday'],
+        ['Due by Sunday', $s->dueThisWeek, 'Open jobs due from today to Sunday'],
         ['Overdue', $s->overdue, 'Open jobs past their due date'],
         ['Waiting on me', $s->waitingOnMe, 'Waiting, drafts and unsent changes'],
         ['Sent this week', $s->sentThisWeek, 'Briefs sent since Monday'],
