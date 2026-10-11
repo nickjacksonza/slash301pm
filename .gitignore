@@ -41,3 +41,6 @@ data/logs/*
 !data/logs/.htaccess
 data/seed-password-check.json
 data/seed-password-check.json.tmp
+
+# Built deploy packages (never commit)
+upload/
