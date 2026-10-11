@@ -167,7 +167,7 @@ final class ReviewHandlers
         return self::jobStep($r, $d,
             static fn (User $u, JobAccess $a, JobReview $jr, JobReviewStatus $st): Decision => ReviewPolicy::canMarkReady($u, $a, $jr, $st),
             static fn (Deps $d, JobAccess $a, int $rv, User $u, JobReviewSignals $s): ReviewWrite => $d->reviews->markReady($a->jobId, $rv, $u->id, $d->clock->now()),
-            'Ready for client review. The rest of the team has been told.');
+            'Ready for client review. Notifications sent.');
     }
 
     public static function sendToClient(Request $r, Deps $d): Response
@@ -175,7 +175,7 @@ final class ReviewHandlers
         return self::jobStep($r, $d,
             static fn (User $u, JobAccess $a, JobReview $jr, JobReviewStatus $st): Decision => ReviewPolicy::canSendToClient($u, $a, $jr, $st),
             static fn (Deps $d, JobAccess $a, int $rv, User $u, JobReviewSignals $s): ReviewWrite => $d->reviews->sendToClient($a->jobId, $rv, $u->id, $d->clock->now()),
-            'Recorded as sent to the client. The rest of the team has been told.');
+            'Recorded as sent to the client. Notifications sent.');
     }
 
     // ---- hand-in page -------------------------------------------------------------

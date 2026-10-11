@@ -365,6 +365,30 @@ final class ReviewRules
         return $jr->allDoneAt === null && self::aggregate($after) === JobReviewStatus::WaitingReview;
     }
 
+    /**
+     * A paused job (waiting, on hold) cannot take the stage move a review step
+     * implies, and resumes to its stored stage. '' when $stage is not paused,
+     * else why the step waits ($why: what the step does to the stage).
+     */
+    public static function pausedProblem(Stage $stage, string $why): string
+    {
+        return $stage->isPaused() ? 'The job is ' . strtolower($stage->label()) . '. Resume the job first: ' . $why . '.' : '';
+    }
+
+    /**
+     * A rejection on a paused job that would resume to in_review or
+     * approved_internal: it cannot send the job back to in_progress, so the job
+     * would come back approved with a rejected post. '' when the rejection may
+     * go ahead (not paused, or resuming to in_progress anyway).
+     */
+    public static function pausedRejectionProblem(Stage $stage, ?Stage $resume): string
+    {
+        if (!$stage->isPaused() || ($resume !== Stage::InReview && $resume !== Stage::ApprovedInternal)) {
+            return '';
+        }
+        return self::pausedProblem($stage, 'a rejection sends it back to In progress');
+    }
+
     /** '' when $v (typed on /admin/system) is a valid round limit (0 to 20, 0 = no warning), else the reason. */
     public static function roundLimitProblem(string $v): string
     {

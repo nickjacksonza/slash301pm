@@ -145,6 +145,10 @@ final class ReviewPolicy
         if (!$d->allowed) {
             return $d;
         }
+        $paused = ReviewRules::pausedProblem($j->stage, 'the ECD approval moves it to Approved (internal)');
+        if ($paused !== '') {
+            return Decision::deny($paused);
+        }
         if ($jr->ecdApproved()) {
             return Decision::deny('The ECD has already approved this job.');
         }

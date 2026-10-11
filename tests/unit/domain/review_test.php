@@ -422,6 +422,28 @@ return [
         t_eq('', App\Domain\Signals\JobReviewSignals::fromSignals(['jr' => ['rv' => 1, 'to' => "x' OR 1"]])->to);
     },
 
+    'review: a paused job takes no ECD approval, nor a rejection it could not undo on resume' => function (): void {
+        // [stage, stored resume stage, rejection refused]
+        $cases = [
+            [Stage::Waiting, Stage::ApprovedInternal, true], [Stage::OnHold, Stage::InReview, true],
+            [Stage::Waiting, Stage::InProgress, false], [Stage::OnHold, null, false], [Stage::Waiting, Stage::Briefed, false],
+            [Stage::InReview, null, false], [Stage::ApprovedInternal, null, false], [Stage::InProgress, Stage::InReview, false],
+        ];
+        foreach ($cases as $i => [$stage, $resume, $refused]) {
+            t_eq($refused, ReviewRules::pausedRejectionProblem($stage, $resume) !== '', "rejection case $i");
+        }
+        // [stage, ECD approval refused]
+        foreach ([[Stage::Waiting, true], [Stage::OnHold, true], [Stage::InReview, false], [Stage::InProgress, false]] as $i => [$stage, $refused]) {
+            t_eq($refused, ReviewRules::pausedProblem($stage, 'x') !== '', "pause case $i");
+        }
+        $ecd = bf_user(Role::ECD, 'ecd1');
+        $jr = rt_jr(['cdApprovedAt' => '2026-10-01T10:00:00Z']);
+        t_true(ReviewPolicy::canApproveAsEcd($ecd, bf_access('in_review'), $jr, JobReviewStatus::AllApproved)->allowed, 'in review: allowed');
+        $d = ReviewPolicy::canApproveAsEcd($ecd, bf_access('waiting'), $jr, JobReviewStatus::AllApproved);
+        t_true(!$d->allowed, 'waiting: refused');
+        t_contains('Resume the job first', $d->reason);
+    },
+
     'review: the board leaves the review stages to the review page, but paused jobs still resume' => function (): void {
         // [from, to, review move]
         $cases = [

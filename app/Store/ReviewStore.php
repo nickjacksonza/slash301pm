@@ -309,6 +309,13 @@ final class ReviewStore
             if ($row === null || (int) $row['row_version'] !== $cur->rowVersion || (int) $row['round'] !== $cur->round) {
                 return ReviewWrite::stale();
             }
+            if ($d->isRejection()) {
+                $job = $this->jobs->get($cur->jobId);
+                $paused = $job === null ? '' : ReviewRules::pausedRejectionProblem($job->stage, $job->resumeStage);
+                if ($paused !== '') {
+                    return ReviewWrite::refused($paused);
+                }
+            }
             $status = (string) ($tx->scalar('SELECT status FROM assets WHERE id = :a', ['a' => $cur->assetId]) ?? '');
             $copy = $cur->copyState;
             $media = $cur->mediaState;
@@ -398,7 +405,8 @@ final class ReviewStore
     {
         return $this->jobWrite($jobId, $rv, $actorId, $now, true, ['ecd_approved_by' => $actorId, 'ecd_approved_at' => Ids::utc($now)],
             ReviewNotify::JOB_ECD_APPROVED, [], ReviewEvent::EcdApproved,
-            static fn (JobReview $jr, Stage $stage): string => $jr->ecdApproved() ? 'The ECD has already approved this job.' : (!$jr->cdApproved() ? 'The CD approves the job first.' : ''));
+            static fn (JobReview $jr, Stage $stage): string => $jr->ecdApproved() ? 'The ECD has already approved this job.' : (!$jr->cdApproved() ? 'The CD approves the job first.'
+                : ReviewRules::pausedProblem($stage, 'the ECD approval moves it to Approved (internal)')));
     }
 
     /** Hand the review to someone else (checked by ReviewPolicy::reassignTargetProblem). Notifies them (not a client). */
