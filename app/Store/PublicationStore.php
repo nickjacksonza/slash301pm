@@ -274,7 +274,31 @@ final class PublicationStore
                 $data['live_url'] = $o->liveUrl;
             }
             $this->log($tx, $p->jobId, $actorId, $verb, $p->id, $data, $now);
-            return $this->followJob($tx, $p->jobId, $actorId, $now, $o->action === PublicationAction::Reopen, $o->reason);
+            return $this->followJob($tx, $p->jobId, $actorId, $now, $o->action === PublicationAction::Reopen || $o->action === PublicationAction::Recheck, $o->reason);
+        });
+    }
+
+    /**
+     * Override a post's status (Traffic, COO, ECD; owner decision 2026-10):
+     * any status, no checklist, date or link precondition, with a reason. The
+     * row's status and row_version are re-checked, the override is logged as
+     * asset_status_overridden (asset assignee, AM or creator, CD), and the
+     * job's Social stage follows in either direction, as after a reopen.
+     */
+    public function override(Publication $p, int $rowVersion, PublicationStatus $to, string $reason, string $actorId, DateTimeImmutable $now): SocialWrite
+    {
+        return $this->tx(function (Db $tx) use ($p, $rowVersion, $to, $reason, $actorId, $now): SocialWrite {
+            $asset = $tx->one('SELECT name, assigned_to FROM assets WHERE id = :a', ['a' => $p->assetId]);
+            if (!$this->bump($tx, $p->id, $rowVersion, ['status' => $to->value], $actorId, $now, 'status = :g_from', ['g_from' => $p->status->value])) {
+                return SocialWrite::stale();
+            }
+            $assignee = $asset !== null && $asset['assigned_to'] !== null && $asset['assigned_to'] !== '' ? (string) $asset['assigned_to'] : null;
+            $this->log($tx, $p->jobId, $actorId, Notifications::ASSET_STATUS_OVERRIDDEN, $p->id, [
+                'kind' => 'publication', 'asset_id' => $p->assetId, 'asset_name' => $asset !== null ? (string) $asset['name'] : '', 'platform' => $p->platform->value,
+                'from' => $p->status->value, 'to' => $to->value, 'reason' => $reason,
+                'recipients' => Notifications::overrideRecipients($this->team($tx, $p->jobId), $this->creator($tx, $p->jobId), $assignee, $actorId),
+            ], $now);
+            return $this->followJob($tx, $p->jobId, $actorId, $now, true, $reason);
         });
     }
 

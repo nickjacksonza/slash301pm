@@ -127,10 +127,10 @@ final class BriefView
         return $out;
     }
 
-    // Social publishing: the Social slot follows SocialPolicy (it also opens after the send).
+    // Social follows SocialPolicy; Developer, SEO and Producer also open after the send (Policy::canSetSlot).
     private static function canSetSlot(User $u, \App\Domain\Types\JobAccess $a, Role $role): bool
     {
-        return $role === Role::Social ? \App\Domain\SocialPolicy::canSetSocialSlot($u, $a)->allowed : Policy::canAssign($u, $a, $role)->allowed;
+        return Policy::canSetSlot($u, $a, $role)->allowed;
     }
 
     public static function doc(BriefState $s, BriefSnapshot $snap, string $versionLabel, ?BriefVersionRecord $rec, User $u, bool $working): BriefDocVM
@@ -214,7 +214,8 @@ final class BriefView
             if ($sentOnly && Notifications::isWorkingCopyVerb($a->verb)) {
                 continue;
             }
-            $out[] = new ActivityItemVM($a->actorName !== '' ? $a->actorName : 'Someone', self::activityText($a), fmt_when($a->createdAt));
+            $out[] = new ActivityItemVM($a->actorName !== '' ? $a->actorName : 'Someone', self::activityText($a), fmt_when($a->createdAt),
+                $a->verb === Notifications::ASSET_STATUS_OVERRIDDEN);
         }
         return $out;
     }
@@ -241,7 +242,7 @@ final class BriefView
             'deliverable_cancelled' => 'cancelled ' . (isset($d['asset_ids']) && is_array($d['asset_ids']) ? count($d['asset_ids']) : 0) . ' unstarted assets',
             'started_asset_conflict' => 'kept started assets: ' . $str('message'),
             // Social publishing
-            default => Notifications::socialPhrase($a->verb, $d) ?? str_replace('_', ' ', $a->verb),
+            default => Notifications::socialPhrase($a->verb, $d) ?? \App\Domain\ReviewNotify::phrase($a->verb, $d) ?? str_replace('_', ' ', $a->verb),
         };
     }
 }

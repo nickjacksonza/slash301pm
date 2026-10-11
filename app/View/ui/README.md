@@ -21,8 +21,19 @@ Fixtures from Go: `go run -C .claude/skills/datastarui-port/render . --cases=$PW
 - Sheet: render `ui_sheet(new SheetProps(id: 'sheet', modal: true))` once; patch inner HTML into `#sheet` (mode inner) and send signal patch `{"sheet":{"open":true}}`. Close with `ui_sheet_close`.
 - Dark mode: toggle class `dark` on `<html>`.
 
+## Design rules
+The look follows the legacy app (`legacy/styles.css` is the reference). Tokens live in `styles/theme.css` and `styles/tokens.css`.
+- Pill controls: buttons, inputs and tab triggers are `rounded-full` (textarea `rounded-xl`). Default button is `h-10 px-5`.
+- Radii run 12 to 20px: `rounded-xl` cards, `rounded-2xl` board columns. `--radius-sm/md/lg/xl` are 8/12/16/20px.
+- Badges are uppercase, semibold, `px-3 py-1`; stage and due chips carry a leading dot (`before:` classes).
+- Shadows are the warm `--shadow-xs/sm/md/lg` (rgba 45,42,38). Use `shadow-sm` on cards, not heavy shadows.
+- Table headers are muted, uppercase, `text-xs font-semibold tracking-wider`. Default cells are `px-4 py-3`; the compact density used by the jobs grid keeps its tight cells.
+- Sage (#7c9a8e family) marks the active state: `bg-accent text-accent-foreground` for the active tab and nav item, `--ring` for focus. `--primary` stays a deeper green so white text keeps AA contrast.
+- Fonts: system sans at 14px/1.5, Monaco/Menlo mono (`--font-sans`, `--font-mono`).
+
 ## Deviations from upstream
 - Dialog Attributes (ignored upstream) land on the id element. DialogOverlay, DropdownMenuFormItem/CustomItem, SelectTrigger/Content/Item manual composition, popover, breadcrumb, calendar, datepicker, sidebar, form, themetoggle are not ported.
 - Toast: added `warning` variant, `open` and `durationMs` (auto-dismiss with data-init + setTimeout). Avatar: `name` derives initials and colour.
 - CSS: `@theme inline` (needed for `.dark` to reach utilities), obsolete `@position-fallback` replaced by `position-try-fallbacks`, dark `text-destructive` uses `--destructive-text`.
+- Look: button, input, textarea and tabs classes deviate from the Go output on purpose (see Design rules), so their fixtures are edited by hand and no longer match a fresh Go render.
 - Upstream quirks kept: inert `data-on:mount`, toast `data-state` holds expression text, select hidden input `data-bind="$id.value"`.

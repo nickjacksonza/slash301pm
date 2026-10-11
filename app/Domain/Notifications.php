@@ -33,6 +33,10 @@ final class Notifications
     public const PUBLICATION_REOPENED = 'publication_reopened';
     public const PUBLICATION_LINK_CHANGED = 'publication_link_changed';
     public const SOCIAL_ASSIGNED = 'social_assigned';
+    /** Back to checking (Producer test reports): Social and the AM, like a reopen. */
+    public const PUBLICATION_RECHECKED = 'publication_rechecked';
+    /** Traffic, the COO or the ECD forced an asset or post status (owner decision 2026-10). */
+    public const ASSET_STATUS_OVERRIDDEN = 'asset_status_overridden';
 
     /**
      * @param list<string> $assetAssignees assets.assigned_to on the job
@@ -102,6 +106,7 @@ final class Notifications
                 }
                 break;
             case self::PUBLICATION_REOPENED:
+            case self::PUBLICATION_RECHECKED:
             case self::PUBLICATION_LINK_CHANGED:
                 $social = $team->userFor(Role::Social);
                 if ($social !== null) {
@@ -115,6 +120,29 @@ final class Notifications
                 break;
             default:
                 $ids = [];
+        }
+        $out = [];
+        foreach ($ids as $id) {
+            if ($id !== '' && $id !== $actorId && !in_array($id, $out, true) && !self::isClientSlot($team, $id)) {
+                $out[] = $id;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Recipients of an asset status override: the asset's assignee, the job's
+     * AM (the brief creator when nobody holds the AM slot) and the CD slot
+     * holder. Never the actor, never a Client slot.
+     * @return list<string>
+     */
+    public static function overrideRecipients(Team $team, ?string $creatorId, ?string $assetAssignee, string $actorId): array
+    {
+        $ids = [];
+        foreach ([$assetAssignee, $team->userFor(Role::AM) ?? $creatorId, $team->userFor(Role::CD)] as $id) {
+            if ($id !== null) {
+                $ids[] = $id;
+            }
         }
         $out = [];
         foreach ($ids as $id) {
@@ -148,8 +176,14 @@ final class Notifications
             self::PUBLICATION_PROMOTED => (($data['promoted'] ?? null) === false ? 'unticked Promoted on ' : 'marked as promoted ') . $post,
             self::PUBLICATION_ARCHIVED => 'archived ' . $post,
             self::PUBLICATION_REOPENED => 'moved ' . $post . ' back a step',
+            self::PUBLICATION_RECHECKED => 'sent ' . $post . ' back to checking',
             self::PUBLICATION_LINK_CHANGED => 'changed the live link of ' . $post,
             self::SOCIAL_ASSIGNED => 'assigned Social',
+            self::ASSET_STATUS_OVERRIDDEN => 'overrode the status of ' . (isset($data['asset_name']) && is_string($data['asset_name']) && $data['asset_name'] !== '' ? $data['asset_name'] : 'an asset')
+                . ($p !== null ? ' on ' . $p->label() : '')
+                . (isset($data['from'], $data['to']) && is_string($data['from']) && is_string($data['to']) ? ' from ' . $data['from'] . ' to ' . $data['to'] : '')
+                . (isset($data['reason']) && is_string($data['reason']) && $data['reason'] !== '' ? ': ' . $data['reason'] : ''),
+            'demo_role_tasks_added' => 'added demo role tasks',
             'publication_added' => 'added ' . $name . ' to a social asset',
             'publication_removed' => 'removed ' . $name . ' from a social asset',
             'publication_checked' => 'updated the checklist of ' . $post,

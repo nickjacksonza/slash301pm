@@ -17,7 +17,7 @@ function ui_table(TableProps $p, string $children = ''): string
 {
     $density = $p->density === 'compact'
         ? 'text-[13px] [&_td]:px-2 [&_td]:py-1 [&_th]:h-8 [&_th]:px-2'
-        : 'text-sm [&_td]:p-2 [&_th]:h-10 [&_th]:px-2';
+        : 'text-sm [&_td]:px-4 [&_td]:py-3 [&_th]:h-10 [&_th]:px-4';
     return '<div data-slot="table-container" class="' . attr(cx('relative w-full overflow-x-auto', $p->containerClass)) . '">'
         . '<table data-slot="table" data-density="' . attr($p->density === 'compact' ? 'compact' : 'default') . '" class="'
         . attr(cx('w-full caption-bottom', $density, $p->class)) . '"' . ui_attrs($p->attrs) . '>' . $children . '</table></div>';
@@ -47,7 +47,7 @@ function ui_table_row(TableRowProps $p, string $children = ''): string
 
 function ui_table_head(PartProps $p, string $children = ''): string
 {
-    return '<th data-slot="table-head" class="' . attr(cx('text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]', $p->class)) . '"' . ui_attrs($p->attrs) . '>' . $children . '</th>';
+    return '<th data-slot="table-head" class="' . attr(cx('bg-muted text-left align-middle text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]', $p->class)) . '"' . ui_attrs($p->attrs) . '>' . $children . '</th>';
 }
 
 function ui_table_cell(PartProps $p, string $children = ''): string

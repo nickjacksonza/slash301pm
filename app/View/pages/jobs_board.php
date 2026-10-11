@@ -92,7 +92,7 @@ function partial_board_column(BoardColumnVM $c): string
         $cards = '<p class="px-2 py-6 text-center text-xs text-muted-foreground" data-empty>Drop a job here</p>';
     }
     return '<section id="col-' . attr($s) . '" data-col="' . attr($s) . '" aria-label="' . attr($c->stage->label()) . '"'
-        . ' class="flex w-64 shrink-0 flex-col rounded-lg border border-border bg-muted/40"'
+        . ' class="flex w-72 shrink-0 flex-col rounded-2xl border border-border bg-muted"'
         . ' data-on:dragover__prevent="1"'
         . ' data-on:dragenter="' . attr("el.classList.add('ring-2', 'ring-ring')") . '"'
         . ' data-on:dragleave="' . attr("el.contains(evt.relatedTarget) || el.classList.remove('ring-2', 'ring-ring')") . '"'
@@ -123,8 +123,8 @@ function partial_board_card(BoardCardVM $c): string
         . ui_dropdown_content(new DropdownContentProps(id: $menuId, align: 'end', class: 'w-56'),
             ui_dropdown_label(new DropdownLabelProps(class: 'text-xs text-muted-foreground'), 'Move to...') . $items));
     // Only cards the user can move are draggable (no dead drag for read-only roles).
-    $drag = $c->moves === [] ? ' class="flex flex-col gap-2 rounded-md border border-border bg-card p-3 text-sm text-card-foreground shadow-xs">'
-        : ' draggable="true" class="flex cursor-grab flex-col gap-2 rounded-md border border-border bg-card p-3 text-sm text-card-foreground shadow-xs active:cursor-grabbing"'
+    $drag = $c->moves === [] ? ' class="flex flex-col gap-2 rounded-xl border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">'
+        : ' draggable="true" class="flex cursor-grab flex-col gap-2 rounded-xl border border-border bg-card p-4 text-sm text-card-foreground shadow-sm active:cursor-grabbing"'
         . ' data-on:dragstart="' . attr($start) . '" data-on:dragend="' . attr("el.classList.remove('opacity-50')") . '">';
     return '<article id="card-' . attr($c->id) . '" data-card="' . attr($c->id) . '" data-stage="' . attr($c->stage->value) . '"' . $drag
         . '<div class="flex items-center justify-between gap-2">'

@@ -47,11 +47,17 @@ final class AssetStore
         $at = Ids::utc($now);
         foreach ($plan->create as $p) {
             $id = Ids::new();
+            // Template tasks (utm-links, campaign-hashtags, asset-test-report) go to the job's holder of the role, read now.
+            $assignee = null;
+            if ($p->defaultRole !== null) {
+                $h = $tx->scalar('SELECT user_id FROM job_assignments WHERE job_id = :j AND role_on_job = :r', ['j' => $jobId, 'r' => $p->defaultRole->value]);
+                $assignee = $h === null || $h === '' ? null : (string) $h;
+            }
             $tx->exec(
                 'INSERT INTO assets (id, job_id, campaign_id, name, type, template_id, status, assigned_to, due_date, sort_order, brief_asset_id, created_at, updated_at)
-                 VALUES (:id, :job, :camp, :name, :type, :tpl, :status, NULL, :due, :sort, :line, :at, :at)',
+                 VALUES (:id, :job, :camp, :name, :type, :tpl, :status, :who, :due, :sort, :line, :at, :at)',
                 ['id' => $id, 'job' => $jobId, 'camp' => $campaignId, 'name' => $p->name, 'type' => $p->type, 'tpl' => $p->templateId,
-                    'status' => AssetStatus::NEW, 'due' => $p->dueDate, 'sort' => $p->sortOrder, 'line' => $p->lineId, 'at' => $at],
+                    'status' => AssetStatus::NEW, 'who' => $assignee, 'due' => $p->dueDate, 'sort' => $p->sortOrder, 'line' => $p->lineId, 'at' => $at],
             );
             $created[] = $id;
         }

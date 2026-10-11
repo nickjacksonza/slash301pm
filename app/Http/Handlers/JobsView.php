@@ -254,8 +254,18 @@ final class JobsView
 
     // ---- filters and views --------------------------------------------------------
 
-    public static function filters(string $screen, Deps $d): JobFiltersVM
+    /**
+     * The filter bar. Roles that see only their assigned jobs
+     * (Policy::seesOnlyAssignedJobs) get only the brands and campaigns of those
+     * jobs, and no Owner filter (every job of theirs is theirs).
+     */
+    public static function filters(string $screen, Deps $d, User $u): JobFiltersVM
     {
+        $only = null;
+        if (Policy::seesOnlyAssignedJobs($u)) {
+            $today = Dates::today($d->clock->now());
+            $only = $d->jobQuery->visibleBrandsAndCampaigns(Policy::jobViewer($u), $today, Dates::addBusinessDays($today, 3));
+        }
         $board = $screen === JobQuery::SCREEN_BOARD;
         $stages = [];
         foreach (JobQuery::pipeline() as $s) {
@@ -267,15 +277,21 @@ final class JobsView
         }
         $brands = [new SelectOption('', 'All brands')];
         foreach ($d->brands->list() as $b) {
-            $brands[] = new SelectOption($b->id, $b->name);
+            if ($only === null || in_array($b->id, $only['brands'], true)) {
+                $brands[] = new SelectOption($b->id, $b->name);
+            }
         }
         $campaigns = [new SelectOption('', 'All campaigns')];
         foreach ($d->campaigns->listAll() as $c) {
-            $campaigns[] = new SelectOption($c->id, $c->name, false, $c->brandName);
+            if ($only === null || in_array($c->id, $only['campaigns'], true)) {
+                $campaigns[] = new SelectOption($c->id, $c->name, false, $c->brandName);
+            }
         }
         $owners = [];
-        foreach (OwnerFilter::cases() as $o) {
-            $owners[] = new SelectOption($o->value, $o->label());
+        if ($only === null) {
+            foreach (OwnerFilter::cases() as $o) {
+                $owners[] = new SelectOption($o->value, $o->label());
+            }
         }
         $due = [new SelectOption('', 'Any date')];
         foreach (DueWindow::cases() as $w) {

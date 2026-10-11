@@ -40,5 +40,11 @@ final class JobSheetVM
         public readonly string $moveUrl,
         // Social publishing: the Social slot picker, for who may set it after the send
         public readonly ?SocialSlotVM $social = null,
+        /** @var list<AssetRowVM>|null every asset (Traffic, COO, ECD: Policy::canViewJobAssets), else null */
+        public readonly ?array $assets = null,
+        public readonly string $assetsUrl = '',
+        // Reviews: the review page (ReviewPolicy::canView) and the hand-in page (roles that hand in work)
+        public readonly string $reviewUrl = '',
+        public readonly string $workUrl = '',
     ) {}
 }

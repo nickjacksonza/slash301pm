@@ -212,7 +212,7 @@ return [
         rw_assign($d, $t, $j['sent'], 'copywriter', $p['copy']);
         $rv = $d->jobs->get($j['sent'])->rowVersion;
         $ds = bh_session($d, $p['designer']);
-        foreach (['approved_internal' => 'cannot move from briefed', 'in_progress' => 'by itself'] as $to => $want) {
+        foreach (['approved_internal' => 'on the review page', 'in_progress' => 'by itself'] as $to => $want) {
             t_contains($want, ts_body(bh_ds($d, $ds, 'POST', '/jobs/' . $j['sent'] . '/move', ['move' => ['to' => $to, 'row_version' => $rv, 'page' => 'board']])), $to);
         }
         t_eq('briefed', $d->jobs->get($j['sent'])->stage->value);
@@ -290,7 +290,7 @@ return [
         t_eq('in_progress', $d->jobs->get($id)->stage->value);
         $d->db->exec("UPDATE jobs SET stage = 'in_review', status = 'In Review' WHERE id = :j", ['j' => $id]);
         $rv = $d->jobs->get($id)->rowVersion;
-        t_contains('not available yet', ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $id . '/move', ['move' => ['to' => 'approved_internal', 'row_version' => $rv]])));
+        t_contains('on the review page', ts_body(bh_ds($d, $s, 'POST', '/jobs/' . $id . '/move', ['move' => ['to' => 'approved_internal', 'row_version' => $rv]])));
         t_eq('in_review', $d->jobs->get($id)->stage->value);
         t_contains('You cannot start work', ts_body(bh_ds($d, bh_session($d, $p['am']), 'POST', '/jobs/' . $j['sent'] . '/transition', ['tr' => ['action' => 'start']])), 'AM: matrix deny');
     },

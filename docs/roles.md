@@ -171,6 +171,7 @@ Each section uses the same headings. Field names are the planned column names (`
 2. Open `/jobs` grouped by brand or AM to scan load.
 3. Act on escalations (reassign Traffic, cancel, reopen).
 4. Weekly: `/admin/system` (migration level, backups, demo banner) and `/admin/users`.
+5. Workflow reviews: `/admin/overrides` lists every asset and post status override (who, job, from and to, reason) in a date range (owner decision 2026-10). While demo mode is on, `/admin/system` also offers "Add demo role tasks" (`add_demo_role_tasks`).
 
 **Reads**: everything, all scopes. Budget all.
 
@@ -228,6 +229,7 @@ Each section uses the same headings. Field names are the planned column names (`
 3. Check "Due soon / overdue assets"; change asset due dates, reassign, or put the job on waiting.
 4. Route client feedback that came back to the right maker.
 5. Mark approved_client jobs as done; archive done and cancelled jobs.
+6. Crunch time and crises (owner decision 2026-10): the job sheet lists every asset; `GET /jobs/{id}/assets` shows every deliverable, asset and Social post, and Traffic (like the COO and the ECD) can override any asset or post status with a reason (`override_asset_status`). Each override is logged and marked as an override in the activity feed. After the send Traffic also fills the Developer, SEO and Producer slots (`assign_task_roles`).
 
 **Reads**
 
@@ -325,6 +327,8 @@ All in-app now; email later (immediate for N01, N03; digest for the rest).
 **Daily workflow**: as PM; the home screen filter defaults to jobs where they hold the Producer slot.
 
 **Reads, creates, edits, transitions, approvals, never sees, notifications, My day**: identical to PM, keyed on the Producer slot instead of the PM slot. Recommendation (Q6): keep the role label, share the Policy rules; add supplier and cost fields later only if the owner asks.
+
+**Asset test reports (owner decision 2026-10)**: the "Asset test report" template (`asset-test-report`) defaults to the job's Producer: when a brief with that deliverable is sent, its assets are assigned to the Producer slot holder (unassigned when the slot is empty). On their own jobs the Producer may tick or note the Social checklist's Test result item (`social_edit_test_result`) and send a post back to checking with a reason (`social_set_checking`); the rest of the checklist and the other Social moves stay with Social, the COO and the ECD.
 
 ### 2.7 CD (Creative Director)
 
@@ -455,6 +459,8 @@ Same as Copywriter. Differences are only asset types and home filters:
 | SEO | Audits, metadata, keyword sets, copy optimisation | report_url |
 
 Not in the beta (Q7). Social is a Maker too but has its own section because it publishes.
+
+**Default tasks (owner decision 2026-10)**: the "UTM link generation" template (`utm-links`) defaults to the job's Developer and "Campaign hashtags" (`campaign-hashtags`) to the job's SEO: when a brief with those deliverables is sent, their assets are assigned to the slot holder (unassigned when the slot is empty). Traffic and the job's owners fill these slots after the send (`assign_task_roles`). Like every assigned-only role, their grid and board filter lists hold only the brands and campaigns of their jobs (no Owner filter), and My day starts with a row of brand buttons (logo or coloured initials, with job counts) that filters every section.
 
 ### 2.13 Social (Publisher)
 
@@ -611,6 +617,8 @@ Urgency: **high** = blocks work until the recipient acts (badge plus top of My d
 | N38 | post_archived_or_deleted | Post publication record archived or deleted | AM | A live post is gone or hidden | normal | digest | social |
 | N39 | changed_after_live | Brief updated, live link edited or asset reopened after Live | Social on the job; AM | A live post may need editing | high | immediate | social |
 
+**Internal reviews as built (owner spec 2026-10).** Activity verbs and recipients (`App\Domain\ReviewNotify`): `review_requested` (N14: a maker clicks Request review on a post, or every post of the job is handed in) goes to the reviewer: the CD or ECD the review was reassigned to, else the CD slot holder, else every ECD. `job_review_requested` (the CD asks the ECD, even before every post is done) and `job_cd_approved` (the CD approves the job) go to every ECD. `job_ecd_approved` (N16) goes to the AM (or brief creator) and the CD. `asset_part_rejected` (N17) goes only to the maker of each rejected part (copy to the copy maker, media to the media maker; the other part stays approved). `round_limit_warning` goes to the AM (or brief creator) when a post reaches the round after the limit (`app_settings.review_round_limit`, default 3, set by the COO or ECD on /admin/system; 0 turns it off). `job_ready_for_client` and `job_sent_to_client` go to the AM and Traffic. `review_reassigned` goes to the new reviewer. `asset_submitted` and `asset_part_approved` notify nobody. QA is not part of this flow yet (Q13: advisory). Screens: makers hand in on `/jobs/{id}/work`; everyone on the job reviews on `/jobs/{id}/review` (one card per post, labelled brand, media, copy, hashtags, link; Approve, Reject with feedback, Reject for the copy, the media or both); My day lists posts waiting for my review (CD or the person the review was handed to), jobs waiting for ECD approval (ECD, COO), changes requested (the part's maker), posts past the round limit and jobs ready for the client (owners; Traffic for ready). Stage moves follow the posts (`ReviewRules::stageMoves`): a hand-in starts a briefed job; Request review, every post handed in, the CD's approval or the CD's request to the ECD move in_progress to in_review; the ECD approval moves it to approved_internal; a rejection sends in_review or approved_internal back to in_progress (a client-approved job keeps its stage; a paused job keeps it only when it would resume to in_progress, otherwise the rejection waits until it is resumed, and the ECD approval always waits for a paused job to be resumed). The board refuses drags into or out of the two review stages and links to the review page. Each decision records the sent brief version it was checked against. A job counts as CD-approvable when every non-cancelled post has every part approved; any later rejection clears the CD and ECD approvals and the ready and sent stamps.
+
 ## 4. Permission matrix
 
 Machine-readable copy: `tests/fixtures/roles/policy-matrix.json` (generated from the same table; the JSON uses the full value names). Each row is one `Policy` function. A cell is necessary but not sufficient: the stage preconditions in the conditions table and the read rules (`view_*`) must also pass, and every actor and `*_by` value comes from the session.
@@ -650,6 +658,7 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `assign_traffic` | Y | Y | AC | Y | AC | AC | - | - | - | - | - | - | - | - |
 | `assign_creatives` * | Y | Y | AC | Y | AC | AC | - | - | - | - | - | - | - | - |
 | `assign_account_roles` | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | - |
+| `assign_task_roles` * | Y | Y | AC | Y | AC | AC | - | - | - | - | - | - | - | - |
 
 #### Assets and tasks
 
@@ -658,6 +667,8 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `manage_tasks` | Y | Y | - | Y | AC | AC | A | - | - | - | - | - | - | - |
 | `edit_asset_schedule` | Y | Y | - | Y | AC | AC | - | - | - | - | - | - | - | - |
 | `edit_asset_work` * | Y | Y | - | - | - | - | A | A | A | - | A | A | A | - |
+| `view_all_assets` * | Y | Y | - | Y | - | - | - | - | - | - | - | - | - | - |
+| `override_asset_status` * | Y | Y | - | Y | - | - | - | - | - | - | - | - | - | - |
 
 #### Job fields
 
@@ -709,12 +720,16 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 
 | Action | COO | ECD | AM | Trf | PM | Prd | CD | Cpy | Dsg | QA | Dev | SEO | Soc | Cli |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| `submit_for_review` * | Y | Y | - | - | - | - | A | A | A | - | A | A | A | - |
+| `submit_for_review` * | Y | Y | - | - | - | A | A | A | A | - | A | A | A | - |
 | `qa_signoff` | Y | Y | - | - | - | - | - | - | - | A | - | - | - | - |
 | `approve_internal` * | Y | Y | - | - | - | - | A | - | - | - | - | - | - | - |
+| `request_ecd_review` * | Y | Y | - | - | - | - | A | - | - | - | - | - | - | - |
+| `approve_job_ecd` * | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
+| `reassign_review` * | Y | Y | - | - | - | - | A | - | - | - | - | - | - | - |
+| `mark_ready_for_client` * | Y | Y | AC | Y | - | AC | A | - | - | - | - | - | - | - |
 | `give_feedback_internal` | Y | Y | AC | Y | AC | AC | A | - | - | A | - | - | - | - |
 | `route_feedback` | Y | Y | AC | Y | AC | AC | A | - | - | - | - | - | - | - |
-| `send_to_client` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | - |
+| `send_to_client` * | Y | Y | AC | Y | - | AC | A | - | - | - | - | - | - | - |
 | `approve_client` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | B |
 | `give_feedback_client` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | B |
 | `recommend_signoff` * | - | - | - | - | - | - | - | - | - | - | - | - | - | B |
@@ -729,6 +744,10 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `manage_users` | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
 | `admin_system` | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
 | `toggle_demo_mode` | Y | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| `manage_brand_logo` * | Y | Y | Y | - | Y | Y | - | - | - | - | - | - | - | - |
+| `view_overrides_report` | Y | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| `add_demo_role_tasks` * | Y | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| `change_review_round_limit` * | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
 | `view_all_jobs` * | Y | Y | Y | Y | Y | Y | Y | A | A | A | A | A | A | B |
 | `view_budget` | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | - |
 | `view_hours` | Y | Y | Y | Y | Y | Y | A | A | A | A | A | A | A | - |
@@ -752,6 +771,8 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `social_edit_live_link` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
 | `social_set_promoted` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
 | `social_archive_post` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
+| `social_set_checking` * | Y | Y | - | - | - | AC | - | - | - | - | - | - | A | - |
+| `social_edit_test_result` * | Y | Y | - | - | - | AC | - | - | - | - | - | - | A | - |
 
 #### Conditions (marked * above)
 
@@ -820,6 +841,16 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `social_edit_live_link` | all allowed roles | Stage scheduled or later; edits after Live are logged and notify the AM. |
 | `social_set_promoted` | all allowed roles | Stage scheduled or later; checkbox plus optional note. |
 | `social_archive_post` | all allowed roles | Archive with a reason; hard delete is not offered to Social. |
+| `social_set_checking` | all allowed roles | Post Ready to Schedule or Scheduled; reason required; notifies Social and the AM; the job Social stage moves back with it. |
+| `social_set_checking` | Producer | Own jobs (Producer slot, an assigned asset, or brief creator): asset test reports. |
+| `social_edit_test_result` | all allowed roles | Post still being checked; only the Test result item (whoever may edit the whole checklist may edit it too). |
+| `social_edit_test_result` | Producer | Own jobs; the other checklist items stay as stored. |
+| `assign_task_roles` | all allowed roles | Brief sent, job not closed: the Developer, SEO and Producer slots (their template tasks are assigned to the slot holder when a brief is sent). Before the send `assign_creatives` / `assign_account_roles` apply. |
+| `view_all_assets` | all allowed roles | Brief sent (or a legacy job past draft): the job sheet asset list and GET /jobs/{id}/assets (deliverables, assets, status, assignee, due). |
+| `override_asset_status` | all allowed roles | Brief sent (or a legacy job past draft). Any legacy asset status, or any Social post status, with a required reason. Writes `asset_status_overridden` (from, to, reason; recipients: asset assignee, AM or brief creator, CD) in the same transaction; shown as an override in the activity feed and on the COO's Overrides report. |
+| `manage_brand_logo` | all allowed roles | https links only (no uploads), set on the Campaigns page; the view re-checks the stored link before it renders an image. |
+| `add_demo_role_tasks` | COO | Demo mode on only; up to 3 open sent jobs; idempotent. |
+| `change_review_round_limit` | all allowed roles | On /admin/system: a whole number from 0 to 20 (0 turns the warning off), stored in app_settings (migration 0014); logged as setting_changed. |
 | `transition:workable->waiting` | all allowed roles | waiting_on and waiting_reason required. |
 | `transition:workable->waiting` | Traffic | Not from draft (cannot see drafts). |
 | `transition:workable->waiting` | CD | Not from draft. |
@@ -828,9 +859,19 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `transition:workable->on_hold` | Traffic | Not from draft. |
 | `transition:open->cancelled` | all allowed roles | Reason required; started assets are kept and flagged. |
 | `transition:done->in_progress` | all allowed roles | Reason required. |
-| `submit_for_review` | all allowed roles | Asset is assigned to the actor (CD: CD slot on the job). |
-| `approve_internal` | CD | Holds the CD slot on the job; not their own submitted asset unless no other CD or ECD exists. |
-| `send_to_client` | all allowed roles | Stage approved_internal; a Client contact is assigned. |
+| `submit_for_review` | all allowed roles | Brief sent, job open, post not cancelled. Each part is handed in by its maker: copy by the Copywriter slot (or the asset assignee for copy deliverables), media by the Designer slot (or the asset assignee; any other role, such as the Producer for an asset test report, makes both parts of an asset assigned to them); the CD slot holder, the COO and the ECD may hand in either part. An approved part is frozen until a reviewer rejects it. |
+| `approve_internal` | all allowed roles | Brief sent, job open. A rejection sends the part back to its maker, clears the CD and ECD approvals and the client steps, and moves an in_review or approved_internal job back to in_progress. |
+| `approve_internal` | CD | Holds the CD slot on the job, or the review was reassigned to them; not a part they handed in themselves unless no other CD or ECD exists. |
+| `request_ecd_review` | all allowed roles | Brief sent, job open, not ECD-approved already. Notifies every ECD; an in_progress job moves to in_review. |
+| `request_ecd_review` | CD | CD slot on the job, or the review was reassigned to them. |
+| `approve_job_ecd` | all allowed roles | The CD has approved the job and every post is approved. Any later rejection clears it. Notifies the AM (N16) and the CD. |
+| `approve_job_ecd` | COO | As cover for the ECD. |
+| `reassign_review` | all allowed roles | Job open. A Client contact of the job brand only after the ECD has approved the job (clients review in the client portal, next phase). Notifies the new reviewer. |
+| `reassign_review` | CD | CD slot on the job, or the review was reassigned to them. |
+| `mark_ready_for_client` | all allowed roles | Stage approved_internal; the CD and the ECD have approved the job and every post is approved. Notifies the AM and Traffic. |
+| `mark_ready_for_client` | CD | CD slot on the job, or the review was reassigned to them. |
+| `send_to_client` | all allowed roles | Stage approved_internal; the CD and the ECD have approved the job and every post is approved; marked ready for client review; not sent already. Notifies the AM and Traffic. |
+| `send_to_client` | CD | CD slot on the job, or the review was reassigned to them. |
 | `approve_client` | Client | users.client_signoff = 1. |
 | `approve_client` | AM | On behalf, with contact and evidence note. |
 | `approve_client` | PM | On behalf. |
@@ -867,7 +908,8 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `qa_signoff` | Legacy QA has no action at all. |
 | `approve_internal` | api/permissions.php:118-121: any CD, not the assigned CD. |
 | `route_feedback` | src/components/reviews.js:25 FEEDBACK_ASSIGNABLE_ROLES omits CD, QA, AM, Developer, SEO, Social. |
-| `send_to_client` | No legacy action; the client queue shows any Approved (Internal) or In Review job (src/components/operations.js:178). |
+| `send_to_client` | No legacy action; the client queue shows any Approved (Internal) or In Review job (src/components/operations.js:178). Owner spec 2026-10 lists CD, ECD, AM, COO, Traffic and Producer (PM is not listed). |
+| `approve_job_ecd` | api/permissions.php:118-121 lets any CD or admin approve internally in one step. |
 | `approve_client` | api/permissions.php:123-128: Client of the brand or admin only. |
 | `give_feedback_client` | api/permissions.php:130-136 lets every manager post client feedback with no on-behalf record; is_internal comes from the body (api/api.php:1201). |
 | `recommend_signoff` | No legacy equivalent. |

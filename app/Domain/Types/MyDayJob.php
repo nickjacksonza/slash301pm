@@ -28,6 +28,9 @@ final class MyDayJob
         public readonly bool $iAmTraffic = false,
         /** Briefed with no CD, maker slot or asset assignee yet. */
         public readonly bool $needsTeam = false,
+        /** The campaign's brand ('' without one) and its logo link (migration 0013), for the brand filter row. */
+        public readonly string $brandId = '',
+        public readonly string $brandLogoUrl = '',
     ) {}
 
     public static function fromRow(array $r): self
@@ -44,13 +47,16 @@ final class MyDayJob
             (int) ($r['i_am_am'] ?? 0) === 1,
             (int) ($r['i_am_traffic'] ?? 0) === 1,
             (int) ($r['needs_team'] ?? 0) === 1,
+            (string) ($r['brand_id'] ?? ''),
+            (string) ($r['brand_logo'] ?? ''),
         );
     }
 
     /** A job with no AM (JobStore::listWithoutAm), which the user could claim. */
     public static function fromListItem(BriefListItem $i): self
     {
-        return new self($i->jobId, $i->jobNumber, $i->title, $i->campaignName, $i->brandName, $i->stage, null, '', $i->version, $i->sentAt, $i->hasUnsentChanges, $i->dueDate, false);
+        return new self($i->jobId, $i->jobNumber, $i->title, $i->campaignName, $i->brandName, $i->stage, null, '', $i->version, $i->sentAt, $i->hasUnsentChanges, $i->dueDate, false,
+            false, false, $i->brandId, $i->brandLogoUrl);
     }
 
     public function sent(): bool

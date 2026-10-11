@@ -9,6 +9,8 @@ use App\Http\MemorySession;
 require_once dirname(__DIR__, 2) . '/support/jobs_fx.php';
 // Social publishing
 require_once dirname(__DIR__, 2) . '/support/social_fx.php';
+// Reviews
+require_once dirname(__DIR__, 2) . '/support/review_fx.php';
 
 /**
  * Audit trail completeness (docs/audit-trail.md). Every POST, PUT, PATCH and
@@ -108,13 +110,45 @@ function ac_cases(Deps $d, array $c, array $p, string $jobId, string $legacyJob)
         [$url, $sig] = $pub($path, $o);
         sx_ok(bh_ds($d, $coo, $method, $url, $sig));
     };
+    // Reviews: a sent job with one static, the creative team on it, and an ECD to hand the review to.
+    $rj = sx_seed($d, $c['campaign'], $p['am'], $p['traffic'], 1, 'Review coverage');
+    foreach (['CD' => 'cd', 'Copywriter' => 'copy', 'Designer' => 'designer'] as $role => $who) {
+        $d->assignments->set($rj, \App\Domain\Role::from($role), $p[$who], $p['traffic'], $d->clock->now());
+    }
+    $ra = rx_posts($d, $rj)[0];
+    $ecdId = ts_user($d, 'ecd_coverage', Role::ECD);
+    $as = static fn (string $who): MemorySession => bh_session($d, $p[$who]);
     return [
+        // Reviews (run in this order: each step needs the one before)
+        'POST /jobs/{id}/work/{aid}' => ['asset_submitted', 'copy', static fn () => sx_ok(rx_sub($d, $as('copy'), $rj, $ra, ['copy_text' => 'Coverage copy']))],
+        'POST /jobs/{id}/work/{aid}/request' => ['review_requested', 'designer', static fn () => sx_ok(rx_sub($d, $as('designer'), $rj, $ra, ['media_url' => 'https://cdn.example.com/c.png'], true))],
+        'POST /jobs/{id}/review/posts/{aid}' => ['asset_part_approved', 'cd', static fn () => sx_ok(rx_rev($d, $as('cd'), $rj, $ra, 'approved'))],
+        'POST /jobs/{id}/review/request-ecd' => ['job_review_requested', 'cd', static fn () => sx_ok(rx_job($d, $as('cd'), $rj, 'request-ecd'))],
+        'POST /jobs/{id}/review/reassign' => ['review_reassigned', 'cd', static fn () => sx_ok(rx_job($d, $as('cd'), $rj, 'reassign', $ecdId))],
+        'POST /jobs/{id}/review/approve' => ['job_cd_approved', 'cd', static fn () => sx_ok(rx_job($d, $as('cd'), $rj, 'approve'))],
+        'POST /jobs/{id}/review/ecd-approve' => ['job_ecd_approved', 'coo', static fn () => sx_ok(rx_job($d, $as('coo'), $rj, 'ecd-approve'))],
+        'POST /jobs/{id}/review/ready' => ['job_ready_for_client', 'am', static fn () => sx_ok(rx_job($d, $as('am'), $rj, 'ready'))],
+        'POST /jobs/{id}/review/send' => ['job_sent_to_client', 'am', static fn () => sx_ok(rx_job($d, $as('am'), $rj, 'send'))],
+        'POST /admin/system/review-round-limit' => ['setting_changed', 'coo', static fn () => sx_ok(bh_ds($d, $as('coo'), 'POST', '/admin/system/review-round-limit', ['rl' => ['limit' => '4']]))],
+
         // Social publishing (run in this order: each step needs the one before)
         'POST /social/assets/{aid}/platforms/{platform}' => ['publication_added', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/social/assets/' . $sa1 . '/platforms/instagram'))],
         'PATCH /social/publications/{pid}/checklist' => ['publication_checked', 'coo', static fn () => $social('PATCH', '/checklist', ['cl' => ['copy' => true, 'image' => true, 'link' => true, 'hashtags' => true, 'test_result' => true]])],
         'DELETE /social/publications/{pid}' => ['publication_removed', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'DELETE', '/social/publications/' . $fb1, sx_sig($d, $fb1)))],
         'POST /social/publications/{pid}/ready' => ['publication_ready', 'coo', static fn () => $social('POST', '/ready')],
         'POST /social/jobs/{id}/ready' => ['publication_ready', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/social/jobs/' . $sj . '/ready'))],
+        // Owner decisions 2026-10: back to checking, then an override of the same post (ig2 is Ready to schedule here)
+        'POST /social/publications/{pid}/recheck' => ['publication_rechecked', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/social/publications/' . $ig2 . '/recheck', sx_sig($d, $ig2, ['reason' => 'UTM test failed'])))],
+        'POST /jobs/{id}/publications/override' => ['asset_status_overridden', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/jobs/' . $sj . '/publications/override',
+            ['ovp' => ['pub_id' => $ig2, 'rv' => $d->publications->get($ig2)->rowVersion, 'to' => 'ready_to_schedule', 'reason' => 'Checked by phone']]))],
+        'POST /jobs/{id}/assets/override' => ['asset_status_overridden', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/jobs/' . $sj . '/assets/override',
+            ['ova' => ['asset_id' => $sa2, 'from' => $d->assets->listByJob($sj)[1]->status, 'to' => 'In Review', 'reason' => 'Crunch']]))],
+        'POST /brands/logo' => ['brand_logo_changed', 'am', static fn () => sx_ok(bh_ds($d, $amy, 'POST', '/brands/logo', ['eb' => ['brand_id' => $c['brand'], 'logo_url' => 'https://example.com/merc.png']]))],
+        'POST /admin/system/demo-role-tasks' => ['demo_role_tasks_added', 'coo', static function () use ($d, $coo): void {
+            file_put_contents($d->config->demoFlagPath(), '1');   // the temp data dir of this test, never the real data/
+            sx_ok(bh_ds($d, $coo, 'POST', '/admin/system/demo-role-tasks'));
+            unlink($d->config->demoFlagPath());
+        }],
         'POST /social/publications/{pid}/scheduled' => ['publication_scheduled', 'coo', static fn () => $social('POST', '/scheduled', ['scheduled_at' => '2026-10-12T09:30'])],
         'PATCH /social/publications/{pid}/schedule' => ['publication_rescheduled', 'coo', static fn () => $social('PATCH', '/schedule', ['scheduled_at' => '2026-10-12T10:30'])],
         'PATCH /social/publications/{pid}/live-link' => ['publication_link_added', 'coo', static fn () => $social('PATCH', '/live-link', ['live_url' => 'https://instagram.com/p/1'])],

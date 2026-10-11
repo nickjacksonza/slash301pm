@@ -35,7 +35,7 @@ final class MyDayStore
     public function ownedOpen(string $userId, int $limit = 300): array
     {
         $rows = $this->db->query(
-            "SELECT j.id AS job_id, j.job_number, COALESCE(br.title, j.title) AS title, c.name AS campaign_name, b.name AS brand_name, j.stage,
+            "SELECT j.id AS job_id, j.job_number, COALESCE(br.title, j.title) AS title, c.name AS campaign_name, b.name AS brand_name, b.id AS brand_id, b.logo_url AS brand_logo, j.stage,
                     j.waiting_on, j.waiting_reason,
                     COALESCE(br.version_major, 0) AS version_major, COALESCE(br.version_minor, 1) AS version_minor, COALESCE(br.version_patch, 0) AS version_patch,
                     br.sent_at, COALESCE(br.has_unsent_changes, 0) AS has_unsent_changes,
@@ -61,7 +61,7 @@ final class MyDayStore
     public function assignedOpen(string $userId, int $limit = 300): array
     {
         $rows = $this->db->query(
-            "SELECT j.id AS job_id, j.job_number, j.title, c.name AS campaign_name, b.name AS brand_name, j.stage,
+            "SELECT j.id AS job_id, j.job_number, j.title, c.name AS campaign_name, b.name AS brand_name, b.id AS brand_id, b.logo_url AS brand_logo, j.stage,
                     j.waiting_on, j.waiting_reason,
                     COALESCE(br.version_major, 1) AS version_major, COALESCE(br.version_minor, 0) AS version_minor, COALESCE(br.version_patch, 0) AS version_patch,
                     br.sent_at, 0 AS has_unsent_changes, j.delivery_date AS due_date, 0 AS i_am_am,
@@ -94,8 +94,9 @@ final class MyDayStore
         $drafts = $owner ? '' : " AND (j.id IS NULL OR j.stage <> 'draft' OR br.sent_at IS NOT NULL)";
         $rows = $this->db->query(
             "SELECT a.id, a.job_id, a.actor_id, COALESCE(u.name, '') AS actor_name, a.verb, a.entity_type, a.entity_id, a.data_json, a.created_at,
-                    COALESCE(j.job_number, '') AS job_number, " . $title . ' AS job_title,
-                    CASE WHEN j.id IS NOT NULL AND ' . $mine . ' THEN 1 ELSE 0 END AS job_is_mine
+                    COALESCE(j.job_number, '') AS job_number, " . $title . " AS job_title,
+                    COALESCE((SELECT bc.brand_id FROM campaigns bc WHERE bc.id = j.campaign_id), '') AS brand_id,
+                    CASE WHEN j.id IS NOT NULL AND " . $mine . ' THEN 1 ELSE 0 END AS job_is_mine
              FROM activity a LEFT JOIN users u ON u.id = a.actor_id LEFT JOIN jobs j ON j.id = a.job_id LEFT JOIN briefs br ON br.job_id = j.id
              WHERE a.created_at > :since AND (a.actor_id IS NULL OR a.actor_id != :u)
                AND (a.data_json LIKE :like OR (j.id IS NOT NULL AND ' . $mine . '))' . $drafts . '

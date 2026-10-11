@@ -55,7 +55,9 @@ return [
             ['reason required', $p['am'], $j['mine_overdue'], 'waiting', ['on' => 'client'], 'Say what the job is waiting for'],
             ['waiting on required', $p['am'], $j['mine_overdue'], 'waiting', ['reason' => 'x'], 'Choose who the job is waiting on'],
             ['someone else\'s job', $p['am'], $j['other_am'], 'on_hold', ['reason' => 'x'], 'You cannot put on hold'],
-            ['not available yet (approve internally)', $p['coo'], $j['aura_review'], 'approved_internal', [], 'not available yet'],
+            ['review stages follow the posts (approve internally)', $p['coo'], $j['aura_review'], 'approved_internal', [], 'on the review page'],
+            ['review stages follow the posts (submit)', $p['am'], $j['mine_overdue'], 'in_review', [], 'on the review page'],
+            ['review stages follow the posts (send back)', $p['coo'], $j['aura_review'], 'in_progress', [], 'on the review page'],
             ['unknown stage', $p['am'], $j['mine_overdue'], 'Done; DROP', [], 'Unknown stage'],
             ['stale row_version', $p['am'], $j['mine_overdue'], 'on_hold', ['reason' => 'x', 'rv' => 0], 'changed by someone else'],
         ];
@@ -71,6 +73,10 @@ return [
         $send = bm_move($d, $p['am'], $j['created_no_am'], 'briefed');
         t_contains('/slash301pm/jobs/' . $j['created_no_am'] . '/brief', $send, 'the refusal links to the brief');
         t_contains('Open the brief', $send);
+        // Reviews: the refusal links to the review page
+        $review = bm_move($d, $p['coo'], $j['aura_review'], 'approved_internal');
+        t_contains('/slash301pm/jobs/' . $j['aura_review'] . '/review', $review);
+        t_contains('Open the review', $review);
     },
     'board move: a legacy write between drag and drop is a conflict' => function (): void {
         [$d, $p, , $j] = jf_world();

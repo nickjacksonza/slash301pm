@@ -352,7 +352,7 @@ function partial_brief_rail(BriefRailVM $vm): string
     <?php else: ?>
     <ol class="flex flex-col gap-2 text-sm">
       <?php foreach ($vm->activity as $a): ?>
-        <li><span class="font-medium"><?= e($a->actor) ?></span> <?= e($a->text) ?><div class="text-xs text-muted-foreground"><?= e($a->at) ?></div></li>
+        <li><?php if ($a->override): ?><?= ui_badge(new BadgeProps(variant: 'destructive'), 'Override') ?> <?php endif; ?><span class="font-medium"><?= e($a->actor) ?></span> <?= e($a->text) ?><div class="text-xs text-muted-foreground"><?= e($a->at) ?></div></li>
       <?php endforeach; ?>
     </ol>
     <?php endif; ?>

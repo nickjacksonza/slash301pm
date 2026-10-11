@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 use App\Http\Handlers\AccountHandlers;
 use App\Http\Handlers\AdminUserHandlers;
+use App\Http\Handlers\AssetHandlers;
 use App\Http\Handlers\AssignmentHandlers;
 use App\Http\Handlers\AuthHandlers;
 use App\Http\Handlers\BriefHandlers;
@@ -16,6 +17,8 @@ use App\Http\Handlers\JobGridHandlers;
 use App\Http\Handlers\JobHandlers;
 use App\Http\Handlers\MyDayHandlers;
 use App\Http\Handlers\SavedViewHandlers;
+// Reviews (owner spec 2026-10)
+use App\Http\Handlers\ReviewHandlers;
 // Social publishing
 use App\Http\Handlers\SocialHandlers;
 use App\Http\Handlers\SpikeHandlers;
@@ -26,6 +29,7 @@ return [
     ['GET /healthz', [SystemHandlers::class, 'healthz']],
     // Phase 4: my day
     ['GET /today', [MyDayHandlers::class, 'page']],
+    ['GET /today/body', [MyDayHandlers::class, 'body']],
     ['GET /today/sections/{section}', [MyDayHandlers::class, 'section']],
     ['POST /today/seen', [MyDayHandlers::class, 'markSeen']],
 
@@ -45,9 +49,11 @@ return [
 
     ['GET /admin/system', [SystemHandlers::class, 'adminSystem']],
     ['POST /admin/system/migrate', [SystemHandlers::class, 'migrate']],
+    ['POST /admin/system/demo-role-tasks', [SystemHandlers::class, 'demoRoleTasks']],
 
     ['GET /campaigns', [CampaignHandlers::class, 'list']],
     ['POST /campaigns', [CampaignHandlers::class, 'create']],
+    ['POST /brands/logo', [CampaignHandlers::class, 'setLogo']],
 
     ['GET /briefs', [BriefHandlers::class, 'mine']],
     ['POST /briefs', [BriefHandlers::class, 'create']],
@@ -78,10 +84,30 @@ return [
     ['GET /jobs/board/columns', [JobBoardHandlers::class, 'columns']],
     ['POST /jobs/{id}/move', [JobBoardHandlers::class, 'move']],
     ['GET /jobs/{id}/sheet', [JobBoardHandlers::class, 'sheet']],
+    // Owner decisions 2026-10: every asset of a job, status overrides, the COO's report
+    ['GET /jobs/{id}/assets', [AssetHandlers::class, 'page']],
+    ['POST /jobs/{id}/assets/override', [AssetHandlers::class, 'overrideAsset']],
+    ['POST /jobs/{id}/publications/override', [AssetHandlers::class, 'overridePost']],
+    ['GET /admin/overrides', [AssetHandlers::class, 'report']],
     ['GET /views', [SavedViewHandlers::class, 'list']],
     ['POST /views', [SavedViewHandlers::class, 'create']],
     ['PATCH /views/{id}', [SavedViewHandlers::class, 'update']],
     ['DELETE /views/{id}', [SavedViewHandlers::class, 'delete']],
+
+    // Reviews (owner spec 2026-10)
+    ['GET /jobs/{id}/work', [ReviewHandlers::class, 'work']],
+    ['POST /jobs/{id}/work/{aid}', [ReviewHandlers::class, 'save']],
+    ['POST /jobs/{id}/work/{aid}/request', [ReviewHandlers::class, 'requestReview']],
+    ['GET /jobs/{id}/review', [ReviewHandlers::class, 'page']],
+    ['POST /jobs/{id}/review/posts/{aid}', [ReviewHandlers::class, 'decide']],
+    ['POST /jobs/{id}/review/approve', [ReviewHandlers::class, 'approveJob']],
+    ['POST /jobs/{id}/review/request-ecd', [ReviewHandlers::class, 'requestEcd']],
+    ['POST /jobs/{id}/review/ecd-approve', [ReviewHandlers::class, 'ecdApprove']],
+    ['POST /jobs/{id}/review/reassign', [ReviewHandlers::class, 'reassign']],
+    ['POST /jobs/{id}/review/ready', [ReviewHandlers::class, 'markReady']],
+    ['POST /jobs/{id}/review/send', [ReviewHandlers::class, 'sendToClient']],
+    ['GET /today/reviews', [ReviewHandlers::class, 'todaySection']],
+    ['POST /admin/system/review-round-limit', [SystemHandlers::class, 'reviewRoundLimit']],
 
     // Social publishing
     ['GET /social', [SocialHandlers::class, 'page']],
@@ -99,6 +125,7 @@ return [
     ['POST /social/publications/{pid}/live', [SocialHandlers::class, 'live']],
     ['POST /social/publications/{pid}/archive', [SocialHandlers::class, 'archive']],
     ['POST /social/publications/{pid}/reopen', [SocialHandlers::class, 'reopen']],
+    ['POST /social/publications/{pid}/recheck', [SocialHandlers::class, 'recheck']],
     ['GET /today/social', [SocialHandlers::class, 'todaySection']],
 
     ['GET /system/spike', [SpikeHandlers::class, 'page']],

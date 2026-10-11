@@ -31,6 +31,23 @@ final class Links
         return is_string($host) && $host !== '' && preg_match('/^[A-Za-z0-9.\-\[\]:]+$/', $host) === 1;
     }
 
+    /** A web link that is https only (brand logos: the page loads them, so never plain http). */
+    public static function isHttpsUrl(string $v): bool
+    {
+        return self::isWebUrl($v) && strncasecmp($v, 'https://', 8) === 0;
+    }
+
+    /** '' when $v is fine as a brand logo link ('' clears the logo), else the reason. */
+    public static function logoUrlProblem(string $v): string
+    {
+        if ($v === '' || self::isHttpsUrl($v)) {
+            return '';
+        }
+        return strlen($v) > self::MAX_LENGTH
+            ? 'The logo link is too long.'
+            : 'The logo must be an https:// link to an image (no other kinds of link).';
+    }
+
     public static function isServerLink(string $v): bool
     {
         if ($v === '' || strlen($v) > self::MAX_LENGTH || preg_match('/[\x00-\x1f\x7f<>"]/', $v) === 1) {

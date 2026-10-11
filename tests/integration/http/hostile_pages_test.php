@@ -121,6 +121,8 @@ function hp_world(): array
     jf_job($d, 'MERC-777', $c['campaign'], 'Unowned ' . $h, ['status' => 'In Review', 'due' => '2026-10-12']);
     // everything people can name, renamed hostile
     $d->db->exec('UPDATE brands SET name = :n', ['n' => 'Brand ' . $h]);
+    // a logo link written straight to the row (never accepted by POST /brands/logo) must never become an <img src>
+    $d->db->exec("UPDATE brands SET logo_url = 'javascript:alert(1)'");
     $d->db->exec('UPDATE campaigns SET name = :n, description = :n', ['n' => 'Camp ' . $h]);
     $d->db->exec('UPDATE users SET name = :n', ['n' => 'Person ' . $h]);
     $d->db->exec('UPDATE users SET username = :n WHERE id = :u', ['n' => 'user' . $h, 'u' => $p['copy']]);
@@ -139,6 +141,10 @@ function hp_world(): array
         foreach ([$jobId, $legacy] as $j) {
             $d->activity->append($tx, new ActivityEntry($j, $p['traffic'], 'verb ' . $h, 'job', $j, [
                 'note' => 'Note ' . $h, 'reason' => 'Reason ' . $h, 'user_name' => 'Name ' . $h, 'recipients' => [$p['am']]]), new DateTimeImmutable('2026-10-09 08:00:00'));
+            // an override with hostile values, for the feeds and the COO's /admin/overrides
+            $d->activity->append($tx, new ActivityEntry($j, $p['traffic'], 'asset_status_overridden', 'asset', $j, [
+                'kind' => 'asset', 'asset_name' => 'Asset ' . $h, 'from' => 'From ' . $h, 'to' => 'To ' . $h, 'reason' => 'Reason ' . $h, 'recipients' => [$p['am']]]),
+                new DateTimeImmutable('2026-10-09 08:30:00'));
         }
     });
     return [$d, $p, $jobId, $legacy];

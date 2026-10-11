@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers;
 
+use App\Domain\ChecklistItem;
 use App\Domain\Dates;
 use App\Domain\Platform;
 use App\Domain\PublicationAction;
@@ -40,7 +41,7 @@ use DateTimeZone;
  *   POST /social/jobs/{id}/ready            mark the whole brief Ready to schedule
  *   POST /social/assets/{aid}/platforms/{platform}, DELETE /social/publications/{pid}
  *   PATCH /social/publications/{pid}/{checklist|schedule|live-link|promoted}
- *   POST /social/publications/{pid}/{ready|scheduled|live|archive|reopen}
+ *   POST /social/publications/{pid}/{ready|scheduled|live|archive|reopen|recheck}
  * Every write checks SocialPolicy, the publication's row_version and the rules
  * in PublicationRules, then answers with the re-rendered asset section and job
  * header (outer patches by id, so transport=html works) and a toast. A refused
@@ -154,8 +155,15 @@ final class SocialHandlers
     {
         return self::withPublication($r, $d, static function (User $u, Publication $p, JobAccess $a, PublicationSignals $s) use ($r, $d): Response {
             $dec = SocialPolicy::canEditChecklist($u, $a);
+            $checklist = $s->checklist;
             if (!$dec->allowed) {
-                return Shell::deny($r, $dec->reason);
+                // The job's Producer may change the Test result item only (asset test reports); the rest is kept as stored.
+                $only = SocialPolicy::canEditTestResult($u, $a);
+                if (!$only->allowed) {
+                    return Shell::deny($r, $dec->reason);
+                }
+                $item = ChecklistItem::TestResult;
+                $checklist = $p->checklist->with($item, $s->checklist->entry($item)->ok, $s->checklist->entry($item)->note);
             }
             if (!PublicationRules::canEditChecklist($p->status)) {
                 return self::replyAsset($d, $u, $a, $p->assetId, Toast::error('The checklist is locked once the post is Ready to schedule. Move it back a step to change it.'));
@@ -163,7 +171,7 @@ final class SocialHandlers
             if ($s->noteProblem !== '') {
                 return self::replyAsset($d, $u, $a, $p->assetId, Toast::error($s->noteProblem));
             }
-            $w = $d->publications->saveChecklist($p, $s->rowVersion, $s->checklist, $u->id, $d->clock->now());
+            $w = $d->publications->saveChecklist($p, $s->rowVersion, $checklist, $u->id, $d->clock->now());
             return self::replyAsset($d, $u, $a, $p->assetId, self::toastFor($w, 'Saved.'));
         });
     }
@@ -253,6 +261,12 @@ final class SocialHandlers
         return self::move($r, $d, PublicationAction::Reopen);
     }
 
+    /** POST /social/publications/{pid}/recheck: back to checking (the job's Producer, Social, COO, ECD). */
+    public static function recheck(Request $r, Deps $d): Response
+    {
+        return self::move($r, $d, PublicationAction::Recheck);
+    }
+
     private static function move(Request $r, Deps $d, PublicationAction $action): Response
     {
         return self::withPublication($r, $d, static function (User $u, Publication $p, JobAccess $a, PublicationSignals $s) use ($r, $d, $action): Response {
@@ -274,6 +288,7 @@ final class SocialHandlers
                 PublicationAction::GoLive => $p->platform->label() . ' is Live.',
                 PublicationAction::Archive => $p->platform->label() . ' post archived.',
                 PublicationAction::Reopen => $p->platform->label() . ' moved back to ' . strtolower($o->to->label()) . '.',
+                PublicationAction::Recheck => $p->platform->label() . ' is back to checking. Social and the AM have been told.',
             };
             if ($w->jobMoved() && $w->jobTo !== null) {
                 $msg .= ' The job is now ' . strtolower($w->jobTo->label()) . '.';
@@ -357,6 +372,7 @@ final class SocialHandlers
             SocialPolicy::canSetScheduled($u, $a)->allowed, SocialPolicy::canSetLive($u, $a)->allowed,
             SocialPolicy::canEditLiveLink($u, $a)->allowed, SocialPolicy::canSetPromoted($u, $a)->allowed,
             SocialPolicy::canArchive($u, $a)->allowed, SocialPolicy::canReopen($u, $a)->allowed,
+            SocialPolicy::canEditTestResult($u, $a)->allowed, SocialPolicy::canSetChecking($u, $a)->allowed,
         );
     }
 

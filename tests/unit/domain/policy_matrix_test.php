@@ -2,11 +2,18 @@
 declare(strict_types=1);
 
 use App\Domain\GridField;
+use App\Domain\JobReviewStatus;
+use App\Domain\MediaKind;
+use App\Domain\PartState;
+use App\Domain\ReviewPolicy;
 use App\Domain\JobAction;
 use App\Domain\Policy;
 use App\Domain\Role;
+use App\Domain\Types\AssetReview;
 use App\Domain\Types\Assignment;
 use App\Domain\Types\JobAccess;
+use App\Domain\Types\JobReview;
+use App\Domain\Types\Team;
 use App\Domain\Types\User;
 
 require_once dirname(__DIR__, 2) . '/support/brief_fx.php';
@@ -63,7 +70,39 @@ function pmt_cases(): array
         'edit_job_field:hours_estimate' => [$j('in_review'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::HoursEstimate)],
         'edit_job_field:waiting_on' => [$j('waiting'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::WaitingOn)],
         'edit_job_field:waiting_reason' => [$j('waiting'), static fn (User $u, JobAccess $a) => Policy::canEditJobField($u, $a, GridField::WaitingReason)],
+        // Owner decisions 2026-10
+        'assign_task_roles' => [$j('in_progress'), static fn (User $u, JobAccess $a) => Policy::canAssignTaskRole($u, $a, Role::Developer)],
+        'view_all_assets' => [$j('in_progress'), static fn (User $u, JobAccess $a) => Policy::canViewJobAssets($u, $a)],
+        'override_asset_status' => [$j('scheduled'), static fn (User $u, JobAccess $a) => Policy::canOverrideAssetStatus($u, $a)],
+        'manage_brand_logo' => [null, static fn (User $u, ?JobAccess $a) => Policy::canSetBrandLogo($u)],
+        'view_overrides_report' => [null, static fn (User $u, ?JobAccess $a) => Policy::canViewOverridesReport($u)],
+        'add_demo_role_tasks' => [null, static fn (User $u, ?JobAccess $a) => Policy::canAddDemoRoleTasks($u, true)],
+        // Reviews (owner spec 2026-10): ReviewPolicy with review state that meets each action's conditions
+        'view_internal_feedback' => [$j('in_review'), static fn (User $u, JobAccess $a) => ReviewPolicy::canView($u, $a)],
+        'submit_for_review' => [$j('in_progress'), static fn (User $u, JobAccess $a) => ReviewPolicy::canSubmit($u, $a, pmt_asset($u, $a), new Team($a->assignments))],
+        'approve_internal' => [$j('in_review'), static fn (User $u, JobAccess $a) => ReviewPolicy::canReview($u, $a, JobReview::empty($a->jobId))],
+        'request_ecd_review' => [$j('in_progress'), static fn (User $u, JobAccess $a) => ReviewPolicy::canRequestEcdReview($u, $a, JobReview::empty($a->jobId))],
+        'approve_job_ecd' => [$j('in_review'), static fn (User $u, JobAccess $a) => ReviewPolicy::canApproveAsEcd($u, $a, pmt_jr(true, false, false), JobReviewStatus::AllApproved)],
+        'reassign_review' => [$j('in_review'), static fn (User $u, JobAccess $a) => ReviewPolicy::canReassign($u, $a, JobReview::empty($a->jobId))],
+        'mark_ready_for_client' => [$j('approved_internal'), static fn (User $u, JobAccess $a) => ReviewPolicy::canMarkReady($u, $a, pmt_jr(true, true, false), JobReviewStatus::AllApproved)],
+        'send_to_client' => [$j('approved_internal'), static fn (User $u, JobAccess $a) => ReviewPolicy::canSendToClient($u, $a, pmt_jr(true, true, true), JobReviewStatus::AllApproved)],
+        'change_review_round_limit' => [null, static fn (User $u, ?JobAccess $a) => Policy::canChangeReviewRoundLimit($u)],
     ];
+}
+
+/** An asset of the fixture job, assigned to the actor when the actor is on the job ("asset is assigned to the actor"). */
+function pmt_asset(User $u, JobAccess $a): AssetReview
+{
+    $mine = $a->isAssigned($u->id);
+    return new AssetReview('a1', $a->jobId, 'MERC-004_Static_01', 'image', 'social-static', 'Inbox', $mine ? $u->id : null, $mine ? $u->role : null, '', '', '', 0,
+        null, 0, '', '', MediaKind::Link, '', '', '', PartState::Missing, PartState::Missing, null, null, null, false, 0, null, '', null, '');
+}
+
+function pmt_jr(bool $cd, bool $ecd, bool $ready): JobReview
+{
+    $at = '2026-10-09 10:00:00';
+    return new JobReview('j1', 1, null, null, null, $cd ? 'cd9' : null, '', $cd ? $at : null, $ecd ? 'ecd9' : null, '', $ecd ? $at : null,
+        $ready ? 'am9' : null, $ready ? $at : null, null, null, null, '', null, 1);
 }
 
 /**
@@ -93,35 +132,31 @@ function pmt_not_yet(): array
         'edit_job_field:last_go_live' => 'no grid cell; edited in the brief editor (edit_brief_*)',
         'edit_job_field:budget' => 'no grid cell; edited in the brief editor (edit_brief_*)',
         'edit_job_field:sort_order' => 'no manual job ordering yet',
-        'transition:in_progress->in_review' => 'needs asset submission (reviews phase)',
-        'transition:in_review->in_progress' => 'reviews phase',
-        'transition:in_review->approved_internal' => 'reviews phase',
-        'transition:approved_internal->in_progress' => 'reviews and client portal phases',
+        'transition:in_progress->in_review' => 'implicit: Request review or every post handed in (ReviewRules::stageMoves)',
+        'transition:in_review->in_progress' => 'implicit: a rejection in the review flow (ReviewRules::stageMoves)',
+        'transition:in_review->approved_internal' => 'implicit: the ECD approval of a CD-approved job (ReviewRules::stageMoves)',
+        'transition:approved_internal->in_progress' => 'implicit: a rejection in the review flow; the AM send back comes with the client portal',
         'transition:approved_internal->approved_client' => 'client portal phase',
         'transition:approved_client->in_progress' => 'reopen flow not built',
         'transition:done->in_progress' => 'reopen flow not built',
         'transition:archived->restore' => 'restore flow not built',
         'transition:cancelled->draft' => 'reinstate flow not built',
-        'submit_for_review' => 'reviews phase',
-        'qa_signoff' => 'reviews phase',
-        'approve_internal' => 'reviews phase',
-        'give_feedback_internal' => 'reviews phase',
-        'route_feedback' => 'reviews phase',
-        'send_to_client' => 'client portal phase',
+        'qa_signoff' => 'QA is advisory (Q13) and not part of the review flow yet',
+        'give_feedback_internal' => 'feedback is given through approve_internal (reject with feedback) in the review flow',
+        'route_feedback' => 'rejections are routed to the part maker automatically; manual routing comes with client feedback',
         'approve_client' => 'client portal phase',
         'give_feedback_client' => 'client portal phase',
         'recommend_signoff' => 'client portal phase',
         'comment' => 'comments come later',
         'manage_brand' => 'no brand admin screen',
         'toggle_demo_mode' => 'the owner flips the demo flag by hand',
-        'view_internal_feedback' => 'reviews phase',
         'view_staff_emails' => 'no screen shows staff emails to non-admins',
         'view_capacity' => 'capacity screen comes later',
         'view_wiki' => 'wiki stays in legacy',
         'edit_wiki' => 'wiki stays in legacy',
     ];
     foreach (['social_view_queue', 'social_edit_checklist', 'social_set_ready_to_schedule', 'social_set_scheduled', 'social_set_live',
-        'social_edit_live_link', 'social_set_promoted', 'social_archive_post'] as $id) {
+        'social_edit_live_link', 'social_set_promoted', 'social_archive_post', 'social_set_checking', 'social_edit_test_result'] as $id) {
         $out[$id] = 'Social publishing: SocialPolicy, checked in social_test.php';
     }
     return $out;
@@ -141,6 +176,27 @@ function pmt_expected(string $cell, string $relation): bool
 }
 
 return [
+    'docs/roles.md section 4 agrees with policy-matrix.json, cell for cell' => function (): void {
+        $m = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/fixtures/roles/policy-matrix.json'), true);
+        $code = ['allow' => 'Y', 'deny' => '-', 'assigned' => 'A', 'creator' => 'C', 'assigned_or_creator' => 'AC', 'own_brand' => 'B'];
+        $rows = [];
+        foreach (explode("\n", (string) file_get_contents(dirname(__DIR__, 3) . '/docs/roles.md')) as $line) {
+            if (preg_match('/^\| `([^`]+)`(?: \*)? \|(.*)\|$/', $line, $mm) === 1) {
+                $cells = array_map('trim', explode('|', $mm[2]));
+                if (count($cells) === 14) {
+                    $rows[$mm[1]][] = $cells;
+                }
+            }
+        }
+        foreach ($m['actions'] as $action) {
+            $want = [];
+            foreach ($m['roles'] as $role) {
+                $want[] = $code[(string) $action['decisions'][$role]];
+            }
+            t_true(isset($rows[$action['id']]), $action['id'] . ' has no row in docs/roles.md section 4');
+            t_true(in_array($want, $rows[$action['id']], true), $action['id'] . ': docs/roles.md row differs from the JSON (' . implode(' ', $want) . ')');
+        }
+    },
     'policy agrees with policy-matrix.json for every implemented brief and job action' => function (): void {
         $m = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/fixtures/roles/policy-matrix.json'), true);
         t_eq(Policy::COLUMNS, $m['roles'], 'column order');
@@ -220,6 +276,42 @@ return [
         t_true(!Policy::canTransition(bf_user(Role::COO), bf_access('in_review'), JobAction::ApproveInternal)->allowed, 'reviews not available yet');
         t_true(!Policy::canTransition($am, $own('scheduled'), JobAction::GoLive)->allowed, 'AM cannot set live');
         t_true(Policy::canTransition($am, $own('live'), JobAction::MarkDone)->allowed);
+    },
+    'policy: owner decisions 2026-10: task slots, assets, overrides, demo tasks, assigned-only filters' => function (): void {
+        $tr = bf_user(Role::Traffic, 't');
+        $am = bf_user(Role::AM, 'am1');
+        $own = static fn (string $stage): JobAccess => bf_access($stage, ['creatorId' => 'am1']);
+        // [user, access, slot, canSetSlot]: Developer, SEO, Producer open to Traffic after the send; owners before and after.
+        $cases = [
+            [$tr, bf_access('draft'), Role::Producer, false], [$tr, bf_access('briefed'), Role::Developer, true], [$tr, bf_access('in_progress'), Role::SEO, true],
+            [$tr, bf_access('in_progress'), Role::Producer, true], [$tr, bf_access('in_progress'), Role::PM, false], [$tr, bf_access('done'), Role::Developer, false],
+            [$am, $own('draft'), Role::Developer, true], [$am, $own('briefed'), Role::Developer, true], [$am, $own('briefed'), Role::Designer, false],
+            [$am, bf_access('briefed'), Role::SEO, false], [$am, $own('in_progress'), Role::Producer, true],
+            [bf_user(Role::Designer, 'd'), bf_access('in_progress'), Role::Developer, false], [bf_user(Role::Developer, 'dev'), bf_access('in_progress'), Role::Developer, false],
+        ];
+        foreach ($cases as $i => [$u, $a, $slot, $want]) {
+            t_eq($want, Policy::canSetSlot($u, $a, $slot)->allowed, "slot case $i " . $u->role->value . ' ' . $slot->value . ' ' . $a->stage->value);
+        }
+        t_true(!Policy::canAssignTaskRole($tr, bf_access('in_progress'), Role::Designer)->allowed, 'only the three task roles');
+        // Assets page and overrides: Traffic, COO, ECD on sent jobs only.
+        foreach ([Role::Traffic, Role::COO, Role::ECD] as $r) {
+            t_true(Policy::canOverrideAssetStatus(bf_user($r), bf_access('live'))->allowed, $r->value);
+            t_true(!Policy::canOverrideAssetStatus(bf_user($r), bf_access('draft'))->allowed, $r->value . ' draft');
+            t_true(Policy::canViewJobAssets(bf_user($r), bf_access('done'))->allowed, $r->value . ' done job readable');
+        }
+        foreach ([Role::Designer, Role::AM, Role::CD, Role::Producer, Role::Social, Role::Client] as $r) {
+            $mine = bf_access('in_progress', ['assignments' => [new Assignment($r, 'u1', 'U', $r)], 'creatorId' => 'u1']);
+            t_true(!Policy::canOverrideAssetStatus(bf_user($r), $mine)->allowed, $r->value . ' cannot override, even on their job');
+        }
+        t_true(!Policy::canAddDemoRoleTasks(bf_user(Role::COO), false)->allowed, 'demo tasks need demo mode');
+        t_true(!Policy::canAddDemoRoleTasks(bf_user(Role::ECD), true)->allowed, 'COO only');
+        t_true(Policy::canSeeNav(bf_user(Role::COO), 'admin-overrides'));
+        t_true(!Policy::canSeeNav(bf_user(Role::ECD), 'admin-overrides'));
+        // Assigned-only roles: filter lists limited, no Owner filter.
+        $assignedOnly = [Role::Copywriter, Role::Designer, Role::Developer, Role::SEO, Role::QA, Role::Social];
+        foreach (Role::cases() as $r) {
+            t_eq(in_array($r, $assignedOnly, true), Policy::seesOnlyAssignedJobs(bf_user($r)), 'assigned only: ' . $r->value);
+        }
     },
     'policy: claim AM' => function (): void {
         foreach ([Role::AM, Role::PM, Role::Producer, Role::COO, Role::ECD] as $r) {

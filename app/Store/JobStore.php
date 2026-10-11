@@ -28,7 +28,7 @@ final class JobStore
             c.name AS campaign_name, b.id AS brand_id, b.name AS brand_name, b.prefix AS brand_prefix
         FROM jobs j LEFT JOIN campaigns c ON c.id = j.campaign_id LEFT JOIN brands b ON b.id = c.brand_id';
 
-    private const LIST = 'SELECT j.id AS job_id, j.job_number, br.title, c.name AS campaign_name, b.name AS brand_name, j.stage,
+    private const LIST = 'SELECT j.id AS job_id, j.job_number, br.title, c.name AS campaign_name, b.name AS brand_name, b.id AS brand_id, b.logo_url AS brand_logo, j.stage,
             br.version_major, br.version_minor, br.version_patch, br.sent_at, br.has_unsent_changes, br.due_date, br.updated_at
         FROM jobs j JOIN briefs br ON br.job_id = j.id LEFT JOIN campaigns c ON c.id = j.campaign_id LEFT JOIN brands b ON b.id = c.brand_id';
 

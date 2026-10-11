@@ -51,8 +51,8 @@ function layout_page(LayoutVM $vm, string $content): string
       A request failed (<span data-text="$_net_error"></span>). Check your connection and try again.
       <button type="button" class="ml-2 underline" data-on:click="$_net_error = 0">Dismiss</button>
     </div>
-    <header class="flex h-14 items-center justify-between gap-4 border-b border-border px-4">
-      <h1 class="truncate text-lg font-semibold"><?= e($vm->title) ?></h1>
+    <header class="flex h-14 items-center justify-between gap-4 border-b border-border bg-card px-6">
+      <h1 class="truncate text-xl font-bold"><?= e($vm->title) ?></h1>
       <div class="flex items-center gap-2">
         <button type="button" data-theme-toggle aria-label="Toggle dark mode" class="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-accent hover:text-accent-foreground">Theme</button>
         <details class="relative">
@@ -70,7 +70,7 @@ function layout_page(LayoutVM $vm, string $content): string
         </details>
       </div>
     </header>
-    <main id="main" class="flex-1 p-4 md:p-6">
+    <main id="main" class="flex-1 p-6">
 <?= $content ?>
     </main>
   </div>

@@ -4,17 +4,23 @@ declare(strict_types=1);
 namespace App\Http\Handlers;
 
 use App\Domain\Policy;
+use App\Domain\Signals\BrandLogoSignals;
 use App\Domain\Signals\CampaignSignals;
 use App\Http\Deps;
 use App\Http\PatchElements;
 use App\Http\Request;
 use App\Http\Response;
 use App\Http\Toast;
+use App\Store\Ids;
 use App\View\ui\SelectOption;
 use App\View\VM\CampaignGroupVM;
 use App\View\VM\CampaignsVM;
 
-/** GET /campaigns (by brand) and POST /campaigns (nc.* from the dialog; managers and admins). */
+/**
+ * GET /campaigns (by brand), POST /campaigns (nc.* from the dialog) and
+ * POST /brands/logo (eb.* from the brand dialog: an https logo link or '' to
+ * clear it). Managers and admins.
+ */
 final class CampaignHandlers
 {
     public static function list(Request $r, Deps $d): Response
@@ -25,7 +31,7 @@ final class CampaignHandlers
         if (!$dec->allowed) {
             return Shell::deny($r, $dec->reason);
         }
-        return Shell::page($r, $d, 'Campaigns', 'campaigns', page_campaigns(self::vm($d, true, Policy::canCreateBrief($u)->allowed, '')));
+        return Shell::page($r, $d, 'Campaigns', 'campaigns', page_campaigns(self::vm($d, true, Policy::canCreateBrief($u)->allowed, '', '', Policy::canSetBrandLogo($u)->allowed)));
     }
 
     public static function create(Request $r, Deps $d): Response
@@ -48,11 +54,34 @@ final class CampaignHandlers
             return Response::events(Toast::error($brand->name . ' already has a campaign called ' . $in->name . '.'));
         }
         $id = $d->campaigns->create($brand->id, $in->name, $in->description, $u->id, $d->clock->now());
-        $vm = self::vm($d, true, Policy::canCreateBrief($u)->allowed, 'Added ' . $in->name . ' to ' . $brand->name . '.', $id);
+        $vm = self::vm($d, true, Policy::canCreateBrief($u)->allowed, 'Added ' . $in->name . ' to ' . $brand->name . '.', $id, Policy::canSetBrandLogo($u)->allowed);
         return Response::events(PatchElements::html(partial_campaigns_panel($vm)), Toast::ok('Campaign created.'));
     }
 
-    private static function vm(Deps $d, bool $canManage, bool $canCreateBrief, string $notice, string $createdId = ''): CampaignsVM
+    /** POST /brands/logo: set or clear a brand's logo link. Only https links are kept. */
+    public static function setLogo(Request $r, Deps $d): Response
+    {
+        $u = BriefHandlers::user($r);
+        $dec = Policy::canSetBrandLogo($u);
+        if (!$dec->allowed) {
+            return Shell::deny($r, $dec->reason);
+        }
+        $in = BrandLogoSignals::fromSignals($r->signals());
+        $errors = $in->validate();
+        if (!$errors->isEmpty()) {
+            return Response::events(Toast::error($errors->first()));
+        }
+        $brand = $d->brands->get($in->brandId);
+        if ($brand === null) {
+            return Response::events(Toast::error('That brand does not exist.'));
+        }
+        $d->brands->setLogo($brand->id, $in->logoUrl, $u->id, $d->clock->now());
+        $msg = $in->logoUrl === '' ? 'Logo removed from ' . $brand->name . '.' : 'Logo saved for ' . $brand->name . '.';
+        $vm = self::vm($d, Policy::canManageCampaign($u)->allowed, Policy::canCreateBrief($u)->allowed, $msg, '', true, Ids::new());
+        return Response::events(PatchElements::html(partial_campaigns_panel($vm)), Toast::ok($msg));
+    }
+
+    private static function vm(Deps $d, bool $canManage, bool $canCreateBrief, string $notice, string $createdId = '', bool $canSetLogo = false, string $brandSaved = ''): CampaignsVM
     {
         $groups = [];
         $brandOptions = [];
@@ -61,9 +90,9 @@ final class CampaignHandlers
             $byBrand[$c->brandId][] = $c;
         }
         foreach ($d->brands->list() as $b) {
-            $groups[] = new CampaignGroupVM($b->id, $b->name, $b->prefix, $byBrand[$b->id] ?? []);
+            $groups[] = new CampaignGroupVM($b->id, $b->name, $b->prefix, $byBrand[$b->id] ?? [], $b->safeLogoUrl());
             $brandOptions[] = new SelectOption($b->id, $b->name);
         }
-        return new CampaignsVM($groups, $brandOptions, $canManage, $canCreateBrief, $notice, $createdId);
+        return new CampaignsVM($groups, $brandOptions, $canManage, $canCreateBrief, $notice, $createdId, $canSetLogo, $brandSaved);
     }
 }

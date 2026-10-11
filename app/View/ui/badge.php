@@ -10,7 +10,7 @@ use App\View\ui\BadgeProps;
  */
 function ui_badge(BadgeProps $p, string $children = ''): string
 {
-    $base = 'inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3';
+    $base = 'inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full px-3 py-1 text-xs font-semibold tracking-wide whitespace-nowrap uppercase transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3';
     $variants = [
         'default' => 'border border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90',
         'secondary' => 'border border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90',
@@ -38,7 +38,9 @@ function ui_badge(BadgeProps $p, string $children = ''): string
         'overdue' => 'border border-transparent bg-due-overdue text-due-overdue-foreground',
         'due_soon' => 'border border-transparent bg-due-soon text-due-soon-foreground',
     ];
-    $variantClasses = $p->stage !== '' ? ($stages[$p->stage] ?? $stages['draft']) : ui_pick($variants, $p->variant, 'default');
+    // Stage and due chips get a leading dot in the chip's text colour (legacy status badges).
+    $dot = "before:size-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']";
+    $variantClasses = $p->stage !== '' ? cx($stages[$p->stage] ?? $stages['draft'], $dot) : ui_pick($variants, $p->variant, 'default');
     $slotAttrs = ' data-slot="badge" data-variant="' . attr($p->stage !== '' ? 'stage-' . $p->stage : $p->variant) . '"';
     $classes = cx($base, $variantClasses, $p->class);
     if ($p->href !== '') {

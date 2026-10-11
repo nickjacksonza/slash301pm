@@ -38,7 +38,7 @@ final class JobGridHandlers
         $u = BriefHandlers::user($r);
         [$q, $viewId] = SavedViewHandlers::resolve($r, $d, $u, JobQuery::SCREEN_JOBS);
         $res = JobsView::search($d, $u, $q);
-        $vm = new JobsPageVM(JobQuery::SCREEN_JOBS, $q->toSignalState(), JobsView::filters(JobQuery::SCREEN_JOBS, $d),
+        $vm = new JobsPageVM(JobQuery::SCREEN_JOBS, $q->toSignalState(), JobsView::filters(JobQuery::SCREEN_JOBS, $d, $u),
             SavedViewHandlers::menu($d, $u, JobQuery::SCREEN_JOBS, $q, $viewId), JobsView::body($res, $q, $u, $d->clock->now()), null,
             url('/jobs'), url('/jobs/board'));
         return Shell::page($r, $d, 'Jobs', 'jobs', page_jobs_grid($vm));

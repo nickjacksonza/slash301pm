@@ -11,6 +11,8 @@ enum PublicationAction: string
     case GoLive = 'go_live';
     case Archive = 'archive';
     case Reopen = 'reopen';
+    /** Back to checking from Ready to schedule or Scheduled (Producer test reports). */
+    case Recheck = 'recheck';
 
     public function label(): string
     {
@@ -20,6 +22,7 @@ enum PublicationAction: string
             self::GoLive => 'Mark live',
             self::Archive => 'Archive',
             self::Reopen => 'Move back a step',
+            self::Recheck => 'Back to checking',
         };
     }
 
@@ -32,6 +35,7 @@ enum PublicationAction: string
             self::GoLive => Notifications::PUBLICATION_LIVE,
             self::Archive => Notifications::PUBLICATION_ARCHIVED,
             self::Reopen => Notifications::PUBLICATION_REOPENED,
+            self::Recheck => Notifications::PUBLICATION_RECHECKED,
         };
     }
 }

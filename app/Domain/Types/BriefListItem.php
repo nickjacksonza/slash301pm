@@ -22,6 +22,8 @@ final class BriefListItem
         public readonly ?string $sentAt,
         public readonly ?string $dueDate,
         public readonly string $updatedAt,
+        public readonly string $brandId = '',
+        public readonly string $brandLogoUrl = '',
     ) {}
 
     public static function fromRow(array $r): self
@@ -33,6 +35,7 @@ final class BriefListItem
             $r['sent_at'] !== null, (int) $r['has_unsent_changes'] === 1,
             $r['sent_at'] !== null ? (string) $r['sent_at'] : null,
             $r['due_date'] !== null && $r['due_date'] !== '' ? (string) $r['due_date'] : null, (string) $r['updated_at'],
+            (string) ($r['brand_id'] ?? ''), (string) ($r['brand_logo'] ?? ''),
         );
     }
 }

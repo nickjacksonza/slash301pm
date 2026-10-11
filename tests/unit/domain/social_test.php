@@ -243,6 +243,8 @@ return [
             'social_edit_live_link' => static fn (User $u, JobAccess $a) => SocialPolicy::canEditLiveLink($u, $a),
             'social_set_promoted' => static fn (User $u, JobAccess $a) => SocialPolicy::canSetPromoted($u, $a),
             'social_archive_post' => static fn (User $u, JobAccess $a) => SocialPolicy::canArchive($u, $a),
+            'social_set_checking' => static fn (User $u, JobAccess $a) => SocialPolicy::canSetChecking($u, $a),
+            'social_edit_test_result' => static fn (User $u, JobAccess $a) => SocialPolicy::canEditTestResult($u, $a),
         ];
         $seen = [];
         $checked = 0;
@@ -282,7 +284,7 @@ return [
             }
         }
         t_eq(array_keys($fns), $seen, 'every social_* row is covered, in order');
-        t_true($checked >= 8 * 14 * 4 * 4, 'checked ' . $checked);
+        t_true($checked >= 10 * 14 * 4 * 4, 'checked ' . $checked);
     },
 
     'social policy: nothing before client approval; writes stop at done; the AM never sets Live (SOC-5, SOC-6)' => function (): void {

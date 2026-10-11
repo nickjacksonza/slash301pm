@@ -31,6 +31,12 @@ final class Shell
             } catch (\Throwable $e) {
                 error_log('[slash301pm] nav count: ' . $e->getMessage());
             }
+            // Reviews (owner spec 2026-10): posts to review, ECD approvals, changes requested, round warnings, ready for client.
+            try {
+                $attention += ReviewHandlers::attention($d, $user);
+            } catch (\Throwable $e) {
+                error_log('[slash301pm] review count: ' . $e->getMessage());
+            }
         }
         // Role-aware: Policy::canSeeNav() decides which items each role gets (no dead links).
         $items = [
@@ -46,6 +52,7 @@ final class Shell
         $adminItems = [
             new NavItem('admin-users', 'Users', url('/admin/users'), true),
             new NavItem('admin-system', 'System', url('/admin/system'), true),
+            new NavItem('admin-overrides', 'Overrides', url('/admin/overrides'), true),
             new NavItem('spike', 'Datastar spike', url('/system/spike'), true),
         ];
         $nav = [];

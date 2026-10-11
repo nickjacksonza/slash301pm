@@ -16,6 +16,21 @@ final class AssetStatus
     /** @var list<string> */
     public const UNSTARTED = ['', 'Inbox', 'Brief', 'To Do', 'Not Started', 'Backlog'];
 
+    /**
+     * Every value an override may set: legacy src/constants.js STATUSES (the
+     * asset picker of the legacy app) plus Cancelled, in that order.
+     * @var list<string>
+     */
+    public const OVERRIDE_VALUES = [
+        'Inbox', 'Backlog', 'To Do', 'Today', 'This Week', 'In Progress', 'Waiting', 'On Hold', 'In Review',
+        'Approved (Internal)', 'Approved (External)', 'Scheduled', 'Live', 'Done', 'Archived', 'Cancelled',
+    ];
+
+    public static function isOverrideValue(string $status): bool
+    {
+        return in_array($status, self::OVERRIDE_VALUES, true);
+    }
+
     public static function isCancelled(string $status): bool
     {
         return $status === self::CANCELLED;

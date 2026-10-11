@@ -5,10 +5,13 @@ namespace App\Http\Handlers;
 
 use App\Domain\BetaChecklist;
 use App\Domain\Policy;
+use App\Domain\ReviewRules;
+use App\Domain\Signals\SignalInput;
 use App\Domain\Role;
 use App\Http\Deps;
 use App\Http\Request;
 use App\Http\Response;
+use App\Http\Toast;
 use App\Store\MigrationLocked;
 use App\View\VM\SystemVM;
 use Throwable;
@@ -85,6 +88,44 @@ final class SystemHandlers
         return Response::redirect(url('/admin/system', ['notice' => $result->ok ? 'migrated' : 'failed']));
     }
 
+    /**
+     * POST /admin/system/demo-role-tasks (COO, demo mode only): the three role
+     * tasks on up to 3 open sent jobs (DemoTaskStore). Answers with a toast.
+     */
+    public static function demoRoleTasks(Request $r, Deps $d): Response
+    {
+        $user = $r->user();
+        $decision = $user === null ? null : Policy::canAddDemoRoleTasks($user, $d->config->demoMode());
+        if ($user === null || $decision === null || !$decision->allowed) {
+            return Shell::deny($r, $decision !== null ? $decision->reason : 'Sign in first.');
+        }
+        $res = $d->demoTasks->addRoleTasks($user->id, $d->clock->now());
+        $msg = $res->jobNumbers === []
+            ? ($res->skipped === [] ? 'No open sent job to add demo tasks to.' : 'Nothing to add: ' . implode(', ', $res->skipped) . ' already have the demo tasks.')
+            : 'Added UTM link generation, Campaign hashtags and Asset test report to ' . implode(', ', $res->jobNumbers) . '.';
+        if ($res->missingRoles !== []) {
+            $msg .= ' No active ' . implode(', ', $res->missingRoles) . ' user exists, so ' . (count($res->missingRoles) === 1 ? 'that task stays' : 'those tasks stay') . ' unassigned.';
+        }
+        return Response::events($res->jobNumbers === [] || $res->missingRoles !== [] ? Toast::warn($msg) : Toast::ok($msg));
+    }
+
+    /** POST /admin/system/review-round-limit (COO, ECD): rl.limit, 0 to 20 (0 = no warning). Answers with a toast. */
+    public static function reviewRoundLimit(Request $r, Deps $d): Response
+    {
+        $user = $r->user();
+        $decision = $user === null ? null : Policy::canChangeReviewRoundLimit($user);
+        if ($user === null || $decision === null || !$decision->allowed) {
+            return Shell::deny($r, $decision !== null ? $decision->reason : 'Sign in first.');
+        }
+        $v = trim(SignalInput::str(SignalInput::obj($r->signals(), 'rl'), 'limit'));
+        $why = ReviewRules::roundLimitProblem($v);
+        if ($why !== '') {
+            return Response::events(Toast::error($why));
+        }
+        $d->settings->setReviewRoundLimit((int) $v, $user->id, $d->clock->now());
+        return Response::events(Toast::ok((int) $v === 0 ? 'Round limit warnings are off.' : 'The AM is now warned when a post reaches round ' . ((int) $v + 1) . '.'));
+    }
+
     private static function vm(Request $r, Deps $d, string $notice): SystemVM
     {
         $pinned = '';
@@ -108,6 +149,17 @@ final class SystemHandlers
             $d->config->demoMode(), $d->seedPasswords->check(), count($d->users->listActiveByRole(Role::AM)),
             $status->failureJson !== null, count($status->pending), count($status->modified), count($status->backups), $isPinned,
         );
-        return new SystemVM($status, $versions, $d->config->demoMode(), $isPinned, $r->csrfToken(), $notice, $gate);
+        $user = $r->user();
+        $demoTasks = $user !== null && Policy::canAddDemoRoleTasks($user, $d->config->demoMode())->allowed;
+        $limit = null;
+        if ($user !== null && Policy::canChangeReviewRoundLimit($user)->allowed) {
+            try {
+                $limit = $d->settings->reviewRoundLimit();
+            } catch (\Throwable $e) {
+                $limit = null;   // app_settings comes with migration 0014; the page must work before it runs
+            }
+        }
+        return new SystemVM($status, $versions, $d->config->demoMode(), $isPinned, $r->csrfToken(), $notice, $gate, $demoTasks,
+            $user !== null && Policy::canViewOverridesReport($user)->allowed, $limit);
     }
 }

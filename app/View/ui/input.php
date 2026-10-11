@@ -8,12 +8,13 @@ use App\View\ui\InputProps;
  * Source: github.com/coreycole/datastarui @ feb9af0c58ade31f8fefc1443b7e7e15ad413242 (MIT)
  * Fixtures: tests/fixtures/ui/input.*.html
  * Empty type, placeholder, value, name and id are omitted. formId + name gives data-bind="<form_id>.<name>".
+ * Design deviation (legacy look): rounded-full, px-4. Fixtures updated by hand.
  * Deviation: class strings carry no conflict handling (see README), so pass utilities that do not clash (max-w-xs is fine).
  */
 function ui_input(InputProps $p): string
 {
     $classes = cx(
-        'aria-invalid:border-destructive aria-invalid:ring-destructive/20 bg-background border border-input dark:aria-invalid:ring-destructive/40 dark:bg-input/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none file:bg-transparent file:border-0 file:font-medium file:h-7 file:inline-flex file:text-foreground file:text-sm flex focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 h-9 md:text-sm min-w-0 outline-none placeholder:text-muted-foreground px-3 py-1 rounded-md selection:bg-primary selection:text-primary-foreground shadow-xs text-base text-foreground transition-[color,box-shadow] w-full z-auto',
+        'aria-invalid:border-destructive aria-invalid:ring-destructive/20 bg-background border border-input dark:aria-invalid:ring-destructive/40 dark:bg-input/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none file:bg-transparent file:border-0 file:font-medium file:h-7 file:inline-flex file:text-foreground file:text-sm flex focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 h-9 md:text-sm min-w-0 outline-none placeholder:text-muted-foreground px-4 py-1 rounded-full selection:bg-primary selection:text-primary-foreground shadow-xs text-base text-foreground transition-[color,box-shadow] w-full z-auto',
         $p->class,
     );
     $bind = '';

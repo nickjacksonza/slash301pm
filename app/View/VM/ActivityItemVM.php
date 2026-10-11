@@ -9,5 +9,7 @@ final class ActivityItemVM
         public readonly string $actor,
         public readonly string $text,
         public readonly string $at,
+        /** An asset or post status override: shown with an "Override" badge. */
+        public readonly bool $override = false,
     ) {}
 }
