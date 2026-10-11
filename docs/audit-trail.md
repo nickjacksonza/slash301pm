@@ -29,6 +29,16 @@ Every state-changing request in the new app writes a row in `activity` (migratio
 | `POST /admin/users/{id}/deactivate` | `user_deactivated` | user | |
 | `POST /admin/users/{id}/activate` | `user_activated` | user | |
 | `POST /account/password` | `password_changed` | user | |
+| `POST /jobs/{id}/work/{aid}` | `asset_submitted` (+ `review_requested` with `data.scope = job` when the hand-in completes every post, `round_limit_warning` past the limit, and `job_start` / `job_submit` with `data.via = review` when the job moves) | asset | Reviews. A maker's hand-in; `data.parts`, `data.round`. `review_requested` goes to the reviewer (the reassigned CD or ECD, else the CD slot, else every ECD); `round_limit_warning` to the AM (or creator). |
+| `POST /jobs/{id}/work/{aid}/request` | `review_requested` (`data.scope = asset`) and `asset_submitted` when something changed (+ the same extras) | asset | Request review on one post. |
+| `POST /jobs/{id}/review/posts/{aid}` | `asset_part_approved` or `asset_part_rejected` (+ `job_send_back` when a rejection moves the job) | asset | `data.parts`, `data.decision`, `data.feedback`, `data.round`, `data.brief_version` (the sent version checked). A rejection goes to the maker of each rejected part only (`data.makers`) and clears the job approvals (`data.cleared_approvals`). |
+| `POST /jobs/{id}/review/approve` | `job_cd_approved` (+ `job_submit`) | job | To every active ECD. |
+| `POST /jobs/{id}/review/request-ecd` | `job_review_requested` (+ `job_submit`) | job | To every active ECD, even before every post is done. |
+| `POST /jobs/{id}/review/ecd-approve` | `job_ecd_approved` (+ `job_approve_internal`) | job | To the AM (or creator) and the CD slot holder. |
+| `POST /jobs/{id}/review/reassign` | `review_reassigned` | job | `data.to`, `data.to_name`, `data.to_role`; to the new reviewer (never a client: clients cannot sign in yet). |
+| `POST /jobs/{id}/review/ready` | `job_ready_for_client` | job | To the AM (or creator) and Traffic. |
+| `POST /jobs/{id}/review/send` | `job_sent_to_client` | job | Sent by hand outside the app until the client portal; to the AM (or creator) and Traffic. |
+| `POST /admin/system/review-round-limit` | `setting_changed` | setting | COO or ECD. No job; data: key, from, to. |
 | `POST /social/jobs/{id}/ready` | `publication_ready` (`data.scope = brief`), plus the job's stage verb (`job_ready_to_schedule`, `data.via = social`) | job | Social publishing. N34: `data.recipients` = AM (or creator), PM and Producer slot holders. |
 | `POST /social/assets/{aid}/platforms/{platform}` | `publication_added` | publication | A new post record (status `checking`). |
 | `DELETE /social/publications/{pid}` | `publication_removed` | publication | Only while still being checked. |

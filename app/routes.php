@@ -17,6 +17,8 @@ use App\Http\Handlers\JobGridHandlers;
 use App\Http\Handlers\JobHandlers;
 use App\Http\Handlers\MyDayHandlers;
 use App\Http\Handlers\SavedViewHandlers;
+// Reviews (owner spec 2026-10)
+use App\Http\Handlers\ReviewHandlers;
 // Social publishing
 use App\Http\Handlers\SocialHandlers;
 use App\Http\Handlers\SpikeHandlers;
@@ -91,6 +93,21 @@ return [
     ['POST /views', [SavedViewHandlers::class, 'create']],
     ['PATCH /views/{id}', [SavedViewHandlers::class, 'update']],
     ['DELETE /views/{id}', [SavedViewHandlers::class, 'delete']],
+
+    // Reviews (owner spec 2026-10)
+    ['GET /jobs/{id}/work', [ReviewHandlers::class, 'work']],
+    ['POST /jobs/{id}/work/{aid}', [ReviewHandlers::class, 'save']],
+    ['POST /jobs/{id}/work/{aid}/request', [ReviewHandlers::class, 'requestReview']],
+    ['GET /jobs/{id}/review', [ReviewHandlers::class, 'page']],
+    ['POST /jobs/{id}/review/posts/{aid}', [ReviewHandlers::class, 'decide']],
+    ['POST /jobs/{id}/review/approve', [ReviewHandlers::class, 'approveJob']],
+    ['POST /jobs/{id}/review/request-ecd', [ReviewHandlers::class, 'requestEcd']],
+    ['POST /jobs/{id}/review/ecd-approve', [ReviewHandlers::class, 'ecdApprove']],
+    ['POST /jobs/{id}/review/reassign', [ReviewHandlers::class, 'reassign']],
+    ['POST /jobs/{id}/review/ready', [ReviewHandlers::class, 'markReady']],
+    ['POST /jobs/{id}/review/send', [ReviewHandlers::class, 'sendToClient']],
+    ['GET /today/reviews', [ReviewHandlers::class, 'todaySection']],
+    ['POST /admin/system/review-round-limit', [SystemHandlers::class, 'reviewRoundLimit']],
 
     // Social publishing
     ['GET /social', [SocialHandlers::class, 'page']],

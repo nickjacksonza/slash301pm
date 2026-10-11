@@ -9,6 +9,8 @@ use App\Http\MemorySession;
 require_once dirname(__DIR__, 2) . '/support/jobs_fx.php';
 // Social publishing
 require_once dirname(__DIR__, 2) . '/support/social_fx.php';
+// Reviews
+require_once dirname(__DIR__, 2) . '/support/review_fx.php';
 
 /**
  * Audit trail completeness (docs/audit-trail.md). Every POST, PUT, PATCH and
@@ -108,7 +110,27 @@ function ac_cases(Deps $d, array $c, array $p, string $jobId, string $legacyJob)
         [$url, $sig] = $pub($path, $o);
         sx_ok(bh_ds($d, $coo, $method, $url, $sig));
     };
+    // Reviews: a sent job with one static, the creative team on it, and an ECD to hand the review to.
+    $rj = sx_seed($d, $c['campaign'], $p['am'], $p['traffic'], 1, 'Review coverage');
+    foreach (['CD' => 'cd', 'Copywriter' => 'copy', 'Designer' => 'designer'] as $role => $who) {
+        $d->assignments->set($rj, \App\Domain\Role::from($role), $p[$who], $p['traffic'], $d->clock->now());
+    }
+    $ra = rx_posts($d, $rj)[0];
+    $ecdId = ts_user($d, 'ecd_coverage', Role::ECD);
+    $as = static fn (string $who): MemorySession => bh_session($d, $p[$who]);
     return [
+        // Reviews (run in this order: each step needs the one before)
+        'POST /jobs/{id}/work/{aid}' => ['asset_submitted', 'copy', static fn () => sx_ok(rx_sub($d, $as('copy'), $rj, $ra, ['copy_text' => 'Coverage copy']))],
+        'POST /jobs/{id}/work/{aid}/request' => ['review_requested', 'designer', static fn () => sx_ok(rx_sub($d, $as('designer'), $rj, $ra, ['media_url' => 'https://cdn.example.com/c.png'], true))],
+        'POST /jobs/{id}/review/posts/{aid}' => ['asset_part_approved', 'cd', static fn () => sx_ok(rx_rev($d, $as('cd'), $rj, $ra, 'approved'))],
+        'POST /jobs/{id}/review/request-ecd' => ['job_review_requested', 'cd', static fn () => sx_ok(rx_job($d, $as('cd'), $rj, 'request-ecd'))],
+        'POST /jobs/{id}/review/reassign' => ['review_reassigned', 'cd', static fn () => sx_ok(rx_job($d, $as('cd'), $rj, 'reassign', $ecdId))],
+        'POST /jobs/{id}/review/approve' => ['job_cd_approved', 'cd', static fn () => sx_ok(rx_job($d, $as('cd'), $rj, 'approve'))],
+        'POST /jobs/{id}/review/ecd-approve' => ['job_ecd_approved', 'coo', static fn () => sx_ok(rx_job($d, $as('coo'), $rj, 'ecd-approve'))],
+        'POST /jobs/{id}/review/ready' => ['job_ready_for_client', 'am', static fn () => sx_ok(rx_job($d, $as('am'), $rj, 'ready'))],
+        'POST /jobs/{id}/review/send' => ['job_sent_to_client', 'am', static fn () => sx_ok(rx_job($d, $as('am'), $rj, 'send'))],
+        'POST /admin/system/review-round-limit' => ['setting_changed', 'coo', static fn () => sx_ok(bh_ds($d, $as('coo'), 'POST', '/admin/system/review-round-limit', ['rl' => ['limit' => '4']]))],
+
         // Social publishing (run in this order: each step needs the one before)
         'POST /social/assets/{aid}/platforms/{platform}' => ['publication_added', 'coo', static fn () => sx_ok(bh_ds($d, $coo, 'POST', '/social/assets/' . $sa1 . '/platforms/instagram'))],
         'PATCH /social/publications/{pid}/checklist' => ['publication_checked', 'coo', static fn () => $social('PATCH', '/checklist', ['cl' => ['copy' => true, 'image' => true, 'link' => true, 'hashtags' => true, 'test_result' => true]])],

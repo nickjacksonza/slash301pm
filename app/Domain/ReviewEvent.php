@@ -12,6 +12,8 @@ enum ReviewEvent: string
     case ReviewRequested = 'review_requested';
     /** A reviewer rejected a part. */
     case Rejected = 'rejected';
+    /** A reviewer approved a part (no stage move; the CD approves the job by hand). */
+    case Approved = 'approved';
     /** The ECD approved a CD-approved job. */
     case EcdApproved = 'ecd_approved';
 }

@@ -89,6 +89,11 @@ final class JobBoardHandlers
         if (SignalInput::int($m, 'row_version', -1) !== $job->rowVersion) {
             return $reply(Toast::warn('This job was changed by someone else. The board now shows the latest; try the move again.'));
         }
+        // Reviews (owner spec 2026-10): In review and Approved (internal) follow the posts on the review page, never a drag.
+        if (BoardMoves::isReviewMove($from, $to)) {
+            return $reply(Toast::error('In review and Approved (internal) follow the posts: makers hand in work and the CD and ECD approve it on the review page.')
+                ->withLink(url('/jobs/' . rawurlencode($job->id) . '/review'), 'Open the review'));
+        }
         $action = BoardMoves::actionFor($from, $to, $job->resumeStage);
         if ($action === null) {
             return $reply(Toast::error(BoardMoves::refusal($from, $to, $job->resumeStage)));
@@ -252,6 +257,8 @@ final class JobBoardHandlers
             BriefView::activity($d->activity->listForJob($row->id, 12), !$row->workingCopy), JobsView::moves($u, $a, $row), $row->rowVersion, Ids::new(), url('/jobs/' . $id . '/move'),
             self::socialSlot($d, $u, $a, $team, $row->briefSent),
             $assetRows, $assetRows !== null ? url('/jobs/' . $id . '/assets') : '',
+            \App\Domain\ReviewPolicy::canView($u, $a)->allowed ? url('/jobs/' . $id . '/review') : '',
+            \App\Domain\ReviewPolicy::canView($u, $a)->allowed && Policy::rule('submit_for_review', $u->role) !== \App\Domain\PolicyRule::Deny ? url('/jobs/' . $id . '/work') : '',
         );
     }
 }

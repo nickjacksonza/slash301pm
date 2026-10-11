@@ -1404,7 +1404,7 @@
                 "AM": "deny",
                 "Traffic": "deny",
                 "PM": "deny",
-                "Producer": "deny",
+                "Producer": "assigned",
                 "CD": "assigned",
                 "Copywriter": "assigned",
                 "Designer": "assigned",
@@ -1415,7 +1415,7 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Brief sent, job open. Each part is handed in by its maker: copy by the Copywriter slot (or the asset assignee for copy deliverables), media by the Designer slot (or the asset assignee); the CD slot holder, the COO and the ECD may hand in either part. An approved part is frozen until a reviewer rejects it."
+                "*": "Brief sent, job open, post not cancelled. Each part is handed in by its maker: copy by the Copywriter slot (or the asset assignee for copy deliverables), media by the Designer slot (or the asset assignee; any other role, such as the Producer for an asset test report, makes both parts of an asset assigned to them); the CD slot holder, the COO and the ECD may hand in either part. An approved part is frozen until a reviewer rejects it."
             }
         },
         {
@@ -1944,6 +1944,32 @@
             },
             "conditions": {
                 "*": "Demo mode on only. Idempotent: jobs that already have the tasks are skipped. Logged as demo_role_tasks_added."
+            },
+            "legacy": "No legacy equivalent."
+        },
+        {
+            "id": "change_review_round_limit",
+            "section": "Organisation and visibility",
+            "phase": "reviews",
+            "description": "Set the review round limit on /admin/system: the AM is warned when a post passes it (owner default 3, so the warning comes at round 4; 0 turns it off).",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "deny",
+                "Traffic": "deny",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "conditions": {
+                "*": "A whole number from 0 to 20, stored in app_settings (migration 0014). Logged as setting_changed."
             },
             "legacy": "No legacy equivalent."
         },

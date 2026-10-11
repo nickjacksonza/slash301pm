@@ -19,7 +19,7 @@ use App\View\VM\MyDayVM;
  * a card with id today-section-<key> that GET /today/sections/<key> patches;
  * every 60 seconds the page asks for #today-body (brand row and sections).
  */
-function page_today(MyDayVM $vm, ?\App\View\VM\SocialDayVM $social = null): string
+function page_today(MyDayVM $vm, ?\App\View\VM\SocialDayVM $social = null, ?\App\View\VM\ReviewDayVM $reviews = null): string
 {
     // One request refreshes the brand row and every section (they all follow today.brand).
     $refresh = act_raw('get', url('/today/body'), 'filterSignals: {include: /^today\\./}');
@@ -29,6 +29,8 @@ function page_today(MyDayVM $vm, ?\App\View\VM\SocialDayVM $social = null): stri
     <h2 class="text-2xl font-semibold leading-tight"><?= e($vm->greeting) ?></h2>
     <p class="text-sm text-muted-foreground"><?= e($vm->dateLabel) ?></p>
   </div>
+  <?php // Reviews: CD, ECD, makers and owners (refreshes itself via GET /today/reviews) ?>
+  <?php if ($reviews !== null): ?><?= partial_today_reviews($reviews) ?><?php endif; ?>
   <?php // Social publishing: role Social or a Social slot holder (refreshes itself via GET /today/social) ?>
   <?php if ($social !== null): ?><?= partial_today_social($social) ?><?php endif; ?>
   <?= partial_today_body($vm) ?>

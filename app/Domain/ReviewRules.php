@@ -312,12 +312,63 @@ final class ReviewRules
                 default => [],
             },
             ReviewEvent::Rejected => ($from === Stage::InReview || $from === Stage::ApprovedInternal) ? [JobAction::SendBack] : [],
+            ReviewEvent::Approved => [],
             ReviewEvent::EcdApproved => match ($from) {
                 Stage::InProgress => [JobAction::Submit, JobAction::ApproveInternal],
                 Stage::InReview => [JobAction::ApproveInternal],
                 default => [],
             },
         };
+    }
+
+    /**
+     * The legacy assets.status a review event writes, so the legacy app shows
+     * progress and a brief update never cancels handed-in work (any value
+     * outside AssetStatus::UNSTARTED counts as started). Null: leave it.
+     * A cancelled asset never changes.
+     */
+    public static function legacyAssetStatus(string $current, ReviewEvent $e, bool $allApproved): ?string
+    {
+        if (AssetStatus::isCancelled($current)) {
+            return null;
+        }
+        $to = match ($e) {
+            ReviewEvent::Submitted => AssetStatus::isStarted($current) ? null : 'In Progress',
+            ReviewEvent::ReviewRequested => 'In Review',
+            ReviewEvent::Rejected => 'In Progress',
+            ReviewEvent::Approved => $allApproved ? 'Approved (Internal)' : null,
+            ReviewEvent::EcdApproved => null,
+        };
+        return $to === $current ? null : $to;
+    }
+
+    /** The job's round: the highest round of its non-cancelled posts (1 before any hand-in). @param list<AssetReview> $assets */
+    public static function jobRound(array $assets): int
+    {
+        $max = 1;
+        foreach ($assets as $a) {
+            if (!AssetStatus::isCancelled($a->assetStatus) && $a->round > $max) {
+                $max = $a->round;
+            }
+        }
+        return $max;
+    }
+
+    /**
+     * Has this hand-in completed the job (every post handed in, nothing
+     * rejected, something waiting) when it was not complete before? Then the
+     * reviewer is told once ("all the posts of a job are done").
+     * @param list<AssetReview> $after the job's posts after the write
+     */
+    public static function completesJob(JobReview $jr, array $after): bool
+    {
+        return $jr->allDoneAt === null && self::aggregate($after) === JobReviewStatus::WaitingReview;
+    }
+
+    /** '' when $v (typed on /admin/system) is a valid round limit (0 to 20, 0 = no warning), else the reason. */
+    public static function roundLimitProblem(string $v): string
+    {
+        return preg_match('/^\d{1,2}$/', trim($v)) === 1 && (int) trim($v) <= 20 ? '' : 'Enter a whole number from 0 (no warning) to 20.';
     }
 
     /** Warn the AM when a hand-in opens a round past the limit (limit 3: at round 4, 5, ...). 0 turns the warning off. */

@@ -86,6 +86,7 @@ function pmt_cases(): array
         'reassign_review' => [$j('in_review'), static fn (User $u, JobAccess $a) => ReviewPolicy::canReassign($u, $a, JobReview::empty($a->jobId))],
         'mark_ready_for_client' => [$j('approved_internal'), static fn (User $u, JobAccess $a) => ReviewPolicy::canMarkReady($u, $a, pmt_jr(true, true, false), JobReviewStatus::AllApproved)],
         'send_to_client' => [$j('approved_internal'), static fn (User $u, JobAccess $a) => ReviewPolicy::canSendToClient($u, $a, pmt_jr(true, true, true), JobReviewStatus::AllApproved)],
+        'change_review_round_limit' => [null, static fn (User $u, ?JobAccess $a) => Policy::canChangeReviewRoundLimit($u)],
     ];
 }
 
@@ -175,6 +176,27 @@ function pmt_expected(string $cell, string $relation): bool
 }
 
 return [
+    'docs/roles.md section 4 agrees with policy-matrix.json, cell for cell' => function (): void {
+        $m = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/fixtures/roles/policy-matrix.json'), true);
+        $code = ['allow' => 'Y', 'deny' => '-', 'assigned' => 'A', 'creator' => 'C', 'assigned_or_creator' => 'AC', 'own_brand' => 'B'];
+        $rows = [];
+        foreach (explode("\n", (string) file_get_contents(dirname(__DIR__, 3) . '/docs/roles.md')) as $line) {
+            if (preg_match('/^\| `([^`]+)`(?: \*)? \|(.*)\|$/', $line, $mm) === 1) {
+                $cells = array_map('trim', explode('|', $mm[2]));
+                if (count($cells) === 14) {
+                    $rows[$mm[1]][] = $cells;
+                }
+            }
+        }
+        foreach ($m['actions'] as $action) {
+            $want = [];
+            foreach ($m['roles'] as $role) {
+                $want[] = $code[(string) $action['decisions'][$role]];
+            }
+            t_true(isset($rows[$action['id']]), $action['id'] . ' has no row in docs/roles.md section 4');
+            t_true(in_array($want, $rows[$action['id']], true), $action['id'] . ': docs/roles.md row differs from the JSON (' . implode(' ', $want) . ')');
+        }
+    },
     'policy agrees with policy-matrix.json for every implemented brief and job action' => function (): void {
         $m = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/fixtures/roles/policy-matrix.json'), true);
         t_eq(Policy::COLUMNS, $m['roles'], 'column order');

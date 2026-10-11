@@ -26,6 +26,9 @@ use App\Store\MyDayStore;
 use App\Store\PublicationStore;
 use App\Store\AssetOverrideStore;
 use App\Store\DemoTaskStore;
+// Reviews (owner spec 2026-10)
+use App\Store\ReviewStore;
+use App\Store\SettingsStore;
 use App\Store\UserStore;
 
 /** Everything a handler may use, passed explicitly. Go: type Deps struct. */
@@ -60,6 +63,9 @@ final class Deps
         // Owner decisions 2026-10: asset status overrides, demo role tasks
         public readonly AssetOverrideStore $assetOverrides,
         public readonly DemoTaskStore $demoTasks,
+        // Reviews (owner spec 2026-10)
+        public readonly ReviewStore $reviews,
+        public readonly SettingsStore $settings,
     ) {}
 
     public static function build(Config $config, Clock $clock, string $driver = 'auto'): self
@@ -96,6 +102,9 @@ final class Deps
             new PublicationStore($db, $activity, new JobStore($db, $activity)),
             new AssetOverrideStore($db, $activity),
             new DemoTaskStore($db, $activity, $assets),
+            // Reviews (owner spec 2026-10)
+            new ReviewStore($db, $activity, new JobStore($db, $activity)),
+            new SettingsStore($db, $activity),
         );
     }
 }

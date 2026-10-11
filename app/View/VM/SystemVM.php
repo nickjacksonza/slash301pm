@@ -24,5 +24,7 @@ final class SystemVM
         public readonly bool $canAddDemoTasks = false,
         /** Link to the Overrides report (COO) */
         public readonly bool $canSeeOverrides = false,
+        /** Reviews: the round limit, or null when this person may not change it (or the table is not there yet). */
+        public readonly ?int $reviewRoundLimit = null,
     ) {}
 }

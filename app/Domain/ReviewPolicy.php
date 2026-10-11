@@ -44,7 +44,7 @@ final class ReviewPolicy
      */
     public static function submitParts(User $u, JobAccess $j, AssetReview $a, Team $team): array
     {
-        if (self::closedOrDraft($j) !== null || Policy::rule('submit_for_review', $u->role) === PolicyRule::Deny) {
+        if (self::closedOrDraft($j) !== null || Policy::rule('submit_for_review', $u->role) === PolicyRule::Deny || AssetStatus::isCancelled($a->assetStatus)) {
             return [];
         }
         $all = Policy::rule('submit_for_review', $u->role) === PolicyRule::Allow || ($u->role === Role::CD && $j->slotHolder(Role::CD) === $u->id);
@@ -67,6 +67,9 @@ final class ReviewPolicy
         if (Policy::rule('submit_for_review', $u->role) === PolicyRule::Deny) {
             return Decision::deny('Only the makers of this post, its CD, the ECD or the COO hand it in.');
         }
+        if (AssetStatus::isCancelled($a->assetStatus)) {
+            return Decision::deny('This post was cancelled.');
+        }
         return self::submitParts($u, $j, $a, $team) !== [] ? Decision::allow() : Decision::deny('This post is not yours to make.');
     }
 
@@ -84,6 +87,9 @@ final class ReviewPolicy
         $d = self::cell('approve_internal', $u, $j, $jr, 'Only the CD on this job, the ECD or the COO review its posts.');
         if (!$d->allowed) {
             return $d;
+        }
+        if ($a !== null && AssetStatus::isCancelled($a->assetStatus)) {
+            return Decision::deny('This post was cancelled.');
         }
         if ($u->role === Role::CD && $a !== null && $otherReviewerExists) {
             foreach ($p !== null ? [$p] : $a->requiredParts() as $part) {

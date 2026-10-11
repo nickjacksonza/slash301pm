@@ -23,6 +23,11 @@
 -- handed in, the CD and ECD approvals, the ECD review request, the person the
 -- review was reassigned to, ready for client and sent to client.
 --
+-- app_settings: owner settings the new app reads (key, value as text). Seeded
+-- with review_round_limit = 3: the AM is warned when a post's review round
+-- passes it (round 4 with the default); 0 turns the warning off. The COO or
+-- ECD changes it on /admin/system.
+--
 -- ON DELETE CASCADE / SET NULL so legacy deletes of jobs, assets or users
 -- still succeed with foreign_keys on.
 
@@ -100,3 +105,12 @@ CREATE TABLE IF NOT EXISTS job_reviews (
 );
 
 CREATE INDEX IF NOT EXISTS idx_job_reviews_assignee ON job_reviews(review_assignee_id);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    updated_at TEXT
+);
+
+INSERT OR IGNORE INTO app_settings (key, value) VALUES ('review_round_limit', '3');

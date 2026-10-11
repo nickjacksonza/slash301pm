@@ -43,5 +43,8 @@ final class JobSheetVM
         /** @var list<AssetRowVM>|null every asset (Traffic, COO, ECD: Policy::canViewJobAssets), else null */
         public readonly ?array $assets = null,
         public readonly string $assetsUrl = '',
+        // Reviews: the review page (ReviewPolicy::canView) and the hand-in page (roles that hand in work)
+        public readonly string $reviewUrl = '',
+        public readonly string $workUrl = '',
     ) {}
 }

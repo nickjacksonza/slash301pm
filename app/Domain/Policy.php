@@ -68,13 +68,14 @@ final class Policy
         'add_demo_role_tasks' => 'Y - - - - - - - - - - - - -',
         // Reviews (owner spec 2026-10): ReviewPolicy adds the conditions. CD "A" = CD slot or the review assignee.
         'view_internal_feedback' => 'Y Y Y Y Y Y Y A A A A A A -',
-        'submit_for_review' => 'Y Y - - - - A A A - A A A -',
+        'submit_for_review' => 'Y Y - - - A A A A - A A A -',
         'approve_internal' => 'Y Y - - - - A - - - - - - -',
         'request_ecd_review' => 'Y Y - - - - A - - - - - - -',
         'approve_job_ecd' => 'Y Y - - - - - - - - - - - -',
         'reassign_review' => 'Y Y - - - - A - - - - - - -',
         'mark_ready_for_client' => 'Y Y AC Y - AC A - - - - - - -',
         'send_to_client' => 'Y Y AC Y - AC A - - - - - - -',
+        'change_review_round_limit' => 'Y Y - - - - - - - - - - - -',
     ];
 
     public static function canManageUsers(User $actor): Decision
@@ -379,6 +380,12 @@ final class Policy
             return Decision::deny('The brief has not been sent, so there are no assets yet.');
         }
         return self::cell('override_asset_status', $u, $j, 'Only Traffic, the COO and the ECD can override an asset status.');
+    }
+
+    /** The review round limit on /admin/system (the AM is warned past it). */
+    public static function canChangeReviewRoundLimit(User $u): Decision
+    {
+        return self::cell('change_review_round_limit', $u, null, 'Only the COO or the ECD changes the review round limit.');
     }
 
     /** GET /admin/overrides: the COO's workflow review. */

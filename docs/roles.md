@@ -617,7 +617,7 @@ Urgency: **high** = blocks work until the recipient acts (badge plus top of My d
 | N38 | post_archived_or_deleted | Post publication record archived or deleted | AM | A live post is gone or hidden | normal | digest | social |
 | N39 | changed_after_live | Brief updated, live link edited or asset reopened after Live | Social on the job; AM | A live post may need editing | high | immediate | social |
 
-**Internal reviews as built (owner spec 2026-10).** Activity verbs and recipients (`App\Domain\ReviewNotify`): `review_requested` (N14: a maker clicks Request review on a post, or every post of the job is handed in) goes to the reviewer: the CD or ECD the review was reassigned to, else the CD slot holder, else every ECD. `job_review_requested` (the CD asks the ECD, even before every post is done) and `job_cd_approved` (the CD approves the job) go to every ECD. `job_ecd_approved` (N16) goes to the AM (or brief creator) and the CD. `asset_part_rejected` (N17) goes only to the maker of each rejected part (copy to the copy maker, media to the media maker; the other part stays approved). `round_limit_warning` goes to the AM when a post reaches the round after the limit (`app/config.php`, default 3). `job_ready_for_client` and `job_sent_to_client` go to the AM and Traffic. `review_reassigned` goes to the new reviewer. `asset_submitted` and `asset_part_approved` notify nobody. QA is not part of this flow yet (Q13: advisory).
+**Internal reviews as built (owner spec 2026-10).** Activity verbs and recipients (`App\Domain\ReviewNotify`): `review_requested` (N14: a maker clicks Request review on a post, or every post of the job is handed in) goes to the reviewer: the CD or ECD the review was reassigned to, else the CD slot holder, else every ECD. `job_review_requested` (the CD asks the ECD, even before every post is done) and `job_cd_approved` (the CD approves the job) go to every ECD. `job_ecd_approved` (N16) goes to the AM (or brief creator) and the CD. `asset_part_rejected` (N17) goes only to the maker of each rejected part (copy to the copy maker, media to the media maker; the other part stays approved). `round_limit_warning` goes to the AM (or brief creator) when a post reaches the round after the limit (`app_settings.review_round_limit`, default 3, set by the COO or ECD on /admin/system; 0 turns it off). `job_ready_for_client` and `job_sent_to_client` go to the AM and Traffic. `review_reassigned` goes to the new reviewer. `asset_submitted` and `asset_part_approved` notify nobody. QA is not part of this flow yet (Q13: advisory). Screens: makers hand in on `/jobs/{id}/work`; everyone on the job reviews on `/jobs/{id}/review` (one card per post, labelled brand, media, copy, hashtags, link; Approve, Reject with feedback, Reject for the copy, the media or both); My day lists posts waiting for my review (CD or the person the review was handed to), jobs waiting for ECD approval (ECD, COO), changes requested (the part's maker), posts past the round limit and jobs ready for the client (owners; Traffic for ready). Stage moves follow the posts (`ReviewRules::stageMoves`): a hand-in starts a briefed job; Request review, every post handed in, the CD's approval or the CD's request to the ECD move in_progress to in_review; the ECD approval moves it to approved_internal; a rejection sends in_review or approved_internal back to in_progress (a paused or client-approved job keeps its stage). The board refuses drags into or out of the two review stages and links to the review page. Each decision records the sent brief version it was checked against. A job counts as CD-approvable when every non-cancelled post has every part approved; any later rejection clears the CD and ECD approvals and the ready and sent stamps.
 
 ## 4. Permission matrix
 
@@ -720,7 +720,7 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 
 | Action | COO | ECD | AM | Trf | PM | Prd | CD | Cpy | Dsg | QA | Dev | SEO | Soc | Cli |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| `submit_for_review` * | Y | Y | - | - | - | - | A | A | A | - | A | A | A | - |
+| `submit_for_review` * | Y | Y | - | - | - | A | A | A | A | - | A | A | A | - |
 | `qa_signoff` | Y | Y | - | - | - | - | - | - | - | A | - | - | - | - |
 | `approve_internal` * | Y | Y | - | - | - | - | A | - | - | - | - | - | - | - |
 | `request_ecd_review` * | Y | Y | - | - | - | - | A | - | - | - | - | - | - | - |
@@ -747,6 +747,7 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `manage_brand_logo` * | Y | Y | Y | - | Y | Y | - | - | - | - | - | - | - | - |
 | `view_overrides_report` | Y | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | `add_demo_role_tasks` * | Y | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| `change_review_round_limit` * | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
 | `view_all_jobs` * | Y | Y | Y | Y | Y | Y | Y | A | A | A | A | A | A | B |
 | `view_budget` | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | - |
 | `view_hours` | Y | Y | Y | Y | Y | Y | A | A | A | A | A | A | A | - |
@@ -849,6 +850,7 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `override_asset_status` | all allowed roles | Brief sent (or a legacy job past draft). Any legacy asset status, or any Social post status, with a required reason. Writes `asset_status_overridden` (from, to, reason; recipients: asset assignee, AM or brief creator, CD) in the same transaction; shown as an override in the activity feed and on the COO's Overrides report. |
 | `manage_brand_logo` | all allowed roles | https links only (no uploads), set on the Campaigns page; the view re-checks the stored link before it renders an image. |
 | `add_demo_role_tasks` | COO | Demo mode on only; up to 3 open sent jobs; idempotent. |
+| `change_review_round_limit` | all allowed roles | On /admin/system: a whole number from 0 to 20 (0 turns the warning off), stored in app_settings (migration 0014); logged as setting_changed. |
 | `transition:workable->waiting` | all allowed roles | waiting_on and waiting_reason required. |
 | `transition:workable->waiting` | Traffic | Not from draft (cannot see drafts). |
 | `transition:workable->waiting` | CD | Not from draft. |
@@ -857,7 +859,7 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `transition:workable->on_hold` | Traffic | Not from draft. |
 | `transition:open->cancelled` | all allowed roles | Reason required; started assets are kept and flagged. |
 | `transition:done->in_progress` | all allowed roles | Reason required. |
-| `submit_for_review` | all allowed roles | Brief sent, job open. Each part is handed in by its maker: copy by the Copywriter slot (or the asset assignee for copy deliverables), media by the Designer slot (or the asset assignee); the CD slot holder, the COO and the ECD may hand in either part. An approved part is frozen until a reviewer rejects it. |
+| `submit_for_review` | all allowed roles | Brief sent, job open, post not cancelled. Each part is handed in by its maker: copy by the Copywriter slot (or the asset assignee for copy deliverables), media by the Designer slot (or the asset assignee; any other role, such as the Producer for an asset test report, makes both parts of an asset assigned to them); the CD slot holder, the COO and the ECD may hand in either part. An approved part is frozen until a reviewer rejects it. |
 | `approve_internal` | all allowed roles | Brief sent, job open. A rejection sends the part back to its maker, clears the CD and ECD approvals and the client steps, and moves an in_review or approved_internal job back to in_progress. |
 | `approve_internal` | CD | Holds the CD slot on the job, or the review was reassigned to them; not a part they handed in themselves unless no other CD or ECD exists. |
 | `request_ecd_review` | all allowed roles | Brief sent, job open, not ECD-approved already. Notifies every ECD; an in_progress job moves to in_review. |

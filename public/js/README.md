@@ -25,3 +25,10 @@ address bar (history.replaceState from the patched `data-url`), moves a board
 card on screen while its move is posted (`s301Jobs.place`), and closes the
 filter menus. `grid-keys.js` adds arrow, Home, End, Enter and F2 movement
 between grid cells and puts focus back on the cell after an inline edit.
+
+## review.js
+
+Ours (Reviews). On `/jobs/{id}/review`: Previous / Next and the keyboard
+(j, k and the arrow keys) move between the post cards the current filter
+shows, scroll the card under the sticky header, mark it with `data-current`
+and keep the "Showing N of M" label up to date after Datastar patches.

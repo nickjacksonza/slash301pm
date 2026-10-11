@@ -378,4 +378,105 @@ return [
         t_eq([], ReviewPolicy::submitParts(bf_user(Role::Copywriter, 'copy1'), $job('cancelled'), rt_asset(), $team));
         t_true(!ReviewPolicy::canSubmit(bf_user(Role::Copywriter, 'copy2'), $job(), rt_asset(), $team)->allowed, 'not their post');
     },
+
+    'review: legacy asset status mirror, job round, completion and the round limit setting' => function (): void {
+        // [current, event, all approved, expected]
+        $cases = [
+            ['Inbox', App\Domain\ReviewEvent::Submitted, false, 'In Progress'],
+            ['In Progress', App\Domain\ReviewEvent::Submitted, false, null],
+            ['This Week', App\Domain\ReviewEvent::Submitted, false, null],
+            ['In Progress', App\Domain\ReviewEvent::ReviewRequested, false, 'In Review'],
+            ['In Review', App\Domain\ReviewEvent::ReviewRequested, false, null],
+            ['In Review', App\Domain\ReviewEvent::Rejected, false, 'In Progress'],
+            ['In Review', App\Domain\ReviewEvent::Approved, false, null],
+            ['In Review', App\Domain\ReviewEvent::Approved, true, 'Approved (Internal)'],
+            ['Cancelled', App\Domain\ReviewEvent::ReviewRequested, false, null],
+        ];
+        foreach ($cases as $i => [$cur, $e, $all, $want]) {
+            t_eq($want, ReviewRules::legacyAssetStatus($cur, $e, $all), "mirror $i");
+        }
+        $S = PartState::Submitted;
+        $A = PartState::Approved;
+        t_eq(1, ReviewRules::jobRound([]));
+        t_eq(3, ReviewRules::jobRound([rt_handed($S, $S, 2), rt_handed($S, $S, 3, ['assetId' => 'a2']), rt_handed($S, $S, 7, ['assetId' => 'a3', 'assetStatus' => 'Cancelled'])]));
+        t_true(ReviewRules::completesJob(rt_jr(), [rt_handed($S, $S), rt_handed($A, $A, 1, ['assetId' => 'a2'])]), 'all handed in');
+        t_true(!ReviewRules::completesJob(rt_jr(['allDoneAt' => 'x']), [rt_handed($S, $S)]), 'told once');
+        t_true(!ReviewRules::completesJob(rt_jr(), [rt_handed($S, $S), rt_asset(['assetId' => 'a2'])]), 'a post still to hand in');
+        t_true(!ReviewRules::completesJob(rt_jr(), [rt_handed($A, $A)]), 'nothing waiting');
+        foreach (['0' => '', '3' => '', '20' => '', '21' => 'whole number', '-1' => 'whole number', 'x' => 'whole number', '' => 'whole number', '3.5' => 'whole number'] as $v => $want) {
+            $got = ReviewRules::roundLimitProblem((string) $v);
+            t_true($want === '' ? $got === '' : str_contains($got, $want), "limit '$v': $got");
+        }
+        // Signal keys: safe ids as is, anything else hashed (stable, letters and digits only).
+        t_eq('a1', App\Domain\Signals\ReviewSignals::key('a1'));
+        $k = App\Domain\Signals\ReviewSignals::key("x'-.] y");
+        t_eq(1, preg_match('/^h[0-9a-f]{24}$/', $k));
+        t_eq($k, App\Domain\Signals\ReviewSignals::key("x'-.] y"));
+        t_eq('rv_a1', App\Domain\Signals\ReviewSignals::root('a1'));
+        t_eq('sub_' . $k, App\Domain\Signals\SubmissionSignals::root("x'-.] y"));
+        $sig = App\Domain\Signals\ReviewSignals::fromSignals(['rv_a1' => ['rv' => '4', 'part' => 'evil', 'decision' => 'approved', 'feedback' => '  hi ']], 'a1');
+        t_eq(4, $sig->rowVersion);
+        t_eq('both', $sig->part);
+        t_eq('hi', $sig->feedback);
+        t_eq(null, App\Domain\Signals\ReviewSignals::fromSignals(['rv_a1' => ['decision' => 'approve']], 'a1')->decision);
+        t_eq('', App\Domain\Signals\JobReviewSignals::fromSignals(['jr' => ['rv' => 1, 'to' => "x' OR 1"]])->to);
+    },
+
+    'review: the board leaves the review stages to the review page, but paused jobs still resume' => function (): void {
+        // [from, to, review move]
+        $cases = [
+            [Stage::InProgress, Stage::InReview, true], [Stage::InReview, Stage::ApprovedInternal, true], [Stage::Briefed, Stage::InReview, true],
+            [Stage::InReview, Stage::InProgress, true], [Stage::ApprovedInternal, Stage::InProgress, true],
+            [Stage::Waiting, Stage::InReview, false], [Stage::InReview, Stage::Waiting, false], [Stage::InReview, Stage::Cancelled, false],
+            [Stage::InProgress, Stage::OnHold, false], [Stage::InReview, Stage::InReview, false],
+        ];
+        foreach ($cases as $i => [$from, $to, $want]) {
+            t_eq($want, App\Domain\BoardMoves::isReviewMove($from, $to), "case $i " . $from->value . '->' . $to->value);
+        }
+    },
+
+    'review: My day lists per role' => function (): void {
+        $S = PartState::Submitted;
+        $A = PartState::Approved;
+        $R = PartState::ChangesRequested;
+        $team = bf_team(['AM' => 'am1', 'Traffic' => 'tr1', 'CD' => 'cd1', 'Copywriter' => 'copy1', 'Designer' => 'des1']);
+        $state = static fn (string $id, array $assets, ?App\Domain\Types\JobReview $jr = null, ?App\Domain\Types\Team $t = null): App\Domain\Types\ReviewJobState =>
+            new App\Domain\Types\ReviewJobState($id, 'MERC-' . $id, 'Job ' . $id, Stage::InReview, 'am1', $t ?? $team, $jr ?? rt_jr(['jobId' => $id]), $assets);
+        $jobs = [
+            $state('1', [rt_handed($S, $S), rt_handed($S, $A, 1, ['assetId' => 'a2'])]),
+            $state('2', [rt_handed($R, $A, 2, ['copyMakerId' => 'copy1']), rt_handed($S, $A, 5, ['assetId' => 'a2']), rt_handed($A, $A, 6, ['assetId' => 'a3'])], rt_jr(['jobId' => '2', 'ecdRequestedAt' => 'x'])),
+            $state('3', [rt_handed($A, $A)], rt_jr(['jobId' => '3', 'cdApprovedAt' => 'x', 'ecdApprovedAt' => 'y'])),
+            $state('4', [rt_handed($S, $S)], rt_jr(['jobId' => '4', 'assigneeId' => 'cd2', 'assigneeRole' => Role::CD])),
+            $state('5', [rt_handed($S, $S)], null, bf_team(['Copywriter' => 'copy1'])),
+        ];
+        $day = static fn (Role $r, string $id): App\Domain\Types\ReviewDay => App\Domain\ReviewDayRules::build(bf_user($r, $id), $jobs, ['ecd1'], 3);
+        $ids = static function (?array $items): ?array {
+            if ($items === null) {
+                return null;
+            }
+            $out = [];
+            foreach ($items as $it) {
+                $out[] = $it->jobId . ':' . $it->detail;
+            }
+            return $out;
+        };
+        $cd = $day(Role::CD, 'cd1');
+        t_eq(['1:2 posts waiting', '2:1 post waiting'], $ids($cd->toReview), 'CD slot: not job 4 (handed to cd2), not job 5 (no CD: the ECD)');
+        t_eq(null, $cd->ecdWaiting);
+        t_eq(['4:1 post waiting'], $ids($day(Role::CD, 'cd2')->toReview), 'the CD the review was handed to');
+        $ecd = $day(Role::ECD, 'ecd1');
+        t_eq(['5:1 post waiting'], $ids($ecd->toReview), 'no CD on the job: the ECD reviews');
+        t_eq(['2:The CD asked for your review'], $ids($ecd->ecdWaiting));
+        $copy = $day(Role::Copywriter, 'copy1');
+        t_eq(['2:Change the copy (round 2)'], $ids($copy->changes));
+        t_eq(null, $copy->toReview);
+        t_eq([], $ids($day(Role::Designer, 'des1')->changes), 'the media maker has nothing to change');
+        $am = $day(Role::AM, 'am1');
+        t_eq(['2:Round 5 (limit 3)'], $ids($am->roundWarnings), 'open posts past the limit; an approved one (round 6) is done');
+        t_eq(['3:Approved by the CD and the ECD: get it ready for the client'], $ids($am->readyForClient));
+        t_eq(null, $day(Role::Traffic, 'tr9')->readyForClient, 'Traffic not on the job: nothing');
+        t_eq(['3:Approved by the CD and the ECD: get it ready for the client'], $ids($day(Role::Traffic, 'tr1')->readyForClient));
+        t_eq(2, $ecd->count(), 'ECD: one post to review, one job waiting for the ECD');
+        t_true(!$day(Role::QA, 'qa1')->applies(), 'QA has no review lists');
+    },
 ];

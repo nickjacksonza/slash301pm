@@ -26,6 +26,19 @@ function page_admin_system(SystemVM $vm): string
         'data-on:click' => act_raw('post', url('/admin/system/demo-role-tasks'), 'filterSignals: {include: /^$/}, retryMaxCount: 0')]), 'Add demo role tasks') ?></div>
   </section>
   <?php endif; ?>
+  <?php if ($vm->reviewRoundLimit !== null): /* Reviews (owner spec 2026-10) */ ?>
+  <section class="<?= attr($card) ?>" aria-labelledby="round-limit-title" data-signals="<?= attr(jobs_js(['rl' => ['limit' => (string) $vm->reviewRoundLimit]])) ?>">
+    <h2 id="round-limit-title" class="text-base font-semibold">Review round limit</h2>
+    <p class="mt-2 text-sm text-muted-foreground">The AM is warned (My day and the job feed) when a post goes past this many review rounds. 0 turns the warning off.</p>
+    <div class="mt-4 flex flex-wrap items-center gap-2">
+      <label for="round-limit" class="text-sm">Rounds</label>
+      <input id="round-limit" type="number" min="0" max="20" step="1" inputmode="numeric" value="<?= attr((string) $vm->reviewRoundLimit) ?>" data-bind="rl.limit"
+        class="h-9 w-24 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
+      <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', attrs: ['data-indicator' => '_rl_busy', 'data-attr:disabled' => '$_rl_busy',
+          'data-on:click' => act_raw('post', url('/admin/system/review-round-limit'), 'filterSignals: {include: /^rl\\./}, retryMaxCount: 0')]), 'Save') ?>
+    </div>
+  </section>
+  <?php endif; ?>
   <?php if ($vm->canSeeOverrides): ?>
     <p class="text-sm"><a class="text-primary underline-offset-4 hover:underline" href="<?= attr(url('/admin/overrides')) ?>">Status overrides report</a> (asset and post overrides by Traffic, the COO and the ECD).</p>
   <?php endif; ?>

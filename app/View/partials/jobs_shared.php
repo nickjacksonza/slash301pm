@@ -314,6 +314,8 @@ function partial_job_sheet_body(JobSheetVM $vm): string
       <p class="mt-1 flex flex-wrap gap-3">
         <a class="text-primary underline-offset-4 hover:underline" href="<?= attr($vm->briefUrl) ?>">Open the brief</a>
         <?php if ($vm->versionUrl !== ''): ?><a class="text-primary underline-offset-4 hover:underline" href="<?= attr($vm->versionUrl) ?>">Sent version</a><?php endif; ?>
+        <?php if ($vm->reviewUrl !== ''): ?><a class="text-primary underline-offset-4 hover:underline" href="<?= attr($vm->reviewUrl) ?>">Review posts</a><?php endif; ?>
+        <?php if ($vm->workUrl !== ''): ?><a class="text-primary underline-offset-4 hover:underline" href="<?= attr($vm->workUrl) ?>">Hand in work</a><?php endif; ?>
       </p>
     </section>
     <?php if ($vm->moves !== []): ?>

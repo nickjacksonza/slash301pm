@@ -30,7 +30,9 @@ final class MyDayHandlers
         $vm = self::vm(self::user($r), $d, $r->query('brand'));
         // Social publishing
         $social = SocialHandlers::today($d, self::user($r));
-        return Shell::page($r, $d, 'My day', 'today', page_today($vm, $social));
+        // Reviews (owner spec 2026-10)
+        $reviews = ReviewHandlers::today($d, self::user($r));
+        return Shell::page($r, $d, 'My day', 'today', page_today($vm, $social, $reviews));
     }
 
     /** One section, patched by id; the page asks for each every 60 seconds. */

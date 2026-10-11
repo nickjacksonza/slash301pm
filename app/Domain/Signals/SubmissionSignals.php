@@ -13,7 +13,7 @@ final class SubmissionSignals
 {
     public static function root(string $assetId): string
     {
-        return 'sub_' . $assetId;
+        return 'sub_' . ReviewSignals::key($assetId);
     }
 
     public static function fromSignals(array $s, string $assetId): SubmissionInput
