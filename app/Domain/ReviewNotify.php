@@ -14,8 +14,10 @@ use App\Domain\Types\Team;
  *
  * - review_requested (Request review on a post, or every post handed in):
  *   the reviewer: the person the review was reassigned to (a CD or the ECD),
- *   else the CD slot holder, else every ECD.
- * - job_review_requested (the CD asks the ECD), job_cd_approved: every ECD.
+ *   else the CD slot holder, else the job's ECD slot holder, else nobody.
+ * - job_review_requested (the CD asks the ECD), job_cd_approved: the job's
+ *   ECD slot holder only, else nobody (owner decision 2026-10-13: never every
+ *   ECD). My day still lists the job for every ECD and the COO.
  * - job_ecd_approved: the AM (or brief creator) and the CD (N16).
  * - asset_part_rejected: the maker of each rejected part (the other part stays).
  * - round_limit_warning: the AM (or brief creator).
@@ -46,8 +48,9 @@ final class ReviewNotify
     }
 
     /**
-     * Who reviews the posts of this job: the reassigned CD or ECD, else the CD
-     * slot holder, else every ECD.
+     * Whose My day lists the posts of this job to review: the reassigned CD or
+     * ECD, else the CD slot holder, else every ECD (a CD-less job stays
+     * visible). Not the notification list: see recipients().
      * @param list<string> $ecdIds active ECD users
      * @return list<string>
      */
@@ -61,21 +64,21 @@ final class ReviewNotify
     }
 
     /**
-     * @param list<string> $ecdIds active ECD users
      * @param list<string> $extra event-specific people: the makers of the rejected parts, or the new reviewer
      * @return list<string>
      */
-    public static function recipients(string $event, Team $team, JobReview $jr, array $ecdIds, ?string $creatorId, array $extra, string $actorId): array
+    public static function recipients(string $event, Team $team, JobReview $jr, ?string $creatorId, array $extra, string $actorId): array
     {
         $am = $team->userFor(Role::AM) ?? $creatorId;
+        $ecd = $team->userFor(Role::ECD);
         $ids = [];
         switch ($event) {
             case self::REVIEW_REQUESTED:
-                $ids = self::reviewers($jr, $team, $ecdIds);
+                $ids = self::reviewers($jr, $team, $ecd !== null ? [$ecd] : []);
                 break;
             case self::JOB_REVIEW_REQUESTED:
             case self::JOB_CD_APPROVED:
-                $ids = $ecdIds;
+                $ids = [$ecd];
                 break;
             case self::JOB_ECD_APPROVED:
                 $ids = [$am, $team->userFor(Role::CD)];

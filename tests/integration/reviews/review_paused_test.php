@@ -20,9 +20,11 @@ function rp_move(\App\Http\Deps $d, string $userId, string $jobId, string $to, s
  * - the ECD approval is refused until the job is resumed (otherwise the job
  *   resumes to its old stage with both approvals recorded and nothing can
  *   ever move it to Approved (internal): the board refuses that drag);
- * - a rejection is refused while the job would resume to In review or
- *   Approved (internal) (otherwise it resumes there with a rejected post, and
- *   the legacy app sees 'Approved (Internal)' and allows approve_client).
+ * - a rejection is refused while the job would resume to In review,
+ *   Approved (internal) or (owner decision 2026-10-13) a client-approved
+ *   stage (otherwise it resumes there with a rejected post, and the legacy
+ *   app sees 'Approved (Internal)' and allows approve_client); the
+ *   client-approved case is in review_reopen_test.php.
  */
 return [
     'reviews: the ECD approval waits until a paused job is resumed' => function (): void {

@@ -18,6 +18,7 @@ use App\Domain\Types\TransitionRequest;
  *   open -> cancelled           cancel (reason)
  *   done|cancelled -> archived  archive
  *   briefed -> in_progress, in_progress -> in_review, in_review|approved_internal -> in_progress (send back, reason),
+ *   approved_client|ready_to_schedule|scheduled|live -> in_progress (send back: a review rejection reopens it, reason),
  *   in_review -> approved_internal, approved_internal -> approved_client,
  *   approved_client -> ready_to_schedule -> scheduled -> live (social),
  *   live -> scheduled -> ready_to_schedule -> approved_client (social step back, reason),
@@ -55,8 +56,9 @@ final class Transitions
                 $to = $from === Stage::InProgress ? Stage::InReview : null;
                 break;
             case JobAction::SendBack:
-                // Reviews: a rejection sends an in-review or internally approved job back to work.
-                $to = ($from === Stage::InReview || $from === Stage::ApprovedInternal) ? Stage::InProgress : null;
+                // Reviews: a rejection sends an in-review or internally approved job back to work, and
+                // reopens a client-approved one, Social stages included (owner decision 2026-10-13).
+                $to = ($from === Stage::InReview || $from === Stage::ApprovedInternal || $from->isClientApproved()) ? Stage::InProgress : null;
                 if ($to !== null && $reason === '') {
                     $errors = $errors->with('reason', 'Say what needs to change.');
                 }
@@ -143,7 +145,13 @@ final class Transitions
             JobAction::Recall => $from === Stage::Briefed ? 'transition:briefed->draft' : null,
             JobAction::Start => $from === Stage::Briefed ? 'transition:briefed->in_progress' : null,
             JobAction::Submit => $from === Stage::InProgress ? 'transition:in_progress->in_review' : null,
-            JobAction::SendBack => $from === Stage::InReview ? 'transition:in_review->in_progress' : ($from === Stage::ApprovedInternal ? 'transition:approved_internal->in_progress' : null),
+            // From the Social stages there is no matrix row: only a review rejection reopens them.
+            JobAction::SendBack => match ($from) {
+                Stage::InReview => 'transition:in_review->in_progress',
+                Stage::ApprovedInternal => 'transition:approved_internal->in_progress',
+                Stage::ApprovedClient => 'transition:approved_client->in_progress',
+                default => null,
+            },
             JobAction::ApproveInternal => $from === Stage::InReview ? 'transition:in_review->approved_internal' : null,
             JobAction::ApproveClient => $from === Stage::ApprovedInternal ? 'transition:approved_internal->approved_client' : null,
             JobAction::ReadyToSchedule => $from === Stage::ApprovedClient ? 'transition:approved_client->ready_to_schedule' : null,

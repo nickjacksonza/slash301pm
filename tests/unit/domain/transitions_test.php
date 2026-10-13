@@ -65,6 +65,15 @@ return [
         t_eq(null, trt_plan('scheduled', JobAction::MarkDone)[0]);
         t_eq(null, trt_plan('approved_internal', JobAction::ReadyToSchedule)[0]);
     },
+    'transitions: send back (a review rejection) from review, internal approval and client approval' => function (): void {
+        // Owner decision 2026-10-13: a rejection reopens a client-approved job, Social stages included.
+        foreach (Stage::cases() as $s) {
+            $back = in_array($s, [Stage::InReview, Stage::ApprovedInternal, Stage::ApprovedClient, Stage::ReadyToSchedule, Stage::Scheduled, Stage::Live], true);
+            t_eq($back ? ['in_progress', [], null, null] : [null, ['stage'], null, null], trt_plan($s->value, JobAction::SendBack, null, 'Rejected: the copy'), 'send back from ' . $s->value);
+        }
+        t_eq(['in_progress', ['reason'], null, null], trt_plan('approved_client', JobAction::SendBack), 'a reason is required');
+        t_true(Stage::ApprovedClient->isClientApproved() && Stage::Live->isClientApproved() && !Stage::ApprovedInternal->isClientApproved() && !Stage::Done->isClientApproved());
+    },
     'transitions: matrix row ids' => function (): void {
         $cases = [
             [JobAction::Send, 'draft', 'transition:draft->briefed'], [JobAction::Recall, 'briefed', 'transition:briefed->draft'],
@@ -74,6 +83,10 @@ return [
             [JobAction::Archive, 'cancelled', 'transition:cancelled->archived'], [JobAction::MarkDone, 'live', 'transition:live->done'],
             [JobAction::MarkDone, 'approved_client', 'transition:approved_client->done'], [JobAction::GoLive, 'scheduled', 'transition:scheduled->live'],
             [JobAction::Archive, 'in_progress', null], [JobAction::Cancel, 'done', null], [JobAction::Resume, 'draft', null],
+            [JobAction::SendBack, 'in_review', 'transition:in_review->in_progress'], [JobAction::SendBack, 'approved_internal', 'transition:approved_internal->in_progress'],
+            [JobAction::SendBack, 'approved_client', 'transition:approved_client->in_progress'],
+            // Social stages: no matrix row, so Policy never allows the move by hand; only a review rejection makes it
+            [JobAction::SendBack, 'scheduled', null], [JobAction::SendBack, 'in_progress', null],
         ];
         foreach ($cases as [$a, $from, $want]) {
             t_eq($want, Transitions::matrixId($a, Stage::from($from)), $a->value . ' from ' . $from);

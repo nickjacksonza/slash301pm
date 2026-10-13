@@ -120,7 +120,7 @@ final class ReviewStore
         return $out;
     }
 
-    /** Active ECD users (the fallback reviewers and the ECD notifications). @return list<string> */
+    /** Active ECD users (My day lists a CD-less job for each; notifications go to the job's ECD slot only). @return list<string> */
     public function ecdIds(): array
     {
         $out = [];
@@ -264,7 +264,6 @@ final class ReviewStore
             }
             $team = $this->team($tx, $cur->jobId);
             $creator = $this->creator($tx, $cur->jobId);
-            $ecds = $this->ecdIds();
             $jr = $this->jobReview($cur->jobId);
             $after = $this->assets($cur->jobId);
             $completes = ReviewRules::completesJob($jr, $after);
@@ -279,15 +278,15 @@ final class ReviewStore
             }
             if ($plan->requestReview) {
                 $this->log($tx, $cur->jobId, $actorId, ReviewNotify::REVIEW_REQUESTED, 'asset', $cur->assetId, $base + ['scope' => 'asset',
-                    'recipients' => ReviewNotify::recipients(ReviewNotify::REVIEW_REQUESTED, $team, $jr, $ecds, $creator, [], $actorId)], $now);
+                    'recipients' => ReviewNotify::recipients(ReviewNotify::REVIEW_REQUESTED, $team, $jr, $creator, [], $actorId)], $now);
             } elseif ($completes) {
                 $this->log($tx, $cur->jobId, $actorId, ReviewNotify::REVIEW_REQUESTED, 'job', $cur->jobId, ['scope' => 'job', 'count' => count($after),
-                    'recipients' => ReviewNotify::recipients(ReviewNotify::REVIEW_REQUESTED, $team, $jr, $ecds, $creator, [], $actorId)], $now);
+                    'recipients' => ReviewNotify::recipients(ReviewNotify::REVIEW_REQUESTED, $team, $jr, $creator, [], $actorId)], $now);
             }
             $warned = ReviewRules::passesRoundLimit($plan->round, $plan->newRound, $roundLimit);
             if ($warned) {
                 $this->log($tx, $cur->jobId, $actorId, ReviewNotify::ROUND_LIMIT_WARNING, 'asset', $cur->assetId, $base + ['limit' => $roundLimit,
-                    'recipients' => ReviewNotify::recipients(ReviewNotify::ROUND_LIMIT_WARNING, $team, $jr, $ecds, $creator, [], $actorId)], $now);
+                    'recipients' => ReviewNotify::recipients(ReviewNotify::ROUND_LIMIT_WARNING, $team, $jr, $creator, [], $actorId)], $now);
             }
             $this->mirrorAsset($tx, $cur->assetId, (string) $status, $plan->requestReview ? ReviewEvent::ReviewRequested : ReviewEvent::Submitted, false, $at);
             [$from, $to] = $this->follow($tx, $cur->jobId, $plan->requestReview || $completes ? ReviewEvent::ReviewRequested : ReviewEvent::Submitted, '', $actorId, $now);
@@ -299,7 +298,8 @@ final class ReviewStore
      * A reviewer's decision on parts of a post (checked by ReviewRules::
      * reviewProblems on $cur). A rejection goes to the maker of each part,
      * clears the CD and ECD approvals and the client steps, and sends an
-     * in-review or internally approved job back to in_progress.
+     * in-review or internally approved job back to in_progress, or reopens a
+     * client-approved one (approved_client or a Social stage).
      * @param list<ReviewPart> $parts
      */
     public function review(AssetReview $cur, array $parts, ReviewDecision $d, string $feedback, string $actorId, DateTimeImmutable $now): ReviewWrite
@@ -375,7 +375,7 @@ final class ReviewStore
             $this->touchJob($tx, $cur->jobId, $set, $now);
             $this->log($tx, $cur->jobId, $actorId, ReviewNotify::PART_REJECTED, 'asset', $cur->assetId, $base + [
                 'feedback' => $feedback, 'makers' => $makerByPart, 'cleared_approvals' => $cleared,
-                'recipients' => ReviewNotify::recipients(ReviewNotify::PART_REJECTED, $team, $jr, $this->ecdIds(), $this->creator($tx, $cur->jobId), $makers, $actorId),
+                'recipients' => ReviewNotify::recipients(ReviewNotify::PART_REJECTED, $team, $jr, $this->creator($tx, $cur->jobId), $makers, $actorId),
             ], $now);
             $this->mirrorAsset($tx, $cur->assetId, $status, ReviewEvent::Rejected, false, $at);
             $reason = $cur->assetName . ': ' . implode(' and ', $partNames) . ' ' . strtolower($d->label()) . ($feedback !== '' ? ' (' . $feedback . ')' : '');
@@ -386,14 +386,14 @@ final class ReviewStore
 
     // ---- writes: the job -------------------------------------------------------------
 
-    /** The CD approves the job (every post approved). Notifies every ECD; an in-progress job moves to in review. */
+    /** The CD approves the job (every post approved). Notifies the job's ECD slot holder; an in-progress job moves to in review. */
     public function approveJobCd(string $jobId, int $rv, string $actorId, DateTimeImmutable $now): ReviewWrite
     {
         return $this->jobWrite($jobId, $rv, $actorId, $now, true, ['cd_approved_by' => $actorId, 'cd_approved_at' => Ids::utc($now)],
             ReviewNotify::JOB_CD_APPROVED, [], ReviewEvent::ReviewRequested, static fn (JobReview $jr, Stage $stage): string => $jr->cdApproved() ? 'The job is already approved by the CD.' : '');
     }
 
-    /** The CD asks the ECD to review the job, even before every post is done. Notifies every ECD. */
+    /** The CD asks the ECD to review the job, even before every post is done. Notifies the job's ECD slot holder. */
     public function requestEcdReview(string $jobId, int $rv, string $actorId, DateTimeImmutable $now): ReviewWrite
     {
         return $this->jobWrite($jobId, $rv, $actorId, $now, false, ['ecd_requested_by' => $actorId, 'ecd_requested_at' => Ids::utc($now)],
@@ -486,7 +486,7 @@ final class ReviewStore
             $team = $this->team($tx, $jobId);
             $after = $this->jobReview($jobId);
             $this->log($tx, $jobId, $actorId, $verb, 'job', $jobId, $data + [
-                'recipients' => ReviewNotify::recipients($verb, $team, $after, $this->ecdIds(), $this->creator($tx, $jobId), $extra, $actorId),
+                'recipients' => ReviewNotify::recipients($verb, $team, $after, $this->creator($tx, $jobId), $extra, $actorId),
             ], $now);
             if ($event === null) {
                 return ReviewWrite::done($job->stage, $job->stage);

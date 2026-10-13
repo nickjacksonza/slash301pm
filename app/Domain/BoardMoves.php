@@ -32,8 +32,9 @@ final class BoardMoves
 
     /**
      * Reviews: a drop into In review or Approved (internal), or a send back
-     * from them to In progress, belongs to the review page (the stages follow
-     * the posts there). Pausing, resuming and cancelling still work by drag.
+     * from them (or a reopen of a client-approved job) to In progress, belongs
+     * to the review page (the stages follow the posts there). Pausing,
+     * resuming and cancelling still work by drag.
      */
     public static function isReviewMove(Stage $from, Stage $to): bool
     {
@@ -44,7 +45,7 @@ final class BoardMoves
         if ($to === Stage::InReview || $to === Stage::ApprovedInternal) {
             return true;
         }
-        return ($from === Stage::InReview || $from === Stage::ApprovedInternal) && $to === Stage::InProgress;
+        return ($from === Stage::InReview || $from === Stage::ApprovedInternal || $from->isClientApproved()) && $to === Stage::InProgress;
     }
 
     /** Why a drop cannot work when actionFor() found nothing. */

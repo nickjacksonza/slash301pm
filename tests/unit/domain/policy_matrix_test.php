@@ -137,7 +137,7 @@ function pmt_not_yet(): array
         'transition:in_review->approved_internal' => 'implicit: the ECD approval of a CD-approved job (ReviewRules::stageMoves)',
         'transition:approved_internal->in_progress' => 'implicit: a rejection in the review flow; the AM send back comes with the client portal',
         'transition:approved_internal->approved_client' => 'client portal phase',
-        'transition:approved_client->in_progress' => 'reopen flow not built',
+        'transition:approved_client->in_progress' => 'implicit: a rejection in the review flow reopens it (ReviewRules::stageMoves); the explicit reopen comes with the client portal',
         'transition:done->in_progress' => 'reopen flow not built',
         'transition:archived->restore' => 'restore flow not built',
         'transition:cancelled->draft' => 'reinstate flow not built',

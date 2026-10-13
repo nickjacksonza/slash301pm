@@ -22,7 +22,9 @@ use App\Domain\Types\Team;
  * - The job counts as CD-approvable when every non-cancelled asset has every
  *   part approved (aggregate() = AllApproved).
  * - A rejection clears the CD and ECD approvals and the client steps, and the
- *   job goes back to in_progress (stageMoves()).
+ *   job goes back to in_progress (stageMoves()): from in_review or
+ *   approved_internal, and (owner decision 2026-10-13) it reopens a
+ *   client-approved job (approved_client and the Social stages).
  * Go: package domain, func RequiredParts, PlanSubmission, ...
  */
 final class ReviewRules
@@ -298,8 +300,9 @@ final class ReviewRules
 
     /**
      * The named stage moves a review event implies, in order, from the job's
-     * stage (each is checked again by Transitions::plan when applied). A paused,
-     * client-approved or closed job never moves here.
+     * stage (each is checked again by Transitions::plan when applied). A paused
+     * or closed job never moves here; a client-approved job moves only on a
+     * rejection, which reopens it (owner decision 2026-10-13).
      * @return list<JobAction>
      */
     public static function stageMoves(Stage $from, ReviewEvent $e): array
@@ -311,7 +314,7 @@ final class ReviewRules
                 Stage::InProgress => [JobAction::Submit],
                 default => [],
             },
-            ReviewEvent::Rejected => ($from === Stage::InReview || $from === Stage::ApprovedInternal) ? [JobAction::SendBack] : [],
+            ReviewEvent::Rejected => ($from === Stage::InReview || $from === Stage::ApprovedInternal || $from->isClientApproved()) ? [JobAction::SendBack] : [],
             ReviewEvent::Approved => [],
             ReviewEvent::EcdApproved => match ($from) {
                 Stage::InProgress => [JobAction::Submit, JobAction::ApproveInternal],
@@ -376,14 +379,15 @@ final class ReviewRules
     }
 
     /**
-     * A rejection on a paused job that would resume to in_review or
-     * approved_internal: it cannot send the job back to in_progress, so the job
-     * would come back approved with a rejected post. '' when the rejection may
-     * go ahead (not paused, or resuming to in_progress anyway).
+     * A rejection on a paused job that would resume to a stage a rejection
+     * sends back (in_review, approved_internal, or a client-approved stage): it
+     * cannot send the job back to in_progress, so the job would come back
+     * approved with a rejected post. '' when the rejection may go ahead (not
+     * paused, or resuming to a stage a rejection leaves alone).
      */
     public static function pausedRejectionProblem(Stage $stage, ?Stage $resume): string
     {
-        if (!$stage->isPaused() || ($resume !== Stage::InReview && $resume !== Stage::ApprovedInternal)) {
+        if (!$stage->isPaused() || $resume === null || self::stageMoves($resume, ReviewEvent::Rejected) === []) {
             return '';
         }
         return self::pausedProblem($stage, 'a rejection sends it back to In progress');

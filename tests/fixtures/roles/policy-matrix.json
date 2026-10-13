@@ -1014,7 +1014,7 @@
                 "Traffic": "deny",
                 "PM": "assigned_or_creator",
                 "Producer": "assigned_or_creator",
-                "CD": "deny",
+                "CD": "assigned",
                 "Copywriter": "deny",
                 "Designer": "deny",
                 "QA": "deny",
@@ -1024,7 +1024,8 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Reason required; client approval fields are cleared."
+                "*": "Reason required; client approval fields are cleared.",
+                "CD": "Implicit only (owner decision 2026-10-13): a rejection of a post in review (approve_internal) reopens a client-approved job, from approved_client or a Social stage (ready_to_schedule, scheduled, live), with the rejection as the reason. The COO and the ECD reopen the same way."
             }
         },
         {
@@ -1463,8 +1464,8 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Brief sent, job open. A rejection sends the part back to its maker, clears the CD and ECD approvals and the client steps, and moves an in_review or approved_internal job back to in_progress.",
-                "CD": "Holds the CD slot on the job, or the review was reassigned to them; not a part they handed in themselves unless no other CD or ECD exists."
+                "*": "Brief sent, job open. A rejection sends the part back to its maker, clears the CD and ECD approvals and the client steps, and moves an in_review or approved_internal job back to in_progress; on a client-approved job (approved_client, ready_to_schedule, scheduled, live) it reopens the job to in_progress (owner decision 2026-10-13). A paused job refuses a rejection while it would resume to any of those stages.",
+                "CD": "Holds the CD slot on the job, or the review was reassigned to them; both keep review rights after a reassign (owner decision 2026-10-13). Not a part they handed in themselves unless no other CD or ECD exists."
             },
             "legacy": "api/permissions.php:118-121: any CD, not the assigned CD."
         },
@@ -1490,7 +1491,7 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Brief sent, job open, not ECD-approved already. Notifies every ECD; an in_progress job moves to in_review.",
+                "*": "Brief sent, job open, not ECD-approved already. Notifies the job's ECD slot holder only (nobody when the slot is empty; the job still waits on My day for every ECD and the COO); an in_progress job moves to in_review.",
                 "CD": "CD slot on the job, or the review was reassigned to them."
             },
             "legacy": "No legacy equivalent."
