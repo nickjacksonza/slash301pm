@@ -62,6 +62,9 @@ function layout_page(LayoutVM $vm, string $content): string
           <div class="absolute right-0 z-50 mt-1 w-56 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md">
             <a href="<?= attr(url('/account/password')) ?>" class="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground">Change password</a>
             <a href="<?= attr(url('/legacy/')) ?>" class="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground">Open the old app</a>
+            <?php if ($vm->switchGroups !== []): ?>
+              <?= layout_switch_menu($vm) ?>
+            <?php endif; ?>
             <form method="post" action="<?= attr(url('/logout')) ?>">
               <input type="hidden" name="_csrf" value="<?= attr($vm->csrf) ?>">
               <button type="submit" class="block w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground">Sign out</button>
@@ -79,6 +82,33 @@ function layout_page(LayoutVM $vm, string $content): string
 <div id="sheet"></div>
 </body>
 </html>
+<?php
+    return (string) ob_get_clean();
+}
+
+/**
+ * Demo user switcher inside the user menu. Only rendered when the VM carries
+ * groups (App\Domain\DemoSwitch decided). One POST form per user, CSRF field included.
+ */
+function layout_switch_menu(LayoutVM $vm): string
+{
+    ob_start(); ?>
+<div data-switch-menu class="mt-1 max-h-80 overflow-y-auto border-t border-border pt-1">
+  <div class="px-2 pt-1 text-xs font-semibold text-foreground">Switch user (demo)</div>
+  <?php foreach ($vm->switchGroups as $group): ?>
+    <div class="px-2 pt-2 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"><?= e($group->role) ?></div>
+    <?php foreach ($group->users as $u): ?>
+      <form method="post" action="<?= attr(url('/account/switch/' . rawurlencode($u->id))) ?>">
+        <input type="hidden" name="_csrf" value="<?= attr($vm->csrf) ?>">
+        <?php if ($u->current): ?>
+          <button type="submit" disabled aria-current="true" class="block w-full rounded-sm bg-accent px-2 py-1.5 text-left text-sm font-medium text-accent-foreground"><?= e($u->name) ?> <span class="text-xs text-muted-foreground">(you)</span></button>
+        <?php else: ?>
+          <button type="submit" title="<?= attr($u->username) ?>" class="block w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"><?= e($u->name) ?></button>
+        <?php endif; ?>
+      </form>
+    <?php endforeach; ?>
+  <?php endforeach; ?>
+</div>
 <?php
     return (string) ob_get_clean();
 }

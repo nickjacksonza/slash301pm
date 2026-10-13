@@ -40,6 +40,7 @@ return [
 
     ['GET /account/password', [AccountHandlers::class, 'passwordForm']],
     ['POST /account/password', [AccountHandlers::class, 'changePassword']],
+    ['POST /account/switch/{userId}', [AccountHandlers::class, 'switchUser']],
 
     ['GET /admin/users', [AdminUserHandlers::class, 'list']],
     ['POST /admin/users', [AdminUserHandlers::class, 'create']],

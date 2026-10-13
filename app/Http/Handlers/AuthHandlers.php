@@ -92,14 +92,19 @@ final class AuthHandlers
         if ($user === null || !$user->isActive) {
             return self::render($r, $d, '', 'That user does not exist.', '', 200);
         }
-        $s = $r->session();
+        self::startDemoSession($r->session(), $user, $d->clock->now()->getTimestamp());
+        return Response::redirect(url('/today'));
+    }
+
+    /** Demo sign-in and the demo user switch (AccountHandlers::switchUser) share this. New session id every time. */
+    public static function startDemoSession(Session $s, User $user, int $now): void
+    {
         $s->regenerate();
         $s->remove('user_id');   // a real login would otherwise win over the demo user in both apps
         $s->set('demo_user_id', $user->id);
         $s->set('user_role', $user->role->value);
         $s->set('user_brand_id', $user->brandId);
-        $s->set('last_activity', $d->clock->now()->getTimestamp());
-        return Response::redirect(url('/today'));
+        $s->set('last_activity', $now);
     }
 
     /** Same keys and order as legacy handleLogin(). */
@@ -120,12 +125,12 @@ final class AuthHandlers
         return Response::page(page_login(new LoginVM($r->csrfToken(), $username, $error, $notice, $demo, $demo ? self::demoGroups($d) : [])), $status);
     }
 
-    /** @return list<DemoGroupVM> active users grouped by role, agency roles first */
-    private static function demoGroups(Deps $d): array
+    /** @return list<DemoGroupVM> active users grouped by role, agency roles first; $currentId marks the signed-in user */
+    public static function demoGroups(Deps $d, string $currentId = ''): array
     {
         $byRole = [];
         foreach ($d->users->listActive() as $u) {
-            $byRole[$u->role->value][] = new DemoUserVM($u->id, $u->name, $u->username);
+            $byRole[$u->role->value][] = new DemoUserVM($u->id, $u->name, $u->username, $u->id === $currentId);
         }
         $groups = [];
         foreach (Role::ordered() as $role) {

@@ -26,6 +26,7 @@ const AC_EXEMPT = [
     'POST /login' => 'Sign-in. Failures are recorded in login_attempts for the rate limit; a success only starts a session.',
     'POST /logout' => 'Ends the session only.',
     'POST /demo-login' => 'Demo mode only (owner switch); swaps the session user and writes nothing.',
+    'POST /account/switch/{userId}' => 'Demo mode only (owner switch from the top bar); swaps the session user and writes nothing.',
     'POST /admin/system/migrate' => 'Recorded in schema_migrations (version, sha256, applied_at) with a backup in data/backups.',
     'POST /views' => 'Saved views are personal UI state (filters, sort, columns); no job data changes.',
     'PATCH /views/{id}' => 'Saved views are personal UI state (filters, sort, columns); no job data changes.',

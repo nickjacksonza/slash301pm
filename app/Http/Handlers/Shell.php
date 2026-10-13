@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Http\Handlers;
 
 use App\Domain\Dates;
+use App\Domain\DemoSwitch;
 use App\Domain\MyDayMode;
 use App\Domain\Policy;
 use App\Http\Deps;
@@ -69,6 +70,14 @@ final class Shell
                 }
             }
         }
+        // Demo user switcher: the rule lives in DemoSwitch (demo mode on and a demo-picker session).
+        $switchGroups = [];
+        if ($user !== null) {
+            $demoSession = AccountHandlers::isDemoSession($r->session());
+            if (DemoSwitch::can($d->config->demoMode(), $demoSession)->allowed) {
+                $switchGroups = AuthHandlers::demoGroups($d, $user->id);
+            }
+        }
         return new LayoutVM(
             $title,
             $active,
@@ -78,6 +87,7 @@ final class Shell
             $d->config->demoMode(),
             $nav,
             $admin,
+            $switchGroups,
         );
     }
 
