@@ -484,7 +484,7 @@ final class Policy
     /**
      * Nav visibility: show only what the role can use (no dead links). Not an
      * authorization check; every route still runs its own Policy function.
-     * Items: today, briefs, jobs, board, campaigns, social, clients, admin-users,
+     * Items: today, briefs, jobs, board, reviews, campaigns, social, clients, admin-users,
      * admin-system, admin-overrides, spike. Unknown items are hidden.
      */
     public static function canSeeNav(User $u, string $item): bool
@@ -493,7 +493,8 @@ final class Policy
             return false;
         }
         return match ($item) {
-            'today', 'jobs', 'board' => true,
+            // reviews: Shell only offers it when the person's review day applies (ReviewDayRules).
+            'today', 'jobs', 'board', 'reviews' => true,
             // Brief creators and owners (Traffic and creatives open sent briefs from their jobs).
             'briefs' => self::canCreateBrief($u)->allowed,
             'campaigns' => self::canManageCampaign($u)->allowed,

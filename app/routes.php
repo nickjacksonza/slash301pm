@@ -108,6 +108,7 @@ return [
     ['POST /jobs/{id}/review/ready', [ReviewHandlers::class, 'markReady']],
     ['POST /jobs/{id}/review/send', [ReviewHandlers::class, 'sendToClient']],
     ['GET /today/reviews', [ReviewHandlers::class, 'todaySection']],
+    ['GET /reviews', [ReviewHandlers::class, 'listPage']],
     ['POST /admin/system/review-round-limit', [SystemHandlers::class, 'reviewRoundLimit']],
 
     // Social publishing
