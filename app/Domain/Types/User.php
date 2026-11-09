@@ -5,7 +5,12 @@ namespace App\Domain\Types;
 
 use App\Domain\Role;
 
-/** A row of users without the password hash. Go: type User struct. */
+/**
+ * A row of users without the password hash. Go: type User struct.
+ * clientSignoff: users.client_signoff (migration 0008; NULL reads as 1), true
+ * for a Brand Director. Only meaningful for the Client role, and only read
+ * from rows that select the column (UserStore does); otherwise false (deny).
+ */
 final class User
 {
     public function __construct(
@@ -17,6 +22,7 @@ final class User
         public readonly string $color,
         public readonly ?string $brandId,
         public readonly bool $isActive,
+        public readonly bool $clientSignoff = false,
     ) {}
 
     public static function fromRow(array $r): self
@@ -30,6 +36,7 @@ final class User
             $r['color'] !== null ? (string) $r['color'] : '#3b82f6',
             $r['brand_id'] !== null && $r['brand_id'] !== '' ? (string) $r['brand_id'] : null,
             (int) $r['is_active'] === 1,
+            array_key_exists('client_signoff', $r) && ($r['client_signoff'] === null || (int) $r['client_signoff'] === 1),
         );
     }
 }

@@ -16,4 +16,6 @@ enum ReviewEvent: string
     case Approved = 'approved';
     /** The ECD approved a CD-approved job. */
     case EcdApproved = 'ecd_approved';
+    /** Client portal: a Brand Director gave the final sign-off. */
+    case ClientSignedOff = 'client_signed_off';
 }

@@ -569,6 +569,8 @@ Backfill every existing Client to 1 so nothing changes on day one (today any own
 
 **My day needs** (`/portal`): Awaiting my review, Awaiting Director sign-off (MM view), In production (title, due date), Recently approved.
 
+**As built (client portal, first slice; docs/portal.md)**: AM, Traffic, the COO and the ECD invite a contact from `/brands/{id}/clients` (`invite_client`): an inactive Client user of that brand with `client_signoff` 0 (Marketing Manager) or 1 (Brand Director) and a single-use link. The contact sets a password at `/invite/{token}` and lands on `/portal`, which lists only their brand's jobs that are approved (internal) and marked ready for client review, plus jobs a client decided in the last 30 days. Both personas approve or reject single posts (`give_feedback_client`; a rejection needs feedback, goes to the maker and reopens the job to in_progress). Only a Brand Director signs the job off (`approve_client`), after every post is client-approved; the job moves to approved_client (legacy Approved (External)). Client decisions notify the AM (or brief creator) and the job's ECD slot holder. Not built yet: "In production" lines, "Recommend for sign-off", N18/N19 emails, on-behalf approvals by staff, the client's own password change.
+
 ## 3. Notification catalogue
 
 Rules for every event: the actor never notifies themselves; recipients are resolved at the time of the event from `job_assignments` and `assets.assigned_to`; a Client only ever receives events marked Client; every notification is written in the same transaction as the change (activity log, migration 0006) and rendered from it, so "in-app now" needs no extra table beyond a per-user read marker. Email is "later" in every row (ADR 0003) and listed as the intended mode.
@@ -742,6 +744,7 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `manage_campaign` | Y | Y | Y | - | Y | Y | - | - | - | - | - | - | - | - |
 | `manage_brand` | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
 | `manage_users` | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
+| `invite_client` | Y | Y | Y | Y | - | - | - | - | - | - | - | - | - | - |
 | `admin_system` | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
 | `toggle_demo_mode` | Y | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | `manage_brand_logo` * | Y | Y | Y | - | Y | Y | - | - | - | - | - | - | - | - |
@@ -819,9 +822,9 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `transition:in_progress->in_review` | Social | Implicit only. |
 | `transition:in_review->in_progress` | all allowed roles | Feedback text is required. |
 | `transition:in_review->approved_internal` | CD | Holds the CD slot on the job. |
-| `transition:approved_internal->in_progress` | Client | Implicit only, through give_feedback_client after send_to_client. |
+| `transition:approved_internal->in_progress` | Client | Implicit only, through give_feedback_client (a rejection in the client portal) once the job is marked ready for client review. |
 | `transition:approved_internal->in_progress` | all allowed roles | Feedback or reason text is required. |
-| `transition:approved_internal->approved_client` | Client | users.client_signoff = 1 and the job was sent to the client. |
+| `transition:approved_internal->approved_client` | Client | Implicit only, through approve_client (the Brand Director's sign-off in the client portal). |
 | `transition:approved_internal->approved_client` | AM | On behalf: must name the client contact and how they approved. |
 | `transition:approved_internal->approved_client` | PM | On behalf, as AM. |
 | `transition:approved_internal->approved_client` | Producer | On behalf, as AM. |
@@ -873,7 +876,7 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `mark_ready_for_client` | CD | CD slot on the job, or the review was reassigned to them. |
 | `send_to_client` | all allowed roles | Stage approved_internal; the CD and the ECD have approved the job and every post is approved; marked ready for client review; not sent already. Notifies the AM and Traffic. |
 | `send_to_client` | CD | CD slot on the job, or the review was reassigned to them. |
-| `approve_client` | Client | users.client_signoff = 1. |
+| `approve_client` | Client | users.client_signoff = 1 (Brand Director): the final job sign-off in the client portal, once the job is marked ready for client review (stage approved_internal) and every post is approved by a client contact of the brand. Moves the job to approved_client. |
 | `approve_client` | AM | On behalf, with contact and evidence note. |
 | `approve_client` | PM | On behalf. |
 | `approve_client` | Producer | On behalf. |
@@ -884,7 +887,7 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `give_feedback_client` | Producer | On behalf. |
 | `give_feedback_client` | COO | On behalf. |
 | `give_feedback_client` | ECD | On behalf. |
-| `give_feedback_client` | Client | Job was sent to the client. |
+| `give_feedback_client` | Client | Job marked ready for client review and stage approved_internal. Marketing Manager and Brand Director. In the portal this is the per-post decision: approve a post, or reject it (feedback required); a rejection goes to the maker and reopens the job. |
 | `recommend_signoff` | Client | users.client_signoff = 0 and the job was sent to the client. |
 | `view_all_jobs` | Client | Client-safe projection; drafts and internal-only stages show only as a coarse "In production" line. |
 | `view_staff_emails` | Client | Own email only. |

@@ -321,6 +321,7 @@ final class ReviewRules
                 Stage::InReview => [JobAction::ApproveInternal],
                 default => [],
             },
+            ReviewEvent::ClientSignedOff => $from === Stage::ApprovedInternal ? [JobAction::ApproveClient] : [],
         };
     }
 
@@ -341,6 +342,7 @@ final class ReviewRules
             ReviewEvent::Rejected => 'In Progress',
             ReviewEvent::Approved => $allApproved ? 'Approved (Internal)' : null,
             ReviewEvent::EcdApproved => null,
+            ReviewEvent::ClientSignedOff => null,
         };
         return $to === $current ? null : $to;
     }

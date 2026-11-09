@@ -24,6 +24,9 @@ use App\Domain\Types\Team;
  * - job_ready_for_client, job_sent_to_client: the AM (or brief creator) and Traffic.
  * - review_reassigned: the new reviewer (not a client: clients cannot sign in yet).
  * - asset_submitted, asset_part_approved: nobody (shown on the job's feed only).
+ * - Client portal: client_post_approved and client_signed_off go to the AM
+ *   (or brief creator) and the job's ECD slot holder; client_post_rejected
+ *   also to the maker of each part (the feedback reaches the maker).
  */
 final class ReviewNotify
 {
@@ -38,13 +41,17 @@ final class ReviewNotify
     public const JOB_READY_FOR_CLIENT = 'job_ready_for_client';
     public const JOB_SENT_TO_CLIENT = 'job_sent_to_client';
     public const ROUND_LIMIT_WARNING = 'round_limit_warning';
+    // Client portal
+    public const CLIENT_POST_APPROVED = 'client_post_approved';
+    public const CLIENT_POST_REJECTED = 'client_post_rejected';
+    public const CLIENT_SIGNED_OFF = 'client_signed_off';
 
     /** @return list<string> */
     public static function verbs(): array
     {
         return [self::ASSET_SUBMITTED, self::REVIEW_REQUESTED, self::PART_APPROVED, self::PART_REJECTED, self::JOB_REVIEW_REQUESTED,
             self::JOB_CD_APPROVED, self::JOB_ECD_APPROVED, self::REVIEW_REASSIGNED, self::JOB_READY_FOR_CLIENT, self::JOB_SENT_TO_CLIENT,
-            self::ROUND_LIMIT_WARNING];
+            self::ROUND_LIMIT_WARNING, self::CLIENT_POST_APPROVED, self::CLIENT_POST_REJECTED, self::CLIENT_SIGNED_OFF];
     }
 
     /**
@@ -94,6 +101,13 @@ final class ReviewNotify
             case self::JOB_SENT_TO_CLIENT:
                 $ids = [$am, $team->userFor(Role::Traffic)];
                 break;
+            case self::CLIENT_POST_APPROVED:
+            case self::CLIENT_SIGNED_OFF:
+                $ids = [$am, $ecd];
+                break;
+            case self::CLIENT_POST_REJECTED:
+                $ids = array_merge($extra, [$am, $ecd]);
+                break;
         }
         $out = [];
         foreach ($ids as $id) {
@@ -129,6 +143,10 @@ final class ReviewNotify
             self::JOB_READY_FOR_CLIENT => 'marked the job ready for client review',
             self::JOB_SENT_TO_CLIENT => 'sent the job to the client',
             self::ROUND_LIMIT_WARNING => $asset . ' passed the review round limit' . $round,
+            self::CLIENT_POST_APPROVED => 'approved ' . $asset . ' (client)',
+            self::CLIENT_POST_REJECTED => (($data['decision'] ?? '') === ReviewDecision::RejectedWithFeedback->value ? 'asked for changes to ' : 'rejected ') . $asset . ' (client)',
+            self::CLIENT_SIGNED_OFF => 'signed off the job (client)',
+            'job_approve_client' => 'moved the job to Approved (client)',
             'job_submit' => 'moved the job to In review',
             'job_send_back' => 'sent the job back to work',
             'job_approve_internal' => 'moved the job to Approved (internal)',

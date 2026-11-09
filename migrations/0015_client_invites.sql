@@ -11,8 +11,9 @@
 -- of the token is stored, never the token itself. A link is valid while
 -- used_at IS NULL and expires_at (UTC 'Y-m-d H:i:s') is in the future.
 -- Accepting it sets the password, marks the row used and activates the user in
--- one transaction. Issuing a new link for the same pending user marks the
--- older unused rows used. Written and read by the new app only.
+-- one transaction. Issuing a new link for the same pending user expires the
+-- older unused rows (expires_at = now); used_at marks an accepted link only.
+-- Written and read by the new app only.
 --
 -- Reused, not added: users.brand_id (the client's one brand), users.is_active
 -- (an invited user stays inactive until the link is accepted) and
