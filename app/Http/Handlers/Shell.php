@@ -54,7 +54,6 @@ final class Shell
             new NavItem('admin-users', 'Users', url('/admin/users'), true),
             new NavItem('admin-system', 'System', url('/admin/system'), true),
             new NavItem('admin-overrides', 'Overrides', url('/admin/overrides'), true),
-            new NavItem('spike', 'Datastar spike', url('/system/spike'), true),
         ];
         $nav = [];
         $admin = [];
