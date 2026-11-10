@@ -19,15 +19,13 @@ function page_login(LoginVM $vm): string
     <input type="hidden" name="_csrf" value="<?= attr($vm->csrf) ?>">
     <div class="flex flex-col gap-2">
       <label for="username" class="text-sm font-medium">Username</label>
-      <input id="username" name="username" type="text" autocomplete="username" required autofocus value="<?= attr($vm->username) ?>"
-             class="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm">
+      <?= ui_input(new \App\View\ui\InputProps(type: 'text', id: 'username', name: 'username', value: $vm->username, required: true, attrs: ['autocomplete' => 'username', 'autofocus' => true])) ?>
     </div>
     <div class="flex flex-col gap-2">
       <label for="password" class="text-sm font-medium">Password</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required
-             class="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm">
+      <?= ui_input(new \App\View\ui\InputProps(type: 'password', id: 'password', name: 'password', required: true, attrs: ['autocomplete' => 'current-password'])) ?>
     </div>
-    <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90">Sign in</button>
+    <?= ui_button(new \App\View\ui\ButtonProps(type: 'submit'), 'Sign in') ?>
   </form>
 </div>
 <?php if ($vm->demoMode): ?>
@@ -41,8 +39,7 @@ function page_login(LoginVM $vm): string
         <legend class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"><?= e($group->role) ?></legend>
         <div class="flex flex-wrap gap-2">
           <?php foreach ($group->users as $u): ?>
-            <button type="submit" name="user_id" value="<?= attr($u->id) ?>" title="<?= attr($u->username) ?>"
-                    class="inline-flex h-8 items-center rounded-md border border-border bg-background px-3 text-sm hover:bg-accent hover:text-accent-foreground"><?= e($u->name) ?></button>
+            <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', size: 'sm', type: 'submit', attrs: ['name' => 'user_id', 'value' => $u->id, 'title' => $u->username]), e($u->name)) ?>
           <?php endforeach; ?>
         </div>
       </fieldset>
