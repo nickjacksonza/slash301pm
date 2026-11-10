@@ -43,9 +43,9 @@ Work is on the branch `claude/rebuild`. Each step is committed and pushed on its
 | **Stage 2: one look everywhere** | | |
 | 4 | Screenshot audit: each legacy screen beside each new page, 1280px and 390px | To do |
 | 5 | Page frame: top bar, pill tab bar (Today, Work, Briefs, Campaigns, Reviews, Social, More). Work holds the table/Kanban toggle. More holds People, Users, System, Overrides and the old app | To do |
-| 6 | Shared parts added once: page toolbar, view toggle, filter pills, metric card, side panel header and footer, traffic-light status chip, empty state | To do |
-| 7 | Convert drifted pages to the shared parts: review, work, social, today, admin users, admin system, admin overrides, account, login, errors. No behaviour changes | To do |
-| 8 | Drift test: a page may not carry a hand-written button, input, select or textarea. Rebuild the CSS. Re-take and check the screenshots | To do |
+| 6 | Shared parts added once: page toolbar, view toggle, filter pills, metric card, side panel header and footer, traffic-light status chip, empty state | Done |
+| 7 | Convert drifted pages to the shared parts: review, work, social, today, admin users, admin system, admin overrides, account, login, errors. No behaviour changes | Mostly done. Left: grid cell editors, board chips, deliverables inputs, a few checkboxes |
+| 8 | Drift test: a page may not carry a hand-written button, input, select or textarea. Rebuild the CSS. Re-take and check the screenshots | Drift test done (allow-list shrinks). Final screenshot re-check of all pages still open |
 | **Stage 3: finish the main path** | | |
 | 9 | Client portal: staff invite page per brand; accept page (`/invite/{token}`); client frame and gates; `/portal` and `/portal/jobs/{id}` with approve, reject with feedback, and final sign-off by a Brand Director; tests for brand isolation, decisions, hidden internal fields, hostile strings | To do |
 | 10 | ECD assignment on the job team form | To do |

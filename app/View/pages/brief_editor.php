@@ -328,15 +328,15 @@ function partial_brief_rail(BriefRailVM $vm): string
         <?php elseif ($a === JobAction::Cancel): ?>
           <?= ui_button(new ButtonProps(variant: 'ghost', size: 'sm', class: 'w-full text-destructive', attrs: ['data-on:click' => "\$tr.reason = ''; \$cancel_dialog.open = true"]), 'Cancel job...') ?>
         <?php elseif ($a === JobAction::Recall): ?>
-          <button type="button" class="<?= attr('inline-flex h-8 w-full items-center justify-center rounded-md border border-border px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground') ?>" data-on:click="<?= $tr('recall', 'Recall the brief to draft? Traffic and the team are told to stop planning.') ?>">Recall to draft</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', size: 'sm', class: 'w-full', attrs: ['data-on:click' => html_entity_decode($tr('recall', 'Recall the brief to draft? Traffic and the team are told to stop planning.'), ENT_QUOTES | ENT_HTML5, 'UTF-8')]), 'Recall to draft') ?>
         <?php elseif ($a === JobAction::Resume): ?>
-          <button type="button" class="<?= attr('inline-flex h-8 w-full items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90') ?>" data-on:click="<?= $tr('resume', '') ?>">Resume</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'default', size: 'sm', class: 'w-full', attrs: ['data-on:click' => html_entity_decode($tr('resume', ''), ENT_QUOTES | ENT_HTML5, 'UTF-8')]), 'Resume') ?>
         <?php elseif ($a === JobAction::Start): ?>
-          <button type="button" class="<?= attr('inline-flex h-8 w-full items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90') ?>" data-on:click="<?= $tr('start', 'Start work? The job moves to In progress.') ?>">Start work</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'default', size: 'sm', class: 'w-full', attrs: ['data-on:click' => html_entity_decode($tr('start', 'Start work? The job moves to In progress.'), ENT_QUOTES | ENT_HTML5, 'UTF-8')]), 'Start work') ?>
         <?php elseif ($a === JobAction::MarkDone): ?>
-          <button type="button" class="<?= attr('inline-flex h-8 w-full items-center justify-center rounded-md border border-border px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground') ?>" data-on:click="<?= $tr('done', 'Mark this job done?') ?>">Mark done</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', size: 'sm', class: 'w-full', attrs: ['data-on:click' => html_entity_decode($tr('done', 'Mark this job done?'), ENT_QUOTES | ENT_HTML5, 'UTF-8')]), 'Mark done') ?>
         <?php elseif ($a === JobAction::Archive): ?>
-          <button type="button" class="<?= attr('inline-flex h-8 w-full items-center justify-center rounded-md border border-border px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground') ?>" data-on:click="<?= $tr('archive', 'Archive this job?') ?>">Archive</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', size: 'sm', class: 'w-full', attrs: ['data-on:click' => html_entity_decode($tr('archive', 'Archive this job?'), ENT_QUOTES | ENT_HTML5, 'UTF-8')]), 'Archive') ?>
         <?php endif; ?>
       <?php endforeach; ?>
       <?php if (!$vm->canSend && !$vm->canUpdate && !$vm->canClaimAm && $vm->actions === []): ?>

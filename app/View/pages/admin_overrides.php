@@ -22,13 +22,13 @@ function page_admin_overrides(OverridesVM $vm): string
   <form method="get" action="<?= attr(url('/admin/overrides')) ?>" class="flex flex-wrap items-end gap-3">
     <div class="flex flex-col gap-1">
       <label for="ov-from" class="text-xs font-medium text-muted-foreground">From</label>
-      <input id="ov-from" name="from" type="date" value="<?= attr($vm->fromDate) ?>" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
+      <?= ui_input(new \App\View\ui\InputProps(type: 'date', id: 'ov-from', name: 'from', value: $vm->fromDate)) ?>
     </div>
     <div class="flex flex-col gap-1">
       <label for="ov-to" class="text-xs font-medium text-muted-foreground">To</label>
-      <input id="ov-to" name="to" type="date" value="<?= attr($vm->toDate) ?>" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
+      <?= ui_input(new \App\View\ui\InputProps(type: 'date', id: 'ov-to', name: 'to', value: $vm->toDate)) ?>
     </div>
-    <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90">Show</button>
+    <?= ui_button(new \App\View\ui\ButtonProps(type: 'submit'), 'Show') ?>
   </form>
   <section class="rounded-xl border border-border bg-card text-card-foreground shadow-sm" aria-labelledby="ov-title">
     <h2 id="ov-title" class="border-b border-border px-4 py-3 text-sm font-semibold"><?= count($vm->rows) ?><?= $vm->capped ? '+' : '' ?> <?= count($vm->rows) === 1 ? 'override' : 'overrides' ?>, <?= e(fmt_date($vm->fromDate)) ?> to <?= e(fmt_date($vm->toDate)) ?></h2>

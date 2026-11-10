@@ -313,14 +313,11 @@ function partial_social_card(Publication $p, SocialPermsVM $perms): string
   <?php if ($st === PublicationStatus::Checking && ($perms->checklist || $perms->ready)): ?>
     <div class="flex flex-wrap gap-2">
       <?php if ($editChecklist): ?>
-        <button type="button" class="<?= attr($btn . ' border border-border hover:bg-accent hover:text-accent-foreground') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy) ?>"
-          data-on:click="<?= attr(implode('; ', array_map(static fn (string $x): string => $x . ' = true', $complete)) . '; ' . $act('patch', '/checklist')) ?>">Tick all</button>
-        <button type="button" class="<?= attr($btn . ' border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy) ?>"
-          data-on:click="<?= attr('confirm(' . jobs_js('Remove ' . $p->platform->label() . ' from this asset?') . ') && ' . $act('delete', '')) ?>">Remove</button>
+        <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', size: 'sm', attrs: ['data-indicator' => ($busy), 'data-attr:disabled' => ('$' . $busy), 'data-on:click' => (implode('; ', array_map(static fn (string $x): string => $x . ' = true', $complete)) . '; ' . $act('patch', '/checklist'))]), 'Tick all') ?>
+        <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', size: 'sm', attrs: ['data-indicator' => ($busy), 'data-attr:disabled' => ('$' . $busy), 'data-on:click' => ('confirm(' . jobs_js('Remove ' . $p->platform->label() . ' from this asset?') . ') && ' . $act('delete', ''))]), 'Remove') ?>
       <?php endif; ?>
       <?php if ($perms->ready): ?>
-        <button type="button" class="<?= attr($btn . ' bg-primary text-primary-foreground hover:bg-primary/90') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy . ' || !(' . $allTicked . ')') ?>"
-          data-on:click="<?= attr($act('post', '/ready')) ?>">Ready to schedule</button>
+        <?= ui_button(new \App\View\ui\ButtonProps(variant: 'default', size: 'sm', attrs: ['data-indicator' => ($busy), 'data-attr:disabled' => ('$' . $busy . ' || !(' . $allTicked . ')'), 'data-on:click' => ($act('post', '/ready'))]), 'Ready to schedule') ?>
       <?php endif; ?>
     </div>
   <?php endif; ?>
@@ -332,9 +329,9 @@ function partial_social_card(Publication $p, SocialPermsVM $perms): string
       <div class="flex flex-wrap items-center gap-2">
         <?= ui_input(new InputProps(type: 'datetime-local', id: $id . '-at', class: 'h-8 w-56', attrs: ['data-bind' => $root . '.scheduled_at'])) ?>
         <?php if ($st === PublicationStatus::ReadyToSchedule): ?>
-          <button type="button" class="<?= attr($btn . ' bg-primary text-primary-foreground hover:bg-primary/90') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy . ' || !' . $s . '.scheduled_at') ?>" data-on:click="<?= attr($act('post', '/scheduled')) ?>">Mark scheduled</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'default', size: 'sm', attrs: ['data-indicator' => ($busy), 'data-attr:disabled' => ('$' . $busy . ' || !' . $s . '.scheduled_at'), 'data-on:click' => ($act('post', '/scheduled'))]), 'Mark scheduled') ?>
         <?php else: ?>
-          <button type="button" class="<?= attr($btn . ' border border-border hover:bg-accent hover:text-accent-foreground') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy) ?>" data-on:click="<?= attr($act('patch', '/schedule')) ?>">Save time</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', size: 'sm', attrs: ['data-indicator' => ($busy), 'data-attr:disabled' => ('$' . $busy), 'data-on:click' => ($act('patch', '/schedule'))]), 'Save time') ?>
         <?php endif; ?>
       </div>
       <?php else: ?>
@@ -352,9 +349,9 @@ function partial_social_card(Publication $p, SocialPermsVM $perms): string
       <div class="flex flex-wrap items-center gap-2">
         <div class="min-w-0 flex-1"><?= ui_input(new InputProps(type: 'url', id: $id . '-url', class: 'h-8', placeholder: 'https://...', attrs: ['data-bind' => $root . '.live_url', 'maxlength' => '2000'])) ?></div>
         <?php if ($st === PublicationStatus::Scheduled && $perms->live): ?>
-          <button type="button" class="<?= attr($btn . ' bg-primary text-primary-foreground hover:bg-primary/90') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy . ' || !' . $s . '.live_url') ?>" data-on:click="<?= attr($act('post', '/live')) ?>">Mark live</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'default', size: 'sm', attrs: ['data-indicator' => ($busy), 'data-attr:disabled' => ('$' . $busy . ' || !' . $s . '.live_url'), 'data-on:click' => ($act('post', '/live'))]), 'Mark live') ?>
         <?php elseif ($perms->liveLink): ?>
-          <button type="button" class="<?= attr($btn . ' border border-border hover:bg-accent hover:text-accent-foreground') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy) ?>" data-on:click="<?= attr($act('patch', '/live-link')) ?>">Save link</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', size: 'sm', attrs: ['data-indicator' => ($busy), 'data-attr:disabled' => ('$' . $busy), 'data-on:click' => ($act('patch', '/live-link'))]), 'Save link') ?>
         <?php endif; ?>
       </div>
       <?php elseif ($p->liveUrl !== ''): ?>
@@ -389,13 +386,10 @@ function partial_social_card(Publication $p, SocialPermsVM $perms): string
       <?= ui_input(new InputProps(type: 'text', class: 'h-8', placeholder: 'Reason (required)', attrs: ['aria-label' => 'Reason', 'maxlength' => '1000', 'data-bind' => $root . '.reason'])) ?>
       <div class="flex flex-wrap gap-2">
         <?php if ($canBack): ?>
-          <button type="button" class="<?= attr($btn . ' border border-border hover:bg-accent hover:text-accent-foreground') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy . ' || !' . $s . '.reason') ?>" data-on:click="<?= attr($act('post', '/reopen')) ?>">Move back to <?= e(strtolower($st->previous()?->label() ?? '')) ?></button>
-        <?php endif; ?>
-        <?php if ($canRecheck): ?>
-          <button type="button" class="<?= attr($btn . ' border border-border hover:bg-accent hover:text-accent-foreground') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy . ' || !' . $s . '.reason') ?>" data-on:click="<?= attr($act('post', '/recheck')) ?>">Back to checking</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', size: 'sm', attrs: ['data-indicator' => ($busy), 'data-attr:disabled' => ('$' . $busy . ' || !' . $s . '.reason'), 'data-on:click' => ($act('post', '/reopen')), 'class' => ($btn . ' border border-border hover:bg-accent hover:text-accent-foreground'), 'data-indicator' => ($busy), 'data-attr:disabled' => ('$' . $busy . ' || !' . $s . '.reason'), 'data-on:click' => ($act('post', '/recheck'))]), 'Back to checking') ?>
         <?php endif; ?>
         <?php if ($canArchive): ?>
-          <button type="button" class="<?= attr($btn . ' bg-destructive text-white hover:bg-destructive/90') ?>" data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy . ' || !' . $s . '.reason') ?>" data-on:click="<?= attr($act('post', '/archive')) ?>">Archive post</button>
+          <?= ui_button(new \App\View\ui\ButtonProps(variant: 'destructive', size: 'sm', attrs: ['data-indicator' => ($busy), 'data-attr:disabled' => ('$' . $busy . ' || !' . $s . '.reason'), 'data-on:click' => ($act('post', '/archive'))]), 'Archive post') ?>
         <?php endif; ?>
       </div>
     </div>
