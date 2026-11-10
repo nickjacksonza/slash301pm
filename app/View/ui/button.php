@@ -21,6 +21,10 @@ function ui_button(ButtonProps $p, string $children = ''): string
         'secondary' => 'bg-secondary focus-visible:ring-ring/50 hover:bg-secondary/80 shadow-xs text-secondary-foreground',
         'ghost' => 'dark:hover:bg-accent/50 focus-visible:ring-ring/50 hover:bg-accent hover:text-accent-foreground',
         'link' => 'focus-visible:ring-ring/50 hover:underline text-primary underline-offset-4',
+        // Review decisions (traffic-light colours, legacy look). Class strings moved from pages/review.php.
+        'approve' => 'bg-green-700 hover:bg-green-800 focus-visible:outline-green-700 shadow-xs text-white',
+        'feedback' => 'bg-orange-700 hover:bg-orange-800 focus-visible:outline-orange-700 shadow-xs text-white',
+        'reject' => 'bg-red-700 hover:bg-red-800 focus-visible:outline-red-700 shadow-xs text-white',
     ];
     $sizes = [
         'default' => 'gap-2 h-10 has-[>svg]:px-4 px-5 py-2',
