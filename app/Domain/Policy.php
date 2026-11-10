@@ -76,6 +76,10 @@ final class Policy
         'mark_ready_for_client' => 'Y Y AC Y - AC A - - - - - - -',
         'send_to_client' => 'Y Y AC Y - AC A - - - - - - -',
         'change_review_round_limit' => 'Y Y - - - - - - - - - - - -',
+        // Client portal: ReviewPolicy::canClient*() add the conditions; on behalf of a client is not built yet.
+        'approve_client' => 'Y Y AC - AC AC - - - - - - - B',
+        'give_feedback_client' => 'Y Y AC - AC AC - - - - - - - B',
+        'invite_client' => 'Y Y Y Y - - - - - - - - - -',
     ];
 
     public static function canManageUsers(User $actor): Decision
@@ -112,6 +116,22 @@ final class Policy
             }
         }
         return Decision::deny('The new app is not open to your role yet.');
+    }
+
+    /**
+     * Client portal: the paths a Client may open (BetaGate sends them to
+     * /portal from everything else and refuses every staff action). Sign-in,
+     * sign-out and invite links are public and handled before this.
+     */
+    public static function isClientPath(string $path): bool
+    {
+        return $path === '/portal' || str_starts_with($path, '/portal/');
+    }
+
+    /** Invite a client contact of a brand (/brands/{id}/clients): AM, Traffic, COO, ECD. */
+    public static function canInviteClient(User $u): Decision
+    {
+        return self::cell('invite_client', $u, null, 'Only account managers, Traffic, the COO and the ECD invite client contacts.');
     }
 
     public static function isAdmin(User $actor): bool
@@ -464,7 +484,7 @@ final class Policy
     /**
      * Nav visibility: show only what the role can use (no dead links). Not an
      * authorization check; every route still runs its own Policy function.
-     * Items: today, briefs, jobs, board, campaigns, social, admin-users,
+     * Items: today, briefs, jobs, board, reviews, campaigns, social, clients, admin-users,
      * admin-system, admin-overrides, spike. Unknown items are hidden.
      */
     public static function canSeeNav(User $u, string $item): bool
@@ -473,7 +493,8 @@ final class Policy
             return false;
         }
         return match ($item) {
-            'today', 'jobs', 'board' => true,
+            // reviews: Shell only offers it when the person's review day applies (ReviewDayRules).
+            'today', 'jobs', 'board', 'reviews' => true,
             // Brief creators and owners (Traffic and creatives open sent briefs from their jobs).
             'briefs' => self::canCreateBrief($u)->allowed,
             'campaigns' => self::canManageCampaign($u)->allowed,
@@ -482,6 +503,8 @@ final class Policy
             'admin-users' => self::canManageUsers($u)->allowed,
             'admin-system', 'spike' => self::canViewSystem($u)->allowed,
             'admin-overrides' => self::canViewOverridesReport($u)->allowed,
+            // Client portal: the client contacts pages.
+            'clients' => self::canInviteClient($u)->allowed,
             default => false,
         };
     }

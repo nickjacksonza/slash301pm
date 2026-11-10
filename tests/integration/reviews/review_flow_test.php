@@ -21,6 +21,9 @@ return [
         $cd = bh_session($d, $p['cd']);
         $ecd = bh_session($d, $p['ecd']);
         $am = bh_session($d, $p['am']);
+        // The job's ECD slot (set in the legacy app); a second active ECD is never told (owner decision 2026-10-13).
+        t_eq('', $d->assignments->set($job, Role::ECD, $p['ecd'], $p['traffic'], $d->clock->now()));
+        $otherEcd = ts_user($d, 'ecd_other', Role::ECD);
         t_eq('briefed', rx_stage($d, $job));
 
         // 1. The Copywriter hands in the copy of post 1: round 1, the job starts, the asset counts as started.
@@ -99,10 +102,10 @@ return [
         t_eq('Approved (Internal)', (string) $d->db->scalar('SELECT status FROM assets WHERE id = :a', ['a' => $a2]), 'legacy asset status');
         rx_err(rx_rev($d, $cd, $job, $a2, 'approved'), 'Already approved');
 
-        // 7. The CD approves the job: every ECD is told. The ECD approves: the AM and the CD are told, the job is approved (internal).
+        // 7. The CD approves the job: the job's ECD slot holder is told. The ECD approves: the AM and the CD are told, the job is approved (internal).
         rx_err(rx_job($d, $ecd, $job, 'ecd-approve'), 'The CD approves the job first');
         sx_ok(rx_job($d, $cd, $job, 'approve'));
-        t_eq([$p['ecd']], rx_to($d, $job, 'job_cd_approved'));
+        t_eq([$p['ecd']], rx_to($d, $job, 'job_cd_approved'), 'the ECD slot holder only, not ' . $otherEcd);
         t_eq('in_review', rx_stage($d, $job));
         rx_err(rx_job($d, $cd, $job, 'ecd-approve'), 'Only the ECD');
         sx_ok(rx_job($d, $ecd, $job, 'ecd-approve'));
@@ -176,6 +179,10 @@ return [
         // The new reviewer is told about the next Request review, and may decide.
         sx_ok(rx_sub($d, bh_session($d, $p['designer']), $job, $a1, ['media_url' => 'https://cdn.example.com/a.png'], true));
         t_eq([$p['cd2']], rx_to($d, $job, 'review_requested'));
+        // The CD slot holder keeps review rights after the reassign (owner decision 2026-10-13): both may decide.
+        sx_ok(rx_rev($d, $cd, $job, $a1, 'approved', 'copy'));
+        t_eq('approved', $d->reviews->asset($job, $a1)->copyState->value);
+        t_eq($p['cd'], $d->db->scalar("SELECT reviewer_id FROM asset_reviews WHERE asset_id = :a AND part = 'copy'", ['a' => $a1]), 'recorded as the original CD');
         sx_ok(rx_rev($d, $cd2, $job, $a1, 'approved'));
         sx_ok(rx_job($d, $cd2, $job, 'reassign', $p['ecd']));
         t_eq([$p['ecd']], rx_to($d, $job, 'review_reassigned'));
@@ -238,10 +245,16 @@ return [
         $d->db->exec("UPDATE assets SET status = 'Cancelled' WHERE id = :a", ['a' => $a2]);
         t_contains('no longer exists', ts_body(rx_sub($d, $copy, $job, $a2, ['copy_text' => 'x'])));
         t_true(!str_contains(ts_body((ts_app($cd))(ts_request('GET', '/jobs/' . $job . '/review'), $d)), 'Post 2 of'), 'cancelled posts are not listed');
-        // Request ECD review early: every ECD is told.
+        // Request ECD review early: the job has no ECD slot, so nobody extra is told (owner decision 2026-10-13),
+        // but the job still waits on My day for every ECD and the COO.
         sx_ok(rx_job($d, $cd, $job, 'request-ecd'));
-        t_eq([$p['ecd']], rx_to($d, $job, 'job_review_requested'));
+        t_eq([], rx_to($d, $job, 'job_review_requested'));
         t_eq('in_review', rx_stage($d, $job));
+        foreach (['ecd', 'coo'] as $who) {
+            $day = ts_body((ts_app(bh_session($d, $p[$who])))(ts_request('GET', '/today'), $d));
+            t_contains('Jobs waiting for ECD approval', $day, $who);
+            t_contains('The CD asked for your review', $day, $who);
+        }
         // Clients never see the review; a Designer not on the job neither.
         $other = ts_user($d, 'design_tariq', Role::Designer);
         t_eq(404, (ts_app(bh_session($d, $other)))(ts_request('GET', '/jobs/' . $job . '/review'), $d)->status());

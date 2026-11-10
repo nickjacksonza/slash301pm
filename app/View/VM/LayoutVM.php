@@ -9,6 +9,7 @@ final class LayoutVM
     /**
      * @param list<NavItem> $nav
      * @param list<NavItem> $adminNav empty unless the user is COO/ECD
+     * @param list<DemoGroupVM> $switchGroups demo user switcher; empty unless App\Domain\DemoSwitch allows it
      */
     public function __construct(
         public readonly string $title,
@@ -19,5 +20,6 @@ final class LayoutVM
         public readonly bool $demoMode,
         public readonly array $nav,
         public readonly array $adminNav,
+        public readonly array $switchGroups = [],
     ) {}
 }

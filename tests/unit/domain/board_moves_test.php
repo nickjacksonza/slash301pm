@@ -30,6 +30,7 @@ return [
             ['briefed', 'draft', null, JobAction::Recall],
             ['briefed', 'in_progress', null, JobAction::Start],
             ['in_review', 'in_progress', null, JobAction::SendBack],
+            ['approved_client', 'in_progress', null, JobAction::SendBack],
             ['waiting', 'briefed', 'in_review', null],
             ['in_progress', 'done', null, null],
             ['draft', 'archived', null, null],
@@ -64,6 +65,9 @@ return [
             'AM, own done' => [$am, $owned('done'), null, ['archive>archived']],
             'AM, someone else\'s job' => [$am, bf_access('in_progress', ['creatorId' => 'am2']), null, []],
             'COO, any in_progress' => [$coo, bf_access('in_progress'), null, ['wait>waiting', 'hold>on_hold', 'cancel>cancelled']],
+            // the reopen of a client-approved job is a review rejection only, never a "Move to" choice
+            'AM, own approved_client' => [$am, $owned('approved_client'), null, ['done>done', 'wait>waiting', 'hold>on_hold', 'cancel>cancelled']],
+            'COO, any approved_client' => [$coo, bf_access('approved_client'), null, ['ready_to_schedule>ready_to_schedule', 'done>done', 'wait>waiting', 'hold>on_hold', 'cancel>cancelled']],
             'Traffic, draft' => [$traffic, bf_access('draft'), null, []],
             'Traffic, briefed' => [$traffic, bf_access('briefed'), null, ['wait>waiting', 'hold>on_hold']],
             'Copywriter, assigned' => [$copy, bf_access('in_progress', ['assetAssigneeIds' => ['cw1']]), null, []],

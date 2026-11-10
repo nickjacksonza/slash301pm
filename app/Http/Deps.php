@@ -3,8 +3,12 @@ declare(strict_types=1);
 
 namespace App\Http;
 
+use App\Auth\IdentityProvider;
+use App\Auth\PasswordIdentityProvider;
 use App\Clock\Clock;
 use App\Config\Config;
+use App\Mail\Mailer;
+use App\Mail\PhpMailMailer;
 use App\Store\ActivityStore;
 use App\Store\AssetStore;
 use App\Store\AssignmentStore;
@@ -30,6 +34,9 @@ use App\Store\DemoTaskStore;
 use App\Store\ReviewStore;
 use App\Store\SettingsStore;
 use App\Store\UserStore;
+// Client portal
+use App\Store\InviteStore;
+use App\Store\PortalStore;
 
 /** Everything a handler may use, passed explicitly. Go: type Deps struct. */
 final class Deps
@@ -66,18 +73,25 @@ final class Deps
         // Reviews (owner spec 2026-10)
         public readonly ReviewStore $reviews,
         public readonly SettingsStore $settings,
+        // Client portal: sign-in seam (ADR 0006), invite mail, invites and portal reads
+        public readonly IdentityProvider $identity,
+        public readonly Mailer $mailer,
+        public readonly InviteStore $invites,
+        public readonly PortalStore $portal,
     ) {}
 
-    public static function build(Config $config, Clock $clock, string $driver = 'auto'): self
+    /** $mailer: null sends with PHP mail() (live); tests pass a MemoryMailer. */
+    public static function build(Config $config, Clock $clock, string $driver = 'auto', ?Mailer $mailer = null): self
     {
         $db = Db::open($config->dbPath, $driver);
         $activity = new ActivityStore($db);
         $assets = new AssetStore($db);
         $briefs = new BriefStore($db, $activity, $assets);
+        $users = new UserStore($db, $activity);
         return new self(
             $config,
             $db,
-            new UserStore($db, $activity),
+            $users,
             new LoginAttemptStore($db),
             new Migrator($db, $config->migrationsDir(), $config->backupsDir(), $config->migrateLockPath(), $config->migrateFailurePath(), $clock),
             $clock,
@@ -105,6 +119,11 @@ final class Deps
             // Reviews (owner spec 2026-10)
             new ReviewStore($db, $activity, new JobStore($db, $activity)),
             new SettingsStore($db, $activity),
+            // Client portal
+            new PasswordIdentityProvider($users, $clock),
+            $mailer ?? new PhpMailMailer(),
+            new InviteStore($db, $activity),
+            new PortalStore($db),
         );
     }
 }

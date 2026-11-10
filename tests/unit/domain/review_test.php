@@ -233,7 +233,14 @@ return [
             [Stage::ApprovedInternal, ReviewEvent::EcdApproved, [], Stage::ApprovedInternal],
             [Stage::Waiting, ReviewEvent::ReviewRequested, [], Stage::Waiting],
             [Stage::OnHold, ReviewEvent::Rejected, [], Stage::OnHold],
-            [Stage::ApprovedClient, ReviewEvent::Rejected, [], Stage::ApprovedClient],
+            // owner decision 2026-10-13: a rejection reopens a client-approved job, Social stages included
+            [Stage::ApprovedClient, ReviewEvent::Rejected, [JobAction::SendBack], Stage::InProgress],
+            [Stage::ReadyToSchedule, ReviewEvent::Rejected, [JobAction::SendBack], Stage::InProgress],
+            [Stage::Scheduled, ReviewEvent::Rejected, [JobAction::SendBack], Stage::InProgress],
+            [Stage::Live, ReviewEvent::Rejected, [JobAction::SendBack], Stage::InProgress],
+            [Stage::ApprovedClient, ReviewEvent::ReviewRequested, [], Stage::ApprovedClient],
+            [Stage::ApprovedClient, ReviewEvent::Approved, [], Stage::ApprovedClient],
+            [Stage::Done, ReviewEvent::Rejected, [], Stage::Done],
             [Stage::Done, ReviewEvent::Submitted, [], Stage::Done],
         ];
         foreach ($cases as $i => [$from, $event, $moves, $end]) {
@@ -248,6 +255,7 @@ return [
         }
         // send back still needs a reason
         t_true(!Transitions::plan(Stage::ApprovedInternal, null, new TransitionRequest(JobAction::SendBack, WaitingOn::Client, ''), false)->ok());
+        t_true(!Transitions::plan(Stage::ApprovedClient, null, new TransitionRequest(JobAction::SendBack, null, ''), false)->ok(), 'reopen needs a reason');
     },
 
     'review: round limit warns from the round after the limit, once per new round' => function (): void {
@@ -261,20 +269,28 @@ return [
     },
 
     'review: recipients per event' => function (): void {
-        $team = bf_team(['AM' => 'am1', 'Traffic' => 'tr1', 'CD' => 'cd1', 'Copywriter' => 'copy1', 'Designer' => 'des1', 'Client' => 'cli1']);
-        $ecds = ['ecd1'];
+        // Owner decision 2026-10-13: ECD notices go to the job's ECD slot holder only, never to every ECD.
+        $team = bf_team(['AM' => 'am1', 'Traffic' => 'tr1', 'CD' => 'cd1', 'ECD' => 'ecd1', 'Copywriter' => 'copy1', 'Designer' => 'des1', 'Client' => 'cli1']);
+        $noEcd = bf_team(['AM' => 'am1', 'Traffic' => 'tr1', 'CD' => 'cd1', 'Copywriter' => 'copy1', 'Designer' => 'des1']);
         $jr = rt_jr();
         $reassigned = rt_jr(['assigneeId' => 'cd2', 'assigneeRole' => Role::CD]);
+        $toEcd2 = rt_jr(['assigneeId' => 'ecd2', 'assigneeRole' => Role::ECD]);
         $toClient = rt_jr(['assigneeId' => 'cli1', 'assigneeRole' => Role::Client]);
         // [event, team, job review, extra, actor, expected]
         $cases = [
             [ReviewNotify::REVIEW_REQUESTED, $team, $jr, [], 'copy1', ['cd1']],
             [ReviewNotify::REVIEW_REQUESTED, $team, $reassigned, [], 'copy1', ['cd2']],
+            [ReviewNotify::REVIEW_REQUESTED, $team, $toEcd2, [], 'copy1', ['ecd2']],
             [ReviewNotify::REVIEW_REQUESTED, $team, $toClient, [], 'copy1', ['cd1']],
-            [ReviewNotify::REVIEW_REQUESTED, bf_team(['Copywriter' => 'copy1']), $jr, [], 'copy1', ['ecd1']],
+            // no CD slot: the ECD slot holder, else nobody (the job still shows on My day)
+            [ReviewNotify::REVIEW_REQUESTED, bf_team(['Copywriter' => 'copy1', 'ECD' => 'ecd1']), $jr, [], 'copy1', ['ecd1']],
+            [ReviewNotify::REVIEW_REQUESTED, bf_team(['Copywriter' => 'copy1']), $jr, [], 'copy1', []],
             [ReviewNotify::REVIEW_REQUESTED, $team, $jr, [], 'cd1', []],
             [ReviewNotify::JOB_REVIEW_REQUESTED, $team, $jr, [], 'cd1', ['ecd1']],
+            [ReviewNotify::JOB_REVIEW_REQUESTED, $noEcd, $jr, [], 'cd1', []],
             [ReviewNotify::JOB_CD_APPROVED, $team, $jr, [], 'cd1', ['ecd1']],
+            [ReviewNotify::JOB_CD_APPROVED, $noEcd, $jr, [], 'cd1', []],
+            [ReviewNotify::JOB_CD_APPROVED, $team, $jr, [], 'ecd1', []],
             [ReviewNotify::JOB_ECD_APPROVED, $team, $jr, [], 'ecd1', ['am1', 'cd1']],
             [ReviewNotify::PART_REJECTED, $team, $jr, ['copy1'], 'cd1', ['copy1']],
             [ReviewNotify::PART_REJECTED, $team, $jr, ['copy1', 'des1', 'copy1'], 'cd1', ['copy1', 'des1']],
@@ -289,8 +305,11 @@ return [
             [ReviewNotify::ASSET_SUBMITTED, $team, $jr, [], 'copy1', []],
         ];
         foreach ($cases as $i => [$event, $t, $j, $extra, $actor, $want]) {
-            t_eq($want, ReviewNotify::recipients($event, $t, $j, $ecds, 'creator1', $extra, $actor), "case $i $event");
+            t_eq($want, ReviewNotify::recipients($event, $t, $j, 'creator1', $extra, $actor), "case $i $event");
         }
+        // My day still lists a CD-less job for every active ECD (existing behaviour), whatever the notices do.
+        t_eq(['ecd1', 'ecd2'], ReviewNotify::reviewers($jr, bf_team(['Copywriter' => 'copy1']), ['ecd1', 'ecd2']));
+        t_eq(['cd1'], ReviewNotify::reviewers($jr, $team, ['ecd1', 'ecd2']));
         foreach (ReviewNotify::verbs() as $v) {
             t_true(ReviewNotify::phrase($v, ['asset_name' => 'X', 'parts' => ['copy'], 'round' => 2]) !== null, $v);
         }
@@ -311,6 +330,13 @@ return [
             'CD slot reviews' => [ReviewPolicy::canReview($cd, $job(), rt_jr()), true],
             'other CD cannot' => [ReviewPolicy::canReview($cd2, $job(), rt_jr()), false],
             'reassigned CD can' => [ReviewPolicy::canReview($cd2, $job(), rt_jr(['assigneeId' => 'cd2', 'assigneeRole' => Role::CD])), true],
+            // owner decision 2026-10-13: reassigning hands the review over without taking it away from the CD slot holder
+            'CD slot keeps review rights after reassign' => [ReviewPolicy::canReview($cd, $job(), rt_jr(['assigneeId' => 'cd2', 'assigneeRole' => Role::CD])), true],
+            'CD slot keeps them after a reassign to the ECD' => [ReviewPolicy::canReview($cd, $job(), rt_jr(['assigneeId' => 'ecd1', 'assigneeRole' => Role::ECD])), true],
+            'CD slot approves the job after reassign' => [ReviewPolicy::canApproveJob($cd, $job(), rt_jr(['assigneeId' => 'cd2', 'assigneeRole' => Role::CD]), $all), true],
+            'reassigned CD approves the job too' => [ReviewPolicy::canApproveJob($cd2, $job(), rt_jr(['assigneeId' => 'cd2', 'assigneeRole' => Role::CD]), $all), true],
+            'a third CD still cannot' => [ReviewPolicy::canReview(bf_user(Role::CD, 'cd3'), $job(), rt_jr(['assigneeId' => 'cd2', 'assigneeRole' => Role::CD])), false],
+            'CD slot keeps rights after a reassign to the client' => [ReviewPolicy::canReview($cd, $job(), rt_jr(['assigneeId' => 'cli1', 'assigneeRole' => Role::Client, 'ecdApprovedAt' => 'y'])), true],
             'ECD reviews any job' => [ReviewPolicy::canReview($ecd, $job(), rt_jr()), true],
             'Designer never reviews' => [ReviewPolicy::canReview(bf_user(Role::Designer, 'des1'), $job(), rt_jr()), false],
             'AM never reviews' => [ReviewPolicy::canReview(bf_user(Role::AM, 'am1'), $job(), rt_jr()), false],
@@ -428,6 +454,9 @@ return [
             [Stage::Waiting, Stage::ApprovedInternal, true], [Stage::OnHold, Stage::InReview, true],
             [Stage::Waiting, Stage::InProgress, false], [Stage::OnHold, null, false], [Stage::Waiting, Stage::Briefed, false],
             [Stage::InReview, null, false], [Stage::ApprovedInternal, null, false], [Stage::InProgress, Stage::InReview, false],
+            // a rejection reopens a client-approved job, so a paused one resuming there waits too
+            [Stage::Waiting, Stage::ApprovedClient, true], [Stage::OnHold, Stage::ReadyToSchedule, true], [Stage::Waiting, Stage::Scheduled, true],
+            [Stage::OnHold, Stage::Live, true], [Stage::ApprovedClient, null, false], [Stage::Live, null, false],
         ];
         foreach ($cases as $i => [$stage, $resume, $refused]) {
             t_eq($refused, ReviewRules::pausedRejectionProblem($stage, $resume) !== '', "rejection case $i");
@@ -449,6 +478,8 @@ return [
         $cases = [
             [Stage::InProgress, Stage::InReview, true], [Stage::InReview, Stage::ApprovedInternal, true], [Stage::Briefed, Stage::InReview, true],
             [Stage::InReview, Stage::InProgress, true], [Stage::ApprovedInternal, Stage::InProgress, true],
+            // reopening a client-approved job is a rejection on the review page, not a drag
+            [Stage::ApprovedClient, Stage::InProgress, true], [Stage::Scheduled, Stage::InProgress, true], [Stage::ApprovedClient, Stage::Done, false],
             [Stage::Waiting, Stage::InReview, false], [Stage::InReview, Stage::Waiting, false], [Stage::InReview, Stage::Cancelled, false],
             [Stage::InProgress, Stage::OnHold, false], [Stage::InReview, Stage::InReview, false],
         ];

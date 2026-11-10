@@ -29,11 +29,11 @@ Every state-changing request in the new app writes a row in `activity` (migratio
 | `POST /admin/users/{id}/deactivate` | `user_deactivated` | user | |
 | `POST /admin/users/{id}/activate` | `user_activated` | user | |
 | `POST /account/password` | `password_changed` | user | |
-| `POST /jobs/{id}/work/{aid}` | `asset_submitted` (+ `review_requested` with `data.scope = job` when the hand-in completes every post, `round_limit_warning` past the limit, and `job_start` / `job_submit` with `data.via = review` when the job moves) | asset | Reviews. A maker's hand-in; `data.parts`, `data.round`. `review_requested` goes to the reviewer (the reassigned CD or ECD, else the CD slot, else every ECD); `round_limit_warning` to the AM (or creator). |
+| `POST /jobs/{id}/work/{aid}` | `asset_submitted` (+ `review_requested` with `data.scope = job` when the hand-in completes every post, `round_limit_warning` past the limit, and `job_start` / `job_submit` with `data.via = review` when the job moves) | asset | Reviews. A maker's hand-in; `data.parts`, `data.round`. `review_requested` goes to the reviewer (the reassigned CD or ECD, else the CD slot, else the job's ECD slot, else nobody); `round_limit_warning` to the AM (or creator). |
 | `POST /jobs/{id}/work/{aid}/request` | `review_requested` (`data.scope = asset`) and `asset_submitted` when something changed (+ the same extras) | asset | Request review on one post. |
-| `POST /jobs/{id}/review/posts/{aid}` | `asset_part_approved` or `asset_part_rejected` (+ `job_send_back` when a rejection moves the job) | asset | `data.parts`, `data.decision`, `data.feedback`, `data.round`, `data.brief_version` (the sent version checked). A rejection goes to the maker of each rejected part only (`data.makers`) and clears the job approvals (`data.cleared_approvals`). |
-| `POST /jobs/{id}/review/approve` | `job_cd_approved` (+ `job_submit`) | job | To every active ECD. |
-| `POST /jobs/{id}/review/request-ecd` | `job_review_requested` (+ `job_submit`) | job | To every active ECD, even before every post is done. |
+| `POST /jobs/{id}/review/posts/{aid}` | `asset_part_approved` or `asset_part_rejected` (+ `job_send_back` with `data.via = review` when a rejection moves the job: from in_review or approved_internal, or a reopen from approved_client or a Social stage) | asset | `data.parts`, `data.decision`, `data.feedback`, `data.round`, `data.brief_version` (the sent version checked). A rejection goes to the maker of each rejected part only (`data.makers`) and clears the job approvals (`data.cleared_approvals`). |
+| `POST /jobs/{id}/review/approve` | `job_cd_approved` (+ `job_submit`) | job | To the job's ECD slot holder only (nobody when the slot is empty). |
+| `POST /jobs/{id}/review/request-ecd` | `job_review_requested` (+ `job_submit`) | job | To the job's ECD slot holder only (nobody when the slot is empty), even before every post is done. |
 | `POST /jobs/{id}/review/ecd-approve` | `job_ecd_approved` (+ `job_approve_internal`) | job | To the AM (or creator) and the CD slot holder. |
 | `POST /jobs/{id}/review/reassign` | `review_reassigned` | job | `data.to`, `data.to_name`, `data.to_role`; to the new reviewer (never a client: clients cannot sign in yet). |
 | `POST /jobs/{id}/review/ready` | `job_ready_for_client` | job | To the AM (or creator) and Traffic. |
@@ -61,6 +61,7 @@ Every state-changing request in the new app writes a row in `activity` (migratio
 | `POST /login` | Sign-in. Failures are recorded in `login_attempts` for the rate limit; a success only starts a session. A bcrypt cost upgrade at sign-in is a system write without an actor. |
 | `POST /logout` | Ends the session only. |
 | `POST /demo-login` | Demo mode only (the owner's switch); swaps the session user and writes nothing. |
+| `POST /account/switch/{userId}` | Demo mode only (the owner's switch from the top bar); swaps the session user and writes nothing. |
 | `POST /admin/system/migrate` | Recorded in `schema_migrations` (version, sha256, applied_at) with a backup in `data/backups/`. |
 | `POST /views` | Saved views are personal UI state (filters, sort, columns); no job data changes. |
 | `PATCH /views/{id}` | Same as above. |

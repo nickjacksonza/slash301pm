@@ -9,5 +9,6 @@ final class DemoUserVM
         public readonly string $id,
         public readonly string $name,
         public readonly string $username,
+        public readonly bool $current = false,
     ) {}
 }

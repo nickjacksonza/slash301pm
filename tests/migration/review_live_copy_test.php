@@ -46,7 +46,7 @@ return [
 
         app_base_path('/slash301pm');
         $config = new Config(Env::Local, dirname(__DIR__, 2), $dir, $dir . '/live.db', '/slash301pm', 'projects.slash301.com', '', false, Transport::Sse, Config::defaultNewUiRoles());
-        $d = Deps::build($config, new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00')));
+        $d = Deps::build($config, new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00')), 'auto', new App\Mail\MemoryMailer());
         $job = (string) $d->db->scalar(
             "SELECT j.id FROM jobs j WHERE j.stage = 'in_progress'
                AND (SELECT COUNT(*) FROM assets a WHERE a.job_id = j.id AND a.status <> 'Cancelled') >= 2
@@ -97,7 +97,9 @@ return [
             sx_ok(rx_rev($d, $cd, $job, $aid, 'approved'));
         }
         sx_ok(rx_job($d, $cd, $job, 'approve'));
-        t_eq($ecdIds, rx_to($d, $job, 'job_cd_approved'));
+        // Owner decision 2026-10-13: only the job's ECD slot holder is told (nobody when the slot is empty).
+        $ecdSlot = $team->userFor(Role::ECD);
+        t_eq($ecdSlot !== null && $ecdSlot !== $cdId ? [$ecdSlot] : [], rx_to($d, $job, 'job_cd_approved'));
         sx_ok(rx_job($d, $ecd, $job, 'ecd-approve'));
         t_eq('approved_internal', rx_stage($d, $job));
         t_eq('Approved (Internal)', sx_status($d, $job));

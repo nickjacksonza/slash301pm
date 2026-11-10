@@ -12,6 +12,7 @@ use App\Domain\PartState;
 use App\Domain\Policy;
 use App\Domain\PolicyRule;
 use App\Domain\ReviewDayRules;
+use App\Domain\Types\ReviewDay;
 use App\Domain\ReviewPart;
 use App\Domain\ReviewPolicy;
 use App\Domain\ReviewRules;
@@ -217,10 +218,26 @@ final class ReviewHandlers
         return $day->applies() ? new ReviewDayVM($day) : null;
     }
 
-    /** Items needing this person (the nav badge). */
+    /** This person's review day (the Reviews tab: whether it shows, and its count). */
+    public static function day(Deps $d, User $u): ReviewDay
+    {
+        return ReviewDayRules::build($u, $d->reviews->dayStates(), $d->reviews->ecdIds(), $d->settings->reviewRoundLimit());
+    }
+
+    /** Items needing this person. */
     public static function attention(Deps $d, User $u): int
     {
-        return ReviewDayRules::build($u, $d->reviews->dayStates(), $d->reviews->ecdIds(), $d->settings->reviewRoundLimit())->count();
+        return self::day($d, $u)->count();
+    }
+
+    /** GET /reviews: the Reviews tab, the same lists as the My day section on a page of their own. */
+    public static function listPage(Request $r, Deps $d): Response
+    {
+        $vm = self::today($d, BriefHandlers::user($r));
+        $body = $vm === null
+            ? '<p class="rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">Nothing is waiting for your review.</p>'
+            : partial_today_reviews($vm);
+        return Shell::page($r, $d, 'Reviews', 'reviews', '<div class="mx-auto flex w-full max-w-4xl flex-col gap-6">' . $body . '</div>');
     }
 
     /** GET /today/reviews: the section, patched by id every 60 seconds. */

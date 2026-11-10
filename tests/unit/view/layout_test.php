@@ -6,12 +6,12 @@ use App\View\VM\NavItem;
 
 require_once dirname(__DIR__, 2) . '/support/app.php';
 
-function lt_vm(string $name = 'Ann', bool $demo = false, bool $admin = false, string $csrf = 'tok123'): LayoutVM
+function lt_vm(string $name = 'Ann', bool $demo = false, bool $admin = false, string $csrf = 'tok123', array $switch = []): LayoutVM
 {
     app_base_path('/slash301pm');
     $nav = [new NavItem('today', 'Today', url('/today'), true), new NavItem('jobs', 'Jobs', url('/jobs'), false)];
     $adminNav = $admin ? [new NavItem('admin-users', 'Users', url('/admin/users'), true)] : [];
-    return new LayoutVM('My <day>', 'today', $name, 'AM', $csrf, $demo, $nav, $adminNav);
+    return new LayoutVM('My <day>', 'today', $name, 'AM', $csrf, $demo, $nav, $adminNav, $switch);
 }
 
 return [
@@ -44,6 +44,23 @@ return [
         t_contains('Demo mode is on', layout_page(lt_vm('Ann', true), ''));
         t_not_contains('/slash301pm/admin/users', layout_page(lt_vm(), ''));
         t_contains('/slash301pm/admin/users', layout_page(lt_vm('Ann', false, true), ''));
+    },
+    'user switcher renders only when the VM has groups (demo mode off gives none)' => function (): void {
+        t_not_contains('data-switch-menu', layout_page(lt_vm('Ann', false), ''));
+        t_not_contains('/account/switch/', layout_page(lt_vm('Ann', true), ''));
+        $groups = [
+            new App\View\VM\DemoGroupVM('AM', [new App\View\VM\DemoUserVM('u1', 'Ann <b>', 'ann', true), new App\View\VM\DemoUserVM('u2', 'Bob', 'bob')]),
+            new App\View\VM\DemoGroupVM('Designer', [new App\View\VM\DemoUserVM('u3', 'Dee', 'dee')]),
+        ];
+        $html = layout_page(lt_vm('Ann', true, false, 'tok123', $groups), '');
+        t_contains('data-switch-menu', $html);
+        t_contains('action="/slash301pm/account/switch/u2"', $html);
+        t_contains('action="/slash301pm/account/switch/u3"', $html);
+        t_contains('>Designer</div>', $html);
+        t_contains('Ann &lt;b&gt;', $html);
+        t_not_contains('Ann <b>', $html);
+        t_contains('aria-current="true"', $html);
+        t_eq(3, substr_count($html, 'name="_csrf" value="tok123"') - 1, 'one CSRF field per user form plus logout, minus logout');
     },
     'act() builds an escaped action with the CSRF header' => function (): void {
         $a = act('post', "/slash301pm/x?a='b'", 'filterSignals: {include: /^pw\\./}');

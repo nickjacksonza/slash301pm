@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Http\Handlers;
 
 use App\Domain\Dates;
+use App\Domain\DemoSwitch;
 use App\Domain\MyDayMode;
 use App\Domain\Policy;
 use App\Http\Deps;
@@ -31,29 +32,36 @@ final class Shell
             } catch (\Throwable $e) {
                 error_log('[slash301pm] nav count: ' . $e->getMessage());
             }
-            // Reviews (owner spec 2026-10): posts to review, ECD approvals, changes requested, round warnings, ready for client.
+        }
+        // Reviews (owner spec 2026-10): posts to review, ECD approvals, changes requested, round warnings, ready for client.
+        $reviewCount = 0;
+        $reviewsApply = false;
+        if ($user !== null) {
             try {
-                $attention += ReviewHandlers::attention($d, $user);
+                $day = ReviewHandlers::day($d, $user);
+                $reviewsApply = $day->applies();
+                $reviewCount = $day->count();
             } catch (\Throwable $e) {
                 error_log('[slash301pm] review count: ' . $e->getMessage());
             }
         }
         // Role-aware: Policy::canSeeNav() decides which items each role gets (no dead links).
+        // Tabs in the legacy order. Work holds the grid and the board (toggle on the page).
         $items = [
             new NavItem('today', 'Today', url('/today'), true, $attention),
+            new NavItem('jobs', 'Work', url('/jobs'), true),
             new NavItem('briefs', 'Briefs', url('/briefs'), true),
-            // Phase 3: jobs grid/board
-            new NavItem('jobs', 'Jobs', url('/jobs'), true),
-            new NavItem('board', 'Board', url('/jobs/board'), true),
             new NavItem('campaigns', 'Campaigns', url('/campaigns'), true),
             // Social publishing (visibility: Policy::canSeeNav 'social')
             new NavItem('social', 'Social', url('/social'), true),
         ];
+        if ($reviewsApply) {
+            array_splice($items, 4, 0, [new NavItem('reviews', 'Reviews', url('/reviews'), true, $reviewCount)]);
+        }
         $adminItems = [
             new NavItem('admin-users', 'Users', url('/admin/users'), true),
             new NavItem('admin-system', 'System', url('/admin/system'), true),
             new NavItem('admin-overrides', 'Overrides', url('/admin/overrides'), true),
-            new NavItem('spike', 'Datastar spike', url('/system/spike'), true),
         ];
         $nav = [];
         $admin = [];
@@ -69,6 +77,14 @@ final class Shell
                 }
             }
         }
+        // Demo user switcher: the rule lives in DemoSwitch (demo mode on and a demo-picker session).
+        $switchGroups = [];
+        if ($user !== null) {
+            $demoSession = AccountHandlers::isDemoSession($r->session());
+            if (DemoSwitch::can($d->config->demoMode(), $demoSession)->allowed) {
+                $switchGroups = AuthHandlers::demoGroups($d, $user->id);
+            }
+        }
         return new LayoutVM(
             $title,
             $active,
@@ -78,6 +94,7 @@ final class Shell
             $d->config->demoMode(),
             $nav,
             $admin,
+            $switchGroups,
         );
     }
 

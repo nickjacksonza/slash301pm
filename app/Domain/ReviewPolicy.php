@@ -247,6 +247,64 @@ final class ReviewPolicy
         return Decision::allow();
     }
 
+    // ---- Client portal ------------------------------------------------------------
+
+    /**
+     * May this client contact open the job in the portal? Their own brand, the
+     * job approved (internal) and marked ready for client review. Anything
+     * else is answered as not found by the handler.
+     */
+    public static function canClientView(User $u, JobAccess $j, JobReview $jr): Decision
+    {
+        if ($u->role !== Role::Client) {
+            return Decision::deny('The client portal is for client contacts.');
+        }
+        if ($u->brandId === null || $j->brandId === null || $u->brandId !== $j->brandId) {
+            return Decision::deny('This job is not one of your brand\'s.');
+        }
+        if ($j->stage !== Stage::ApprovedInternal || !$jr->readyForClient()) {
+            return Decision::deny('This job is not waiting for your review.');
+        }
+        return Decision::allow();
+    }
+
+    /**
+     * Approve one post, or reject it with feedback (give_feedback_client):
+     * every client contact of the brand, Marketing Manager or Brand Director.
+     */
+    public static function canClientDecidePost(User $u, JobAccess $j, JobReview $jr): Decision
+    {
+        $v = self::canClientView($u, $j, $jr);
+        if (!$v->allowed) {
+            return $v;
+        }
+        return self::cell('give_feedback_client', $u, $j, $jr, 'Only a client contact of this brand reviews its posts.');
+    }
+
+    /**
+     * The final job sign-off (approve_client): a Brand Director
+     * (users.client_signoff = 1), once every post is approved by a client
+     * contact. Moves the job to approved_client.
+     */
+    public static function canClientSignOff(User $u, JobAccess $j, JobReview $jr, bool $allPostsClientApproved): Decision
+    {
+        $v = self::canClientView($u, $j, $jr);
+        if (!$v->allowed) {
+            return $v;
+        }
+        $d = self::cell('approve_client', $u, $j, $jr, 'Only a client contact of this brand signs it off.');
+        if (!$d->allowed) {
+            return $d;
+        }
+        if (!$u->clientSignoff) {
+            return Decision::deny('Only a Brand Director gives the final sign-off.');
+        }
+        if (!$allPostsClientApproved) {
+            return Decision::deny('Approve every post first.');
+        }
+        return Decision::allow();
+    }
+
     /** Does this user review posts on this job (for "Waiting for me")? */
     public static function isReviewer(User $u, JobAccess $j, JobReview $jr): bool
     {

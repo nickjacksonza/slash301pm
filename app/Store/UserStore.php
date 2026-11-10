@@ -17,7 +17,7 @@ use DateTimeImmutable;
  */
 final class UserStore
 {
-    private const COLS = 'id, username, name, email, role, color, brand_id, is_active';
+    private const COLS = 'id, username, name, email, role, color, brand_id, is_active, client_signoff';
 
     public function __construct(private readonly Db $db, private readonly ActivityStore $activity) {}
 

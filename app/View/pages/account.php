@@ -12,7 +12,6 @@ function page_account_password(string $csrf, string $notice, string $error = '')
  */
 function partial_account_password_panel(string $csrf, string $notice, string $error): string
 {
-    $input = 'h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm';
     ob_start(); ?>
 <section id="pw-panel" class="rounded-xl border border-border bg-card p-6 text-card-foreground shadow-sm"
          data-signals="<?= js(['pw' => ['current' => '', 'new' => '', 'confirm' => '']]) ?>">
@@ -30,17 +29,17 @@ function partial_account_password_panel(string $csrf, string $notice, string $er
     <input type="hidden" name="_csrf" value="<?= attr($csrf) ?>">
     <div class="flex flex-col gap-2">
       <label for="pw-current" class="text-sm font-medium">Current password</label>
-      <input id="pw-current" name="current" type="password" autocomplete="current-password" required data-bind="pw.current" class="<?= attr($input) ?>">
+      <?= ui_input(new \App\View\ui\InputProps(type: 'password', id: 'pw-current', name: 'current', required: true, attrs: ['autocomplete' => 'current-password', 'data-bind' => 'pw.current'])) ?>
     </div>
     <div class="flex flex-col gap-2">
       <label for="pw-new" class="text-sm font-medium">New password</label>
-      <input id="pw-new" name="new" type="password" autocomplete="new-password" required minlength="12" maxlength="128" data-bind="pw.new" class="<?= attr($input) ?>">
+      <?= ui_input(new \App\View\ui\InputProps(type: 'password', id: 'pw-new', name: 'new', required: true, attrs: ['autocomplete' => 'new-password', 'minlength' => 12, 'maxlength' => 128, 'data-bind' => 'pw.new'])) ?>
     </div>
     <div class="flex flex-col gap-2">
       <label for="pw-confirm" class="text-sm font-medium">New password again</label>
-      <input id="pw-confirm" name="confirm" type="password" autocomplete="new-password" required minlength="12" maxlength="128" data-bind="pw.confirm" class="<?= attr($input) ?>">
+      <?= ui_input(new \App\View\ui\InputProps(type: 'password', id: 'pw-confirm', name: 'confirm', required: true, attrs: ['autocomplete' => 'new-password', 'minlength' => 12, 'maxlength' => 128, 'data-bind' => 'pw.confirm'])) ?>
     </div>
-    <button type="submit" data-attr:disabled="$_pw_saving" class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50">Change password</button>
+    <?= ui_button(new \App\View\ui\ButtonProps(type: 'submit', attrs: ['data-attr:disabled' => '$_pw_saving']), 'Change password') ?>
   </form>
 </section>
 <?php

@@ -967,7 +967,7 @@
                 "Client": "own_brand"
             },
             "conditions": {
-                "Client": "Implicit only, through give_feedback_client after send_to_client.",
+                "Client": "Implicit only, through give_feedback_client (a rejection in the client portal) once the job is marked ready for client review.",
                 "*": "Feedback or reason text is required."
             }
         },
@@ -993,7 +993,7 @@
                 "Client": "own_brand"
             },
             "conditions": {
-                "Client": "users.client_signoff = 1 and the job was sent to the client.",
+                "Client": "Implicit only, through approve_client (the Brand Director's sign-off in the client portal): users.client_signoff = 1, the job marked ready for client review and every post approved by a client contact.",
                 "AM": "On behalf: must name the client contact and how they approved.",
                 "PM": "On behalf, as AM.",
                 "Producer": "On behalf, as AM.",
@@ -1014,7 +1014,7 @@
                 "Traffic": "deny",
                 "PM": "assigned_or_creator",
                 "Producer": "assigned_or_creator",
-                "CD": "deny",
+                "CD": "assigned",
                 "Copywriter": "deny",
                 "Designer": "deny",
                 "QA": "deny",
@@ -1024,7 +1024,8 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Reason required; client approval fields are cleared."
+                "*": "Reason required; client approval fields are cleared.",
+                "CD": "Implicit only (owner decision 2026-10-13): a rejection of a post in review (approve_internal) reopens a client-approved job, from approved_client or a Social stage (ready_to_schedule, scheduled, live), with the rejection as the reason. The COO and the ECD reopen the same way."
             }
         },
         {
@@ -1463,8 +1464,8 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Brief sent, job open. A rejection sends the part back to its maker, clears the CD and ECD approvals and the client steps, and moves an in_review or approved_internal job back to in_progress.",
-                "CD": "Holds the CD slot on the job, or the review was reassigned to them; not a part they handed in themselves unless no other CD or ECD exists."
+                "*": "Brief sent, job open. A rejection sends the part back to its maker, clears the CD and ECD approvals and the client steps, and moves an in_review or approved_internal job back to in_progress; on a client-approved job (approved_client, ready_to_schedule, scheduled, live) it reopens the job to in_progress (owner decision 2026-10-13). A paused job refuses a rejection while it would resume to any of those stages.",
+                "CD": "Holds the CD slot on the job, or the review was reassigned to them; both keep review rights after a reassign (owner decision 2026-10-13). Not a part they handed in themselves unless no other CD or ECD exists."
             },
             "legacy": "api/permissions.php:118-121: any CD, not the assigned CD."
         },
@@ -1490,7 +1491,7 @@
                 "Client": "deny"
             },
             "conditions": {
-                "*": "Brief sent, job open, not ECD-approved already. Notifies every ECD; an in_progress job moves to in_review.",
+                "*": "Brief sent, job open, not ECD-approved already. Notifies the job's ECD slot holder only (nobody when the slot is empty; the job still waits on My day for every ECD and the COO); an in_progress job moves to in_review.",
                 "CD": "CD slot on the job, or the review was reassigned to them."
             },
             "legacy": "No legacy equivalent."
@@ -1670,7 +1671,7 @@
                 "Client": "own_brand"
             },
             "conditions": {
-                "Client": "users.client_signoff = 1.",
+                "Client": "users.client_signoff = 1 (Brand Director): the final job sign-off in the client portal, once the job is marked ready for client review (stage approved_internal) and every post is approved by a client contact of the brand. Moves the job to approved_client.",
                 "AM": "On behalf, with contact and evidence note.",
                 "PM": "On behalf.",
                 "Producer": "On behalf.",
@@ -1683,7 +1684,7 @@
             "id": "give_feedback_client",
             "section": "Reviews",
             "phase": "client_portal",
-            "description": "Give client feedback (moves approved_internal back to in_progress).",
+            "description": "Give client feedback (moves approved_internal back to in_progress). In the client portal this is the per-post decision: approve a post, or reject it with feedback.",
             "decisions": {
                 "COO": "allow",
                 "ECD": "allow",
@@ -1706,7 +1707,7 @@
                 "Producer": "On behalf.",
                 "COO": "On behalf.",
                 "ECD": "On behalf.",
-                "Client": "Job was sent to the client."
+                "Client": "Job marked ready for client review and stage approved_internal. Marketing Manager and Brand Director. Approving a single post is allowed; a rejection needs feedback, goes to the maker and reopens the job."
             },
             "legacy": "api/permissions.php:130-136 lets every manager post client feedback with no on-behalf record; is_internal comes from the body (api/api.php:1201)."
         },
@@ -1826,6 +1827,29 @@
                 "Client": "deny"
             },
             "legacy": "api/permissions.php:109-112 COO only; src/constants.js:124 ECD canEditPeople false."
+        },
+        {
+            "id": "invite_client",
+            "section": "Organisation and visibility",
+            "phase": "client_portal",
+            "description": "Invite a client contact of a brand (name, email, Marketing Manager or Brand Director): creates an inactive Client user and a single-use invite link.",
+            "decisions": {
+                "COO": "allow",
+                "ECD": "allow",
+                "AM": "allow",
+                "Traffic": "allow",
+                "PM": "deny",
+                "Producer": "deny",
+                "CD": "deny",
+                "Copywriter": "deny",
+                "Designer": "deny",
+                "QA": "deny",
+                "Developer": "deny",
+                "SEO": "deny",
+                "Social": "deny",
+                "Client": "deny"
+            },
+            "legacy": "No legacy equivalent; legacy users are created by the COO on the users page."
         },
         {
             "id": "admin_system",

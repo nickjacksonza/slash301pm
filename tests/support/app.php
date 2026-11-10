@@ -60,7 +60,7 @@ function ts_deps(bool $demo = false, string $driver = 'auto'): Deps
     if ($demo) {
         file_put_contents($dir . '/.demo_mode', '1');
     }
-    $deps = Deps::build(ts_config($dir), new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00')), $driver);
+    $deps = Deps::build(ts_config($dir), new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00')), $driver, new App\Mail\MemoryMailer());
     $result = $deps->migrator->run();
     if (!$result->ok) {
         throw new RuntimeException('test migration failed: ' . $result->error);

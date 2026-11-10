@@ -23,6 +23,15 @@ function attr(string|int|float|null $v): string
     return e($v);
 }
 
+/** The same JSON literal NOT HTML-escaped, for props whose attrs the UI parts escape themselves. */
+function js_raw(mixed $v): string
+{
+    return json_encode(
+        $v,
+        JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION
+    );
+}
+
 function js(mixed $v): string
 {
     $json = json_encode(

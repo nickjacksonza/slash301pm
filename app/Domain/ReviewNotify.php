@@ -14,14 +14,19 @@ use App\Domain\Types\Team;
  *
  * - review_requested (Request review on a post, or every post handed in):
  *   the reviewer: the person the review was reassigned to (a CD or the ECD),
- *   else the CD slot holder, else every ECD.
- * - job_review_requested (the CD asks the ECD), job_cd_approved: every ECD.
+ *   else the CD slot holder, else the job's ECD slot holder, else nobody.
+ * - job_review_requested (the CD asks the ECD), job_cd_approved: the job's
+ *   ECD slot holder only, else nobody (owner decision 2026-10-13: never every
+ *   ECD). My day still lists the job for every ECD and the COO.
  * - job_ecd_approved: the AM (or brief creator) and the CD (N16).
  * - asset_part_rejected: the maker of each rejected part (the other part stays).
  * - round_limit_warning: the AM (or brief creator).
  * - job_ready_for_client, job_sent_to_client: the AM (or brief creator) and Traffic.
  * - review_reassigned: the new reviewer (not a client: clients cannot sign in yet).
  * - asset_submitted, asset_part_approved: nobody (shown on the job's feed only).
+ * - Client portal: client_post_approved and client_signed_off go to the AM
+ *   (or brief creator) and the job's ECD slot holder; client_post_rejected
+ *   also to the maker of each part (the feedback reaches the maker).
  */
 final class ReviewNotify
 {
@@ -36,18 +41,23 @@ final class ReviewNotify
     public const JOB_READY_FOR_CLIENT = 'job_ready_for_client';
     public const JOB_SENT_TO_CLIENT = 'job_sent_to_client';
     public const ROUND_LIMIT_WARNING = 'round_limit_warning';
+    // Client portal
+    public const CLIENT_POST_APPROVED = 'client_post_approved';
+    public const CLIENT_POST_REJECTED = 'client_post_rejected';
+    public const CLIENT_SIGNED_OFF = 'client_signed_off';
 
     /** @return list<string> */
     public static function verbs(): array
     {
         return [self::ASSET_SUBMITTED, self::REVIEW_REQUESTED, self::PART_APPROVED, self::PART_REJECTED, self::JOB_REVIEW_REQUESTED,
             self::JOB_CD_APPROVED, self::JOB_ECD_APPROVED, self::REVIEW_REASSIGNED, self::JOB_READY_FOR_CLIENT, self::JOB_SENT_TO_CLIENT,
-            self::ROUND_LIMIT_WARNING];
+            self::ROUND_LIMIT_WARNING, self::CLIENT_POST_APPROVED, self::CLIENT_POST_REJECTED, self::CLIENT_SIGNED_OFF];
     }
 
     /**
-     * Who reviews the posts of this job: the reassigned CD or ECD, else the CD
-     * slot holder, else every ECD.
+     * Whose My day lists the posts of this job to review: the reassigned CD or
+     * ECD, else the CD slot holder, else every ECD (a CD-less job stays
+     * visible). Not the notification list: see recipients().
      * @param list<string> $ecdIds active ECD users
      * @return list<string>
      */
@@ -61,21 +71,21 @@ final class ReviewNotify
     }
 
     /**
-     * @param list<string> $ecdIds active ECD users
      * @param list<string> $extra event-specific people: the makers of the rejected parts, or the new reviewer
      * @return list<string>
      */
-    public static function recipients(string $event, Team $team, JobReview $jr, array $ecdIds, ?string $creatorId, array $extra, string $actorId): array
+    public static function recipients(string $event, Team $team, JobReview $jr, ?string $creatorId, array $extra, string $actorId): array
     {
         $am = $team->userFor(Role::AM) ?? $creatorId;
+        $ecd = $team->userFor(Role::ECD);
         $ids = [];
         switch ($event) {
             case self::REVIEW_REQUESTED:
-                $ids = self::reviewers($jr, $team, $ecdIds);
+                $ids = self::reviewers($jr, $team, $ecd !== null ? [$ecd] : []);
                 break;
             case self::JOB_REVIEW_REQUESTED:
             case self::JOB_CD_APPROVED:
-                $ids = $ecdIds;
+                $ids = [$ecd];
                 break;
             case self::JOB_ECD_APPROVED:
                 $ids = [$am, $team->userFor(Role::CD)];
@@ -90,6 +100,13 @@ final class ReviewNotify
             case self::JOB_READY_FOR_CLIENT:
             case self::JOB_SENT_TO_CLIENT:
                 $ids = [$am, $team->userFor(Role::Traffic)];
+                break;
+            case self::CLIENT_POST_APPROVED:
+            case self::CLIENT_SIGNED_OFF:
+                $ids = [$am, $ecd];
+                break;
+            case self::CLIENT_POST_REJECTED:
+                $ids = array_merge($extra, [$am, $ecd]);
                 break;
         }
         $out = [];
@@ -126,6 +143,10 @@ final class ReviewNotify
             self::JOB_READY_FOR_CLIENT => 'marked the job ready for client review',
             self::JOB_SENT_TO_CLIENT => 'sent the job to the client',
             self::ROUND_LIMIT_WARNING => $asset . ' passed the review round limit' . $round,
+            self::CLIENT_POST_APPROVED => 'approved ' . $asset . ' (client)',
+            self::CLIENT_POST_REJECTED => (($data['decision'] ?? '') === ReviewDecision::RejectedWithFeedback->value ? 'asked for changes to ' : 'rejected ') . $asset . ' (client)',
+            self::CLIENT_SIGNED_OFF => 'signed off the job (client)',
+            'job_approve_client' => 'moved the job to Approved (client)',
             'job_submit' => 'moved the job to In review',
             'job_send_back' => 'sent the job back to work',
             'job_approve_internal' => 'moved the job to Approved (internal)',

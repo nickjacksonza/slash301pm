@@ -11,8 +11,12 @@ use App\Domain\Role;
  */
 final class Config
 {
+    /** Sender of portal emails (owner decision 2026-10-13, ADR 0006). */
+    public const MAIL_FROM = 'nickjacksonis@gmail.com';
+
     /**
      * @param list<Role> $newUiRoles roles BetaGate lets into the new UI
+     * @param string $publicUrl base URL for links in emails ('' = https://<liveHost><basePath>); never taken from a request
      */
     public function __construct(
         public readonly Env $env,
@@ -25,6 +29,7 @@ final class Config
         public readonly bool $cookieSecure,
         public readonly Transport $transport,
         public readonly array $newUiRoles,
+        public readonly string $publicUrl = '',
     ) {}
 
     /**
@@ -52,7 +57,19 @@ final class Config
             !$local,
             $transport,
             self::defaultNewUiRoles(),
+            // Local runs only (screenshots, dev server): the live site always uses the live host.
+            $local && isset($env['S301_PUBLIC_URL']) && preg_match('#^https?://[A-Za-z0-9.\-]+(:\d+)?(/[A-Za-z0-9._\-/]*)?$#', $env['S301_PUBLIC_URL']) === 1 ? rtrim($env['S301_PUBLIC_URL'], '/') : '',
         );
+    }
+
+    /**
+     * Base URL of the app for links that leave it (invite emails), without a
+     * trailing slash: https://projects.slash301.com/slash301pm on live. Fixed
+     * by configuration, never built from the Host header.
+     */
+    public function publicBaseUrl(): string
+    {
+        return $this->publicUrl !== '' ? $this->publicUrl : 'https://' . $this->liveHost . $this->basePath;
     }
 
     /**

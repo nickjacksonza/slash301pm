@@ -87,6 +87,8 @@ function pmt_cases(): array
         'mark_ready_for_client' => [$j('approved_internal'), static fn (User $u, JobAccess $a) => ReviewPolicy::canMarkReady($u, $a, pmt_jr(true, true, false), JobReviewStatus::AllApproved)],
         'send_to_client' => [$j('approved_internal'), static fn (User $u, JobAccess $a) => ReviewPolicy::canSendToClient($u, $a, pmt_jr(true, true, true), JobReviewStatus::AllApproved)],
         'change_review_round_limit' => [null, static fn (User $u, ?JobAccess $a) => Policy::canChangeReviewRoundLimit($u)],
+        // Client portal
+        'invite_client' => [null, static fn (User $u, ?JobAccess $a) => Policy::canInviteClient($u)],
     ];
 }
 
@@ -135,18 +137,18 @@ function pmt_not_yet(): array
         'transition:in_progress->in_review' => 'implicit: Request review or every post handed in (ReviewRules::stageMoves)',
         'transition:in_review->in_progress' => 'implicit: a rejection in the review flow (ReviewRules::stageMoves)',
         'transition:in_review->approved_internal' => 'implicit: the ECD approval of a CD-approved job (ReviewRules::stageMoves)',
-        'transition:approved_internal->in_progress' => 'implicit: a rejection in the review flow; the AM send back comes with the client portal',
-        'transition:approved_internal->approved_client' => 'client portal phase',
-        'transition:approved_client->in_progress' => 'reopen flow not built',
+        'transition:approved_internal->in_progress' => 'implicit: a rejection in the review flow or in the client portal; the AM send back is not built',
+        'transition:approved_internal->approved_client' => 'Client: implicit through the portal sign-off (approve_client, portal_policy_test.php); staff on behalf not built',
+        'transition:approved_client->in_progress' => 'implicit: a rejection in the review flow reopens it (ReviewRules::stageMoves); the explicit reopen comes with the client portal',
         'transition:done->in_progress' => 'reopen flow not built',
         'transition:archived->restore' => 'restore flow not built',
         'transition:cancelled->draft' => 'reinstate flow not built',
         'qa_signoff' => 'QA is advisory (Q13) and not part of the review flow yet',
         'give_feedback_internal' => 'feedback is given through approve_internal (reject with feedback) in the review flow',
         'route_feedback' => 'rejections are routed to the part maker automatically; manual routing comes with client feedback',
-        'approve_client' => 'client portal phase',
-        'give_feedback_client' => 'client portal phase',
-        'recommend_signoff' => 'client portal phase',
+        'approve_client' => 'Client cell: ReviewPolicy::canClientSignOff, checked in portal_policy_test.php; staff on behalf not built',
+        'give_feedback_client' => 'Client cell: ReviewPolicy::canClientDecidePost, checked in portal_policy_test.php; staff on behalf not built',
+        'recommend_signoff' => 'not in the first portal slice',
         'comment' => 'comments come later',
         'manage_brand' => 'no brand admin screen',
         'toggle_demo_mode' => 'the owner flips the demo flag by hand',

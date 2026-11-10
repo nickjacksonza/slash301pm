@@ -148,6 +148,16 @@ enum Stage: string
         return in_array($this, self::closed(), true);
     }
 
+    /**
+     * The client has approved: approved_client and the Social stages after it
+     * (all mirror to 'Approved (External)'). A review rejection reopens these
+     * (owner decision 2026-10-13).
+     */
+    public function isClientApproved(): bool
+    {
+        return in_array($this, [self::ApprovedClient, self::ReadyToSchedule, self::Scheduled, self::Live], true);
+    }
+
     /** Waiting or on hold: paused, resumes to the stored resume stage. */
     /**
      * Whether the job's due date still applies (counts for Overdue and Due soon).

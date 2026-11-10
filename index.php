@@ -5,6 +5,7 @@ declare(strict_types=1);
 // legacy/, api/ and public/, see .htaccess). Go: cmd/web/main.go.
 
 use App\Clock\SystemClock;
+use App\Config\Env;
 use App\Http\Deps;
 use App\Http\ErrorResponse;
 use App\Http\Kernel;
@@ -12,6 +13,7 @@ use App\Http\Middleware\SecurityHeaders;
 use App\Http\PhpSession;
 use App\Http\Request;
 use App\Logs\AppLog;
+use App\Mail\MemoryMailer;
 
 $config = require __DIR__ . '/app/bootstrap.php';
 
@@ -21,7 +23,8 @@ $requestId = AppLog::newRequestId();
 $session = new PhpSession($config);
 $request = Request::fromGlobals($config->basePath);
 try {
-    $deps = Deps::build($config, $clock);
+    // Invite mail leaves only from the live site; a local run (dev server, screenshots) never sends any.
+    $deps = Deps::build($config, $clock, 'auto', $config->env === Env::Live ? null : new MemoryMailer());
     $app = Kernel::build(require __DIR__ . '/app/routes.php', $session);
     $response = $app($request, $deps);
 } catch (Throwable $e) {

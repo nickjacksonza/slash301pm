@@ -33,7 +33,7 @@ return [
 
         app_base_path('/slash301pm');
         $config = new Config(Env::Local, dirname(__DIR__, 2), $dir, $dir . '/live.db', '/slash301pm', 'projects.slash301.com', '', false, Transport::Sse, Config::defaultNewUiRoles());
-        $d = Deps::build($config, new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00')));
+        $d = Deps::build($config, new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00')), 'auto', new App\Mail\MemoryMailer());
         $social = (string) $d->db->scalar("SELECT id FROM users WHERE role = 'Social' AND is_active = 1 ORDER BY id LIMIT 1");
         $am = (string) $d->db->scalar("SELECT id FROM users WHERE role = 'AM' AND is_active = 1 ORDER BY id LIMIT 1");
         t_true($social !== '' && $am !== '', 'live has a Social and an AM user');

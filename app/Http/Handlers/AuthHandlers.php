@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers;
 
+use App\Auth\PasswordIdentityProvider;
 use App\Domain\LoginRules;
 use App\Domain\Role;
 use App\Domain\Types\User;
@@ -20,13 +21,14 @@ use App\View\VM\LoginVM;
  */
 final class AuthHandlers
 {
-    /** Real bcrypt (cost 12, like the live hashes) of a throwaway string, so unknown usernames cost the same time. */
-    public const DUMMY_HASH = '$2y$12$MoMuqcrClPRL3B.gkzAdKe7.tV.9EdZHafEtcB2BZ6PGT55UKBTsm';
+    /** Real bcrypt of a throwaway string, so unknown users cost the same time (kept here for AccountHandlers). */
+    public const DUMMY_HASH = PasswordIdentityProvider::DUMMY_HASH;
 
     public static function loginForm(Request $r, Deps $d): Response
     {
-        if ($r->user() !== null) {
-            return Response::redirect(url('/today'), 302);
+        $signedIn = $r->user();
+        if ($signedIn !== null) {
+            return Response::redirect(url(self::home($signedIn)), 302);
         }
         $notice = $r->query('expired') === '1' ? 'Your session expired. Please sign in again.' : '';
         return self::render($r, $d, '', '', $notice, 200);
@@ -57,23 +59,17 @@ final class AuthHandlers
             return self::render($r, $d, $username, 'Enter your username and password.', '', 200);
         }
 
-        $user = LoginRules::passwordLengthOk($password) ? $d->users->findByUsername($username) : null;
-        $hash = $user !== null ? ($d->users->passwordHash($user->id) ?? self::DUMMY_HASH) : self::DUMMY_HASH;
-        $valid = password_verify($password, $hash);   // always runs, so timing does not reveal usernames
-        if ($user === null || !$valid) {
+        // The identity provider proves who it is (ADR 0006); throttling and the session stay here.
+        $user = $d->identity->authenticate($username, $password);
+        if ($user === null) {
             $d->loginAttempts->recordFailure($ip, $now);
             $d->loginAttempts->recordFailure($userKey, $now);
             return self::render($r, $d, $username, 'Invalid username or password.', '', 200);
         }
-
-        if (password_needs_rehash($hash, PASSWORD_DEFAULT)) {
-            // A hash upgrade at sign-in is a system write: no activity row (the login route is exempt).
-            $d->users->setPassword($user->id, password_hash($password, PASSWORD_DEFAULT), null, 'password_rehashed', $d->clock->now());
-        }
         self::startLogin($r->session(), $user, $now);
         $d->loginAttempts->clear($ip);
         $d->loginAttempts->clear($userKey);
-        return Response::redirect(url('/today'));
+        return Response::redirect(url(self::home($user)));
     }
 
     public static function logout(Request $r, Deps $d): Response
@@ -92,14 +88,25 @@ final class AuthHandlers
         if ($user === null || !$user->isActive) {
             return self::render($r, $d, '', 'That user does not exist.', '', 200);
         }
-        $s = $r->session();
+        self::startDemoSession($r->session(), $user, $d->clock->now()->getTimestamp());
+        return Response::redirect(url(self::home($user)));
+    }
+
+    /** Where a signed-in person starts: client contacts on /portal, everyone else on /today. */
+    public static function home(User $u): string
+    {
+        return $u->role === Role::Client ? '/portal' : '/today';
+    }
+
+    /** Demo sign-in and the demo user switch (AccountHandlers::switchUser) share this. New session id every time. */
+    public static function startDemoSession(Session $s, User $user, int $now): void
+    {
         $s->regenerate();
         $s->remove('user_id');   // a real login would otherwise win over the demo user in both apps
         $s->set('demo_user_id', $user->id);
         $s->set('user_role', $user->role->value);
         $s->set('user_brand_id', $user->brandId);
-        $s->set('last_activity', $d->clock->now()->getTimestamp());
-        return Response::redirect(url('/today'));
+        $s->set('last_activity', $now);
     }
 
     /** Same keys and order as legacy handleLogin(). */
@@ -120,12 +127,12 @@ final class AuthHandlers
         return Response::page(page_login(new LoginVM($r->csrfToken(), $username, $error, $notice, $demo, $demo ? self::demoGroups($d) : [])), $status);
     }
 
-    /** @return list<DemoGroupVM> active users grouped by role, agency roles first */
-    private static function demoGroups(Deps $d): array
+    /** @return list<DemoGroupVM> active users grouped by role, agency roles first; $currentId marks the signed-in user */
+    public static function demoGroups(Deps $d, string $currentId = ''): array
     {
         $byRole = [];
         foreach ($d->users->listActive() as $u) {
-            $byRole[$u->role->value][] = new DemoUserVM($u->id, $u->name, $u->username);
+            $byRole[$u->role->value][] = new DemoUserVM($u->id, $u->name, $u->username, $u->id === $currentId);
         }
         $groups = [];
         foreach (Role::ordered() as $role) {

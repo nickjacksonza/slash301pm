@@ -132,7 +132,7 @@ Each section uses the same headings. Field names are the planned column names (`
 | on_hold | previous stage | Resume |
 | approved_internal | in_progress | Reason required (AM not satisfied, or client feedback logged) |
 | approved_internal | approved_client | On behalf of a named client contact, with how they approved |
-| approved_client | in_progress | Reason required |
+| approved_client | in_progress | Reason required. Also implicit: a rejection of a post in review reopens a client-approved job, from approved_client or a Social stage (owner decision 2026-10-13) |
 | approved_client | done | |
 | open | cancelled | Reason required; started assets kept and flagged |
 | done, cancelled | archived | |
@@ -569,6 +569,8 @@ Backfill every existing Client to 1 so nothing changes on day one (today any own
 
 **My day needs** (`/portal`): Awaiting my review, Awaiting Director sign-off (MM view), In production (title, due date), Recently approved.
 
+**As built (client portal, first slice; docs/portal.md)**: AM, Traffic, the COO and the ECD invite a contact from `/brands/{id}/clients` (`invite_client`): an inactive Client user of that brand with `client_signoff` 0 (Marketing Manager) or 1 (Brand Director) and a single-use link. The contact sets a password at `/invite/{token}` and lands on `/portal`, which lists only their brand's jobs that are approved (internal) and marked ready for client review, plus jobs a client decided in the last 30 days. Both personas approve or reject single posts (`give_feedback_client`; a rejection needs feedback, goes to the maker and reopens the job to in_progress). Only a Brand Director signs the job off (`approve_client`), after every post is client-approved; the job moves to approved_client (legacy Approved (External)). Client decisions notify the AM (or brief creator) and the job's ECD slot holder. Not built yet: "In production" lines, "Recommend for sign-off", N18/N19 emails, on-behalf approvals by staff, the client's own password change.
+
 ## 3. Notification catalogue
 
 Rules for every event: the actor never notifies themselves; recipients are resolved at the time of the event from `job_assignments` and `assets.assigned_to`; a Client only ever receives events marked Client; every notification is written in the same transaction as the change (activity log, migration 0006) and rendered from it, so "in-app now" needs no extra table beyond a per-user read marker. Email is "later" in every row (ADR 0003) and listed as the intended mode.
@@ -617,7 +619,7 @@ Urgency: **high** = blocks work until the recipient acts (badge plus top of My d
 | N38 | post_archived_or_deleted | Post publication record archived or deleted | AM | A live post is gone or hidden | normal | digest | social |
 | N39 | changed_after_live | Brief updated, live link edited or asset reopened after Live | Social on the job; AM | A live post may need editing | high | immediate | social |
 
-**Internal reviews as built (owner spec 2026-10).** Activity verbs and recipients (`App\Domain\ReviewNotify`): `review_requested` (N14: a maker clicks Request review on a post, or every post of the job is handed in) goes to the reviewer: the CD or ECD the review was reassigned to, else the CD slot holder, else every ECD. `job_review_requested` (the CD asks the ECD, even before every post is done) and `job_cd_approved` (the CD approves the job) go to every ECD. `job_ecd_approved` (N16) goes to the AM (or brief creator) and the CD. `asset_part_rejected` (N17) goes only to the maker of each rejected part (copy to the copy maker, media to the media maker; the other part stays approved). `round_limit_warning` goes to the AM (or brief creator) when a post reaches the round after the limit (`app_settings.review_round_limit`, default 3, set by the COO or ECD on /admin/system; 0 turns it off). `job_ready_for_client` and `job_sent_to_client` go to the AM and Traffic. `review_reassigned` goes to the new reviewer. `asset_submitted` and `asset_part_approved` notify nobody. QA is not part of this flow yet (Q13: advisory). Screens: makers hand in on `/jobs/{id}/work`; everyone on the job reviews on `/jobs/{id}/review` (one card per post, labelled brand, media, copy, hashtags, link; Approve, Reject with feedback, Reject for the copy, the media or both); My day lists posts waiting for my review (CD or the person the review was handed to), jobs waiting for ECD approval (ECD, COO), changes requested (the part's maker), posts past the round limit and jobs ready for the client (owners; Traffic for ready). Stage moves follow the posts (`ReviewRules::stageMoves`): a hand-in starts a briefed job; Request review, every post handed in, the CD's approval or the CD's request to the ECD move in_progress to in_review; the ECD approval moves it to approved_internal; a rejection sends in_review or approved_internal back to in_progress (a client-approved job keeps its stage; a paused job keeps it only when it would resume to in_progress, otherwise the rejection waits until it is resumed, and the ECD approval always waits for a paused job to be resumed). The board refuses drags into or out of the two review stages and links to the review page. Each decision records the sent brief version it was checked against. A job counts as CD-approvable when every non-cancelled post has every part approved; any later rejection clears the CD and ECD approvals and the ready and sent stamps.
+**Internal reviews as built (owner spec 2026-10).** Activity verbs and recipients (`App\Domain\ReviewNotify`): `review_requested` (N14: a maker clicks Request review on a post, or every post of the job is handed in) goes to the reviewer: the CD or ECD the review was reassigned to, else the CD slot holder, else the job's ECD slot holder, else nobody. `job_review_requested` (the CD asks the ECD, even before every post is done) and `job_cd_approved` (the CD approves the job) go only to the job's ECD slot holder, never to every ECD (owner decision 2026-10-13). When the job has no ECD slot holder nobody extra is told, and the job stays visible on My day as before: under Jobs waiting for ECD approval for every ECD and the COO, and (with no CD slot either) under Waiting for my review for every ECD. The ECD slot is filled in the legacy app; the new app does not offer it as a slot (`Policy::canAssign`). `job_ecd_approved` (N16) goes to the AM (or brief creator) and the CD. `asset_part_rejected` (N17) goes only to the maker of each rejected part (copy to the copy maker, media to the media maker; the other part stays approved). `round_limit_warning` goes to the AM (or brief creator) when a post reaches the round after the limit (`app_settings.review_round_limit`, default 3, set by the COO or ECD on /admin/system; 0 turns it off). `job_ready_for_client` and `job_sent_to_client` go to the AM and Traffic. `review_reassigned` goes to the new reviewer. Reassigning hands the review over without taking it away: the CD slot holder keeps review rights, so both the CD slot holder and the person the review was reassigned to may decide (intended, owner decision 2026-10-13); later notices go to the new reviewer. `asset_submitted` and `asset_part_approved` notify nobody. QA is not part of this flow yet (Q13: advisory). Screens: makers hand in on `/jobs/{id}/work`; everyone on the job reviews on `/jobs/{id}/review` (one card per post, labelled brand, media, copy, hashtags, link; Approve, Reject with feedback, Reject for the copy, the media or both); My day lists posts waiting for my review (CD or the person the review was handed to), jobs waiting for ECD approval (ECD, COO), changes requested (the part's maker), posts past the round limit and jobs ready for the client (owners; Traffic for ready). Stage moves follow the posts (`ReviewRules::stageMoves`): a hand-in starts a briefed job; Request review, every post handed in, the CD's approval or the CD's request to the ECD move in_progress to in_review; the ECD approval moves it to approved_internal; a rejection sends in_review or approved_internal back to in_progress, and reopens a client-approved job (approved_client, or the Social stages ready_to_schedule, scheduled and live) to in_progress through the same send back, with the rejection as the reason, the legacy status mirrored to In Progress and a `job_send_back` row (owner decision 2026-10-13; Social post records keep their status); a paused job keeps its stage only when it would resume to a stage a rejection leaves alone (in_progress or earlier), otherwise the rejection waits until it is resumed, and the ECD approval always waits for a paused job to be resumed). The board refuses drags into or out of the two review stages, and a drag of a client-approved job back to in_progress, and links to the review page. Each decision records the sent brief version it was checked against. A job counts as CD-approvable when every non-cancelled post has every part approved; any later rejection clears the CD and ECD approvals and the ready and sent stamps.
 
 ## 4. Permission matrix
 
@@ -699,7 +701,7 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `transition:in_review->approved_internal` * | Y | Y | - | - | - | - | A | - | - | - | - | - | - | - |
 | `transition:approved_internal->in_progress` * | Y | Y | AC | - | AC | AC | A | - | - | - | - | - | - | B |
 | `transition:approved_internal->approved_client` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | B |
-| `transition:approved_client->in_progress` * | Y | Y | AC | - | AC | AC | - | - | - | - | - | - | - | - |
+| `transition:approved_client->in_progress` * | Y | Y | AC | - | AC | AC | A | - | - | - | - | - | - | - |
 | `transition:approved_client->done` | Y | Y | AC | Y | AC | AC | - | - | - | - | - | - | - | - |
 | `transition:approved_client->ready_to_schedule` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
 | `transition:ready_to_schedule->scheduled` * | Y | Y | - | - | - | - | - | - | - | - | - | - | A | - |
@@ -742,6 +744,7 @@ Legend: **Y** allow, **-** deny, **A** assigned, **C** creator, **AC** assigned_
 | `manage_campaign` | Y | Y | Y | - | Y | Y | - | - | - | - | - | - | - | - |
 | `manage_brand` | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
 | `manage_users` | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
+| `invite_client` | Y | Y | Y | Y | - | - | - | - | - | - | - | - | - | - |
 | `admin_system` | Y | Y | - | - | - | - | - | - | - | - | - | - | - | - |
 | `toggle_demo_mode` | Y | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | `manage_brand_logo` * | Y | Y | Y | - | Y | Y | - | - | - | - | - | - | - | - |
@@ -819,15 +822,16 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `transition:in_progress->in_review` | Social | Implicit only. |
 | `transition:in_review->in_progress` | all allowed roles | Feedback text is required. |
 | `transition:in_review->approved_internal` | CD | Holds the CD slot on the job. |
-| `transition:approved_internal->in_progress` | Client | Implicit only, through give_feedback_client after send_to_client. |
+| `transition:approved_internal->in_progress` | Client | Implicit only, through give_feedback_client (a rejection in the client portal) once the job is marked ready for client review. |
 | `transition:approved_internal->in_progress` | all allowed roles | Feedback or reason text is required. |
-| `transition:approved_internal->approved_client` | Client | users.client_signoff = 1 and the job was sent to the client. |
+| `transition:approved_internal->approved_client` | Client | Implicit only, through approve_client (the Brand Director's sign-off in the client portal). |
 | `transition:approved_internal->approved_client` | AM | On behalf: must name the client contact and how they approved. |
 | `transition:approved_internal->approved_client` | PM | On behalf, as AM. |
 | `transition:approved_internal->approved_client` | Producer | On behalf, as AM. |
 | `transition:approved_internal->approved_client` | COO | On behalf, as AM. |
 | `transition:approved_internal->approved_client` | ECD | On behalf, as AM. |
 | `transition:approved_client->in_progress` | all allowed roles | Reason required; client approval fields are cleared. |
+| `transition:approved_client->in_progress` | CD | Implicit only (owner decision 2026-10-13): a rejection of a post in review (approve_internal) reopens a client-approved job, from approved_client or a Social stage (ready_to_schedule, scheduled, live), with the rejection as the reason. The COO and the ECD reopen the same way. |
 | `transition:approved_client->ready_to_schedule` | all allowed roles | Checklist complete for every social asset in scope; notifies the AM. |
 | `transition:ready_to_schedule->scheduled` | all allowed roles | scheduled_at set per platform in scope. |
 | `transition:scheduled->live` | all allowed roles | Live link entered per platform in scope. The AM cannot do this (Q23). |
@@ -860,9 +864,9 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `transition:open->cancelled` | all allowed roles | Reason required; started assets are kept and flagged. |
 | `transition:done->in_progress` | all allowed roles | Reason required. |
 | `submit_for_review` | all allowed roles | Brief sent, job open, post not cancelled. Each part is handed in by its maker: copy by the Copywriter slot (or the asset assignee for copy deliverables), media by the Designer slot (or the asset assignee; any other role, such as the Producer for an asset test report, makes both parts of an asset assigned to them); the CD slot holder, the COO and the ECD may hand in either part. An approved part is frozen until a reviewer rejects it. |
-| `approve_internal` | all allowed roles | Brief sent, job open. A rejection sends the part back to its maker, clears the CD and ECD approvals and the client steps, and moves an in_review or approved_internal job back to in_progress. |
-| `approve_internal` | CD | Holds the CD slot on the job, or the review was reassigned to them; not a part they handed in themselves unless no other CD or ECD exists. |
-| `request_ecd_review` | all allowed roles | Brief sent, job open, not ECD-approved already. Notifies every ECD; an in_progress job moves to in_review. |
+| `approve_internal` | all allowed roles | Brief sent, job open. A rejection sends the part back to its maker, clears the CD and ECD approvals and the client steps, and moves an in_review or approved_internal job back to in_progress; on a client-approved job (approved_client, ready_to_schedule, scheduled, live) it reopens the job to in_progress (owner decision 2026-10-13). A paused job refuses a rejection while it would resume to any of those stages. |
+| `approve_internal` | CD | Holds the CD slot on the job, or the review was reassigned to them; both keep review rights after a reassign (owner decision 2026-10-13). Not a part they handed in themselves unless no other CD or ECD exists. |
+| `request_ecd_review` | all allowed roles | Brief sent, job open, not ECD-approved already. Notifies the job's ECD slot holder only (nobody when the slot is empty; the job still waits on My day for every ECD and the COO); an in_progress job moves to in_review. |
 | `request_ecd_review` | CD | CD slot on the job, or the review was reassigned to them. |
 | `approve_job_ecd` | all allowed roles | The CD has approved the job and every post is approved. Any later rejection clears it. Notifies the AM (N16) and the CD. |
 | `approve_job_ecd` | COO | As cover for the ECD. |
@@ -872,7 +876,7 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `mark_ready_for_client` | CD | CD slot on the job, or the review was reassigned to them. |
 | `send_to_client` | all allowed roles | Stage approved_internal; the CD and the ECD have approved the job and every post is approved; marked ready for client review; not sent already. Notifies the AM and Traffic. |
 | `send_to_client` | CD | CD slot on the job, or the review was reassigned to them. |
-| `approve_client` | Client | users.client_signoff = 1. |
+| `approve_client` | Client | users.client_signoff = 1 (Brand Director): the final job sign-off in the client portal, once the job is marked ready for client review (stage approved_internal) and every post is approved by a client contact of the brand. Moves the job to approved_client. |
 | `approve_client` | AM | On behalf, with contact and evidence note. |
 | `approve_client` | PM | On behalf. |
 | `approve_client` | Producer | On behalf. |
@@ -883,7 +887,7 @@ Applies from stage approved_client. Asset-level moves use the same actions on a 
 | `give_feedback_client` | Producer | On behalf. |
 | `give_feedback_client` | COO | On behalf. |
 | `give_feedback_client` | ECD | On behalf. |
-| `give_feedback_client` | Client | Job was sent to the client. |
+| `give_feedback_client` | Client | Job marked ready for client review and stage approved_internal. Marketing Manager and Brand Director. In the portal this is the per-post decision: approve a post, or reject it (feedback required); a rejection goes to the maker and reopens the job. |
 | `recommend_signoff` | Client | users.client_signoff = 0 and the job was sent to the client. |
 | `view_all_jobs` | Client | Client-safe projection; drafts and internal-only stages show only as a coarse "In production" line. |
 | `view_staff_emails` | Client | Own email only. |

@@ -49,8 +49,6 @@ function partial_work_item(WorkItemVM $it): string
     $only = 'filterSignals: {include: /^' . $root . '\\./}, retryMaxCount: 0';
     $signals = [$root => ['copy_text' => $it->copyText, 'media_url' => $it->mediaUrl, 'hashtags' => $it->hashtags, 'link_url' => $it->linkUrl,
         'note' => $it->note, 'rv' => $it->rowVersion]];
-    $input = 'h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60';
-    $area = 'w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60';
     $id = 'work-' . $it->key;
     $copyLocked = !$it->editCopy;
     $mediaLocked = !$it->editMedia;
@@ -74,32 +72,30 @@ function partial_work_item(WorkItemVM $it): string
       <?php if ($it->needsMedia): ?>
       <div class="flex flex-col gap-1">
         <label for="<?= attr($id . '-media') ?>" class="text-sm font-medium">Media link</label>
-        <input id="<?= attr($id . '-media') ?>" type="text" inputmode="url" class="<?= attr($input) ?>" placeholder="https://... or a server path" value="<?= attr($it->mediaUrl) ?>" data-bind="<?= attr($root . '.media_url') ?>"<?= $mediaLocked ? ' disabled' : '' ?>>
+        <?= ui_input(new \App\View\ui\InputProps(type: 'text', id: ($id . '-media'), placeholder: 'https://... or a server path', value: ($it->mediaUrl), attrs: ['inputmode' => 'url', 'data-bind' => ($root . '.media_url'), 'disabled' => $copyLocked])) ?>
         <p class="text-xs text-muted-foreground">An image link (https, .jpg/.png/.webp) shows in the post; video and other links open in a new tab.</p>
       </div>
       <?php endif; ?>
       <div class="flex flex-col gap-1">
         <label for="<?= attr($id . '-copy') ?>" class="text-sm font-medium">Copy</label>
-        <textarea id="<?= attr($id . '-copy') ?>" rows="6" maxlength="10000" class="<?= attr($area) ?>" data-bind="<?= attr($root . '.copy_text') ?>"<?= $copyLocked ? ' disabled' : '' ?>><?= e($it->copyText) ?></textarea>
+        <?= ui_textarea(new \App\View\ui\TextareaProps(id: ($id . '-copy'), value: $it->copyText, disabled: $copyLocked, attrs: ['rows' => 6, 'maxlength' => 10000, 'data-bind' => ($root . '.copy_text')])) ?>
       </div>
       <div class="flex flex-col gap-1">
         <label for="<?= attr($id . '-tags') ?>" class="text-sm font-medium">Hashtags</label>
-        <input id="<?= attr($id . '-tags') ?>" type="text" class="<?= attr($input) ?>" placeholder="#launch #grandopening" value="<?= attr($it->hashtags) ?>" data-bind="<?= attr($root . '.hashtags') ?>"<?= $copyLocked ? ' disabled' : '' ?>>
+        <?= ui_input(new \App\View\ui\InputProps(type: 'text', id: ($id . '-tags'), placeholder: '#launch #grandopening', value: ($it->hashtags), attrs: ['data-bind' => ($root . '.hashtags'), 'disabled' => $copyLocked])) ?>
       </div>
       <div class="flex flex-col gap-1">
         <label for="<?= attr($id . '-link') ?>" class="text-sm font-medium">Link</label>
-        <input id="<?= attr($id . '-link') ?>" type="url" class="<?= attr($input) ?>" placeholder="https://..." value="<?= attr($it->linkUrl) ?>" data-bind="<?= attr($root . '.link_url') ?>"<?= $copyLocked ? ' disabled' : '' ?>>
+        <?= ui_input(new \App\View\ui\InputProps(type: 'url', id: ($id . '-link'), placeholder: 'https://...', value: ($it->linkUrl), attrs: ['data-bind' => ($root . '.link_url'), 'disabled' => $copyLocked])) ?>
       </div>
       <div class="flex flex-col gap-1">
         <label for="<?= attr($id . '-note') ?>" class="text-sm font-medium">Note for the reviewer <span class="font-normal text-muted-foreground">(optional)</span></label>
-        <input id="<?= attr($id . '-note') ?>" type="text" maxlength="1000" class="<?= attr($input) ?>" value="<?= attr($it->note) ?>" data-bind="<?= attr($root . '.note') ?>">
+        <?= ui_input(new \App\View\ui\InputProps(type: 'text', id: ($id . '-note'), value: ($it->note), attrs: ['maxlength' => '1000', 'data-bind' => ($root . '.note')])) ?>
       </div>
       <?php if ($it->readOnlyReason !== ''): ?><p class="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground"><?= e($it->readOnlyReason) ?></p><?php endif; ?>
       <div class="flex flex-wrap gap-2">
-        <button type="button" class="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-4 text-sm font-medium shadow-xs hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
-          data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy) ?>" data-on:click="<?= attr(act_raw('post', $it->saveUrl, $only)) ?>">Save</button>
-        <button type="button" class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-          data-indicator="<?= attr($busy) ?>" data-attr:disabled="<?= attr('$' . $busy) ?>" data-on:click="<?= attr(act_raw('post', $it->requestUrl, $only)) ?>">Request review</button>
+        <?= ui_button(new \App\View\ui\ButtonProps(variant: 'outline', attrs: ['data-indicator' => $busy, 'data-attr:disabled' => '$' . $busy, 'data-on:click' => act_raw('post', $it->saveUrl, $only)]), 'Save') ?>
+        <?= ui_button(new \App\View\ui\ButtonProps(variant: 'default', attrs: ['data-indicator' => $busy, 'data-attr:disabled' => '$' . $busy, 'data-on:click' => act_raw('post', $it->requestUrl, $only)]), 'Request review') ?>
       </div>
     </div>
     <div class="flex flex-col gap-1">

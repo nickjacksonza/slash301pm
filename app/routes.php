@@ -40,6 +40,7 @@ return [
 
     ['GET /account/password', [AccountHandlers::class, 'passwordForm']],
     ['POST /account/password', [AccountHandlers::class, 'changePassword']],
+    ['POST /account/switch/{userId}', [AccountHandlers::class, 'switchUser']],
 
     ['GET /admin/users', [AdminUserHandlers::class, 'list']],
     ['POST /admin/users', [AdminUserHandlers::class, 'create']],
@@ -107,6 +108,7 @@ return [
     ['POST /jobs/{id}/review/ready', [ReviewHandlers::class, 'markReady']],
     ['POST /jobs/{id}/review/send', [ReviewHandlers::class, 'sendToClient']],
     ['GET /today/reviews', [ReviewHandlers::class, 'todaySection']],
+    ['GET /reviews', [ReviewHandlers::class, 'listPage']],
     ['POST /admin/system/review-round-limit', [SystemHandlers::class, 'reviewRoundLimit']],
 
     // Social publishing
