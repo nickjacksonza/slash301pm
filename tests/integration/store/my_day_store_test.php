@@ -24,7 +24,7 @@ function mds_deps(): Deps
     } else {
         fwrite(STDERR, "note: data/live-copy.db not present, MyDayStore runs on an empty migrated database\n");
     }
-    $d = Deps::build(ts_config($dir), new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00 +02:00')), 'auto');
+    $d = Deps::build(ts_config($dir), new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00 +02:00')), 'auto', new App\Mail\MemoryMailer());
     $res = $d->migrator->run();
     t_true($res->ok, $res->error);
     return $d;

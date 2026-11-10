@@ -7,6 +7,7 @@ use App\Domain\JobAction;
 use App\Domain\JobReviewStatus;
 use App\Domain\Notifications;
 use App\Domain\PartState;
+use App\Domain\PortalRules;
 use App\Domain\ReviewDecision;
 use App\Domain\ReviewEvent;
 use App\Domain\ReviewNotify;
@@ -300,11 +301,16 @@ final class ReviewStore
      * clears the CD and ECD approvals and the client steps, and sends an
      * in-review or internally approved job back to in_progress, or reopens a
      * client-approved one (approved_client or a Social stage).
+     * $byClient: a client contact's rejection from the portal (every part),
+     * logged as client_post_rejected: to the makers, the AM and the job's ECD.
      * @param list<ReviewPart> $parts
      */
-    public function review(AssetReview $cur, array $parts, ReviewDecision $d, string $feedback, string $actorId, DateTimeImmutable $now): ReviewWrite
+    public function review(AssetReview $cur, array $parts, ReviewDecision $d, string $feedback, string $actorId, DateTimeImmutable $now, bool $byClient = false): ReviewWrite
     {
-        return $this->tx(function (Db $tx) use ($cur, $parts, $d, $feedback, $actorId, $now): ReviewWrite {
+        if ($byClient && !$d->isRejection()) {
+            throw new \LogicException('a client approval goes through clientApprove');
+        }
+        return $this->tx(function (Db $tx) use ($cur, $parts, $d, $feedback, $actorId, $now, $byClient): ReviewWrite {
             $row = $tx->one('SELECT id, round, row_version FROM asset_submissions WHERE asset_id = :a ORDER BY round DESC LIMIT 1', ['a' => $cur->assetId]);
             if ($row === null || (int) $row['row_version'] !== $cur->rowVersion || (int) $row['round'] !== $cur->round) {
                 return ReviewWrite::stale();
@@ -373,14 +379,105 @@ final class ReviewStore
                 $set[$col] = null;
             }
             $this->touchJob($tx, $cur->jobId, $set, $now);
-            $this->log($tx, $cur->jobId, $actorId, ReviewNotify::PART_REJECTED, 'asset', $cur->assetId, $base + [
+            $verb = $byClient ? ReviewNotify::CLIENT_POST_REJECTED : ReviewNotify::PART_REJECTED;
+            $this->log($tx, $cur->jobId, $actorId, $verb, 'asset', $cur->assetId, $base + [
                 'feedback' => $feedback, 'makers' => $makerByPart, 'cleared_approvals' => $cleared,
-                'recipients' => ReviewNotify::recipients(ReviewNotify::PART_REJECTED, $team, $jr, $this->creator($tx, $cur->jobId), $makers, $actorId),
+                'recipients' => ReviewNotify::recipients($verb, $team, $jr, $this->creator($tx, $cur->jobId), $makers, $actorId),
             ], $now);
             $this->mirrorAsset($tx, $cur->assetId, $status, ReviewEvent::Rejected, false, $at);
-            $reason = $cur->assetName . ': ' . implode(' and ', $partNames) . ' ' . strtolower($d->label()) . ($feedback !== '' ? ' (' . $feedback . ')' : '');
+            $reason = ($byClient ? 'Client: ' : '') . $cur->assetName . ': ' . implode(' and ', $partNames) . ' ' . strtolower($d->label()) . ($feedback !== '' ? ' (' . $feedback . ')' : '');
             [$from, $to] = $this->follow($tx, $cur->jobId, ReviewEvent::Rejected, mb_substr($reason, 0, Transitions::MAX_REASON), $actorId, $now);
             return ReviewWrite::done($from, $to, false, $cleared, $cur->round);
+        });
+    }
+
+    // ---- writes: client portal ------------------------------------------------------
+
+    /**
+     * A client contact approves a post (every part) from the portal. The part
+     * states stay approved (they were approved internally); one asset_reviews
+     * row per required part records the client's decision, and the post's
+     * row_version is bumped so an open page goes stale. Refused as stale when
+     * the post's current round changed since $cur was read. Policy and
+     * PortalRules::postProblem are checked by the caller.
+     */
+    public function clientApprove(AssetReview $cur, string $actorId, DateTimeImmutable $now): ReviewWrite
+    {
+        return $this->tx(function (Db $tx) use ($cur, $actorId, $now): ReviewWrite {
+            $row = $tx->one('SELECT id, round, row_version FROM asset_submissions WHERE asset_id = :a ORDER BY round DESC LIMIT 1', ['a' => $cur->assetId]);
+            if ($row === null || (int) $row['row_version'] !== $cur->rowVersion || (int) $row['round'] !== $cur->round) {
+                return ReviewWrite::stale();
+            }
+            $status = $tx->scalar('SELECT status FROM assets WHERE id = :a AND job_id = :j', ['a' => $cur->assetId, 'j' => $cur->jobId]);
+            if ($status === null || (string) $status === 'Cancelled') {
+                return ReviewWrite::refused('This post was cancelled.');
+            }
+            $n = $tx->exec('UPDATE asset_submissions SET row_version = row_version + 1 WHERE id = :id AND row_version = :rv', ['id' => (string) $row['id'], 'rv' => $cur->rowVersion]);
+            if ($n === 0) {
+                throw new StaleWrite();
+            }
+            $at = Ids::utc($now);
+            $version = $this->briefVersion($tx, $cur->jobId);
+            $partNames = [];
+            foreach ($cur->requiredParts() as $p) {
+                $partNames[] = $p->value;
+                $tx->exec(
+                    'INSERT INTO asset_reviews (id, asset_id, job_id, submission_id, part, round, decision, feedback, reviewer_id, reviewed_at, brief_version)
+                     VALUES (:id, :a, :j, :s, :p, :r, :d, NULL, :u, :at, :v)',
+                    ['id' => Ids::new(), 'a' => $cur->assetId, 'j' => $cur->jobId, 's' => (string) $row['id'], 'p' => $p->value, 'r' => $cur->round,
+                        'd' => ReviewDecision::Approved->value, 'u' => $actorId, 'at' => $at, 'v' => $version === '' ? null : $version],
+                );
+            }
+            $this->touchJob($tx, $cur->jobId, [], $now);
+            $team = $this->team($tx, $cur->jobId);
+            $jr = $this->jobReview($cur->jobId);
+            $this->log($tx, $cur->jobId, $actorId, ReviewNotify::CLIENT_POST_APPROVED, 'asset', $cur->assetId, [
+                'asset_id' => $cur->assetId, 'asset_name' => $cur->assetName, 'parts' => $partNames, 'decision' => ReviewDecision::Approved->value,
+                'round' => $cur->round, 'brief_version' => $version,
+                'recipients' => ReviewNotify::recipients(ReviewNotify::CLIENT_POST_APPROVED, $team, $jr, $this->creator($tx, $cur->jobId), [], $actorId),
+            ], $now);
+            $stage = $this->jobs->get($cur->jobId)?->stage;
+            return ReviewWrite::done($stage, $stage, false, false, $cur->round);
+        });
+    }
+
+    /**
+     * The final client sign-off by a Brand Director (checked by the caller with
+     * ReviewPolicy::canClientSignOff). Inside the transaction: the job review
+     * row is still at $rv, the job is approved (internal) and ready for the
+     * client, and every live post is approved by a client contact of $brandId
+     * in its current round. The job moves to approved_client through
+     * Transitions (legacy status Approved (External) written alongside).
+     */
+    public function clientSignOff(string $jobId, string $brandId, int $rv, string $actorId, DateTimeImmutable $now): ReviewWrite
+    {
+        return $this->tx(function (Db $tx) use ($jobId, $brandId, $rv, $actorId, $now): ReviewWrite {
+            $jr = $this->jobReview($jobId);
+            if ($jr->rowVersion !== $rv) {
+                return ReviewWrite::stale();
+            }
+            $job = $this->jobs->get($jobId);
+            if ($job === null) {
+                return ReviewWrite::refused('This job no longer exists.');
+            }
+            if ($job->stage !== Stage::ApprovedInternal || !$jr->readyForClient()) {
+                return ReviewWrite::refused('This job is not waiting for your review.');
+            }
+            $posts = $this->assets($jobId);
+            if (!PortalRules::allClientApproved($posts, (new PortalStore($tx))->clientApprovedIds($brandId, $jobId))) {
+                return ReviewWrite::refused('Approve every post first.');
+            }
+            $this->touchJob($tx, $jobId, [], $now);
+            $team = $this->team($tx, $jobId);
+            $after = $this->jobReview($jobId);
+            $this->log($tx, $jobId, $actorId, ReviewNotify::CLIENT_SIGNED_OFF, 'job', $jobId, [
+                'recipients' => ReviewNotify::recipients(ReviewNotify::CLIENT_SIGNED_OFF, $team, $after, $this->creator($tx, $jobId), [], $actorId),
+            ], $now);
+            [$from, $to] = $this->follow($tx, $jobId, ReviewEvent::ClientSignedOff, '', $actorId, $now);
+            if ($to !== Stage::ApprovedClient) {
+                throw new \RuntimeException('client sign-off did not reach approved_client');
+            }
+            return ReviewWrite::done($from, $to);
         });
     }
 

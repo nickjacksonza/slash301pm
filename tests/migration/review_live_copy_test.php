@@ -46,7 +46,7 @@ return [
 
         app_base_path('/slash301pm');
         $config = new Config(Env::Local, dirname(__DIR__, 2), $dir, $dir . '/live.db', '/slash301pm', 'projects.slash301.com', '', false, Transport::Sse, Config::defaultNewUiRoles());
-        $d = Deps::build($config, new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00')));
+        $d = Deps::build($config, new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00')), 'auto', new App\Mail\MemoryMailer());
         $job = (string) $d->db->scalar(
             "SELECT j.id FROM jobs j WHERE j.stage = 'in_progress'
                AND (SELECT COUNT(*) FROM assets a WHERE a.job_id = j.id AND a.status <> 'Cancelled') >= 2

@@ -63,7 +63,7 @@ if (!is_dir($dir) && !mkdir($dir, 0700, true)) {
 app_base_path('/slash301pm');
 $config = new Config(Env::Local, $root, $dir, $dbPath, '/slash301pm', 'projects.slash301.com', '', false, Transport::Sse, Config::defaultNewUiRoles());
 // The brief fixtures carry October 2026 dates, so the seed runs on a fixed clock like the tests do.
-$d = Deps::build($config, new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00')));
+$d = Deps::build($config, new FixedClock(new DateTimeImmutable('2026-10-09 09:00:00')), 'auto', new App\Mail\MemoryMailer());
 $res = $d->migrator->run();
 if (!$res->ok) {
     fwrite(STDERR, 'migration failed: ' . $res->error . "\n");
